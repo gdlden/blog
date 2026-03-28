@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package api.realName;
+import "google/api/annotations.proto";
+option go_package = "blog/api/realName/v1;v1";
+
+service RealName {
+	rpc CreateRealName (CreateRealNameRequest) returns (CreateRealNameReply) {
+		option (google.api.http) = {
+			post: "/realName/add/v1"
+			body: "*"
+		};
+	};
+	rpc UpdateRealName (UpdateRealNameRequest) returns (UpdateRealNameReply){
+		option (google.api.http) = {
+			post: "/realName/edit/v1"
+			body: "*"
+		};
+	};
+	rpc GetRealName (GetRealNameRequest) returns (GetRealNameReply) {
+		option (google.api.http) = {
+			get: "/realName/get/v1"
+		};
+	};
+}
+
+message CreateRealNameRequest {
+	string name = 1;
+	string faceImage = 2;
+	string bankImage = 3;
+	string idCard = 4;
+
+}
+message CreateRealNameReply {
+	string id = 1;
+	string status = 2;
+	string statusCh = 3;
+}
+
+message UpdateRealNameRequest {
+	string name = 1;
+	string faceImage = 2;
+	string bankImage = 3;
+	string idCard = 4;
+}
+message UpdateRealNameReply {
+	string status = 2;
+	string statusCh = 3;
+}
+
+message GetRealNameRequest {
+}
+message GetRealNameReply {
+	string name = 1;
+	string faceImage = 2;
+	string bankImage = 3;
+	string idCard = 4;
+	string status = 5;
+	string statusCh = 6;
+}

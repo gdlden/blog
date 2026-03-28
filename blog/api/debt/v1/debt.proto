@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package api.debt.v1;
+
+option go_package = "blog/api/debt/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.debt.v1";
+
+import "google/api/annotations.proto";
+
+service Debt {
+	rpc CreateDebt (DebtEntity) returns (CreateDebtReply) {
+		option (google.api.http) = {
+			post: "/debt/save/v1"
+			body: "*"
+		};
+	};
+	rpc UpdateDebt (DebtEntity) returns (UpdateDebtReply) {
+		option (google.api.http) = {
+			post: "/debt/update/v1"
+			body: "*"
+		};
+	};
+	rpc DeleteDebt (DeleteDebtRequest) returns (DeleteDebtReply){
+		option (google.api.http) = {
+			post: "/debt/delete/v1"
+			body: "*"
+		};
+	};
+	rpc GetDebt (GetDebtRequest) returns (DebtEntity){
+		option (google.api.http) = {
+			get: "/debt/get/v1"
+		};
+	};
+	rpc ListDebt (ListDebtRequest) returns (ListDebtReply){
+		option (google.api.http) = {
+			get: "/debt/page/v1"
+		};
+	};
+}
+
+message CreateDebtReply {
+	string id = 1;
+	string message = 2;
+}
+
+message UpdateDebtReply {
+	string message = 1;
+	string id = 2;
+}
+
+message DeleteDebtRequest {
+	string id = 1;
+}
+message DeleteDebtReply {
+	bool flag = 1;
+}
+
+message GetDebtRequest {
+	string id = 1;
+}
+
+message ListDebtRequest {
+	int64 page = 1;
+	int64 pageSize = 2;
+	string name = 3;
+	string bankName = 4;
+	string bankAccount = 5;
+	string applyTime = 6;
+	string endTime = 7;
+	string amount = 8;
+	string status = 9;
+	string remark = 10;
+	string apr = 11;
+	string fee = 12;
+	string tenor = 13;
+}
+message ListDebtReply {
+	int64 page = 1;
+	int64 total = 2;
+	repeated DebtEntity list = 3;
+}
+message DebtEntity{
+	int64 id = 1;
+	string name = 2;
+	string bankName = 3;
+	string bankAccount = 4;
+	string applyTime = 5;
+	string endTime = 6;
+	string amount = 7;
+	string status = 8;
+	string remark = 9;
+	string apr = 10;
+	string fee = 11;
+	string tenor = 12;
+}

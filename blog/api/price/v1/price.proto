@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package price.v1;
+
+import "google/api/annotations.proto";
+
+option go_package = "price/api/price/v1;v1";
+
+service Price {
+	rpc CreatePrice (CreatePriceRequest) returns (CreatePriceReply) {
+		option (google.api.http) = {
+			post: "/price/add"
+			body: "*"
+		};
+	}
+	rpc UpdatePrice (UpdatePriceRequest) returns (UpdatePriceReply);
+	rpc DeletePrice (DeletePriceRequest) returns (DeletePriceReply);
+	rpc GetPrice (GetPriceRequest) returns (GetPriceReply);
+	rpc ListPrice (ListPriceRequest) returns (ListPriceReply) {
+		option (google.api.http) = {
+			get: "/price/list"
+		};
+	}
+}
+
+message CreatePriceRequest {
+	string name =1;
+	string price = 2;
+	string priceDate =3; 
+}
+message CreatePriceReply {
+	string id = 1;
+}
+
+message UpdatePriceRequest {}
+message UpdatePriceReply {}
+
+message DeletePriceRequest {}
+message DeletePriceReply {}
+
+message GetPriceRequest {}
+message GetPriceReply {}
+
+message ListPriceRequest {}
+message ListPriceReply {}

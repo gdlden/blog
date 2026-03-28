@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package ocr.v1;
+import "google/api/annotations.proto";
+
+option go_package = "api/ocr/v1;v1";
+
+service Aiocr {
+	rpc Ocr (OcrRequest) returns (OcrReply) {
+		option (google.api.http)= {
+			post: "/ocr/aiocr"
+			body: "*"
+		};
+	}
+}
+
+message OcrRequest {
+	string imgBaseStr =1; 
+}
+message OcrReply {
+	string res = 1;
+}

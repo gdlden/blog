@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package api.debt.v1;
+
+option go_package = "blog/api/debt/v1;v1";
+import "google/api/annotations.proto";
+
+service DebtDetail {
+	rpc CreateDebtDetail (DebtDetailData) returns (CreateDebtDetailReply) {
+		option (google.api.http) = {
+			post: "/debtDetail/save/v1"
+			body: "*"
+		};
+	};
+	rpc UpdateDebtDetail (DebtDetailData) returns (UpdateDebtDetailReply) {
+		option (google.api.http) = {
+			post: "/debtDetail/edit/v1"
+			body: "*"
+		};
+	};
+	rpc DeleteDebtDetail (DeleteDebtDetailRequest) returns (DeleteDebtDetailReply){
+		option (google.api.http) = {
+			post: "/debtDetail/delete/v1"
+			body: "*"
+		};
+	};
+	rpc GetDebtDetail (GetDebtDetailRequest) returns (DebtDetailData) {
+		option (google.api.http) = {
+			get: "/debtDetail/get/v1"
+		};
+	};
+	rpc ListDebtDetail (DebtDetailData) returns (ListDebtDetailReply) {
+		option (google.api.http) = {
+			get: "/debtDetail/list/v1"
+		};
+	};
+}
+
+message DebtDetailData {
+	string id = 1;
+	string debtId = 2;
+	string postingDate = 3;
+	//本金
+	string principal = 4;
+	//利息
+	string interest = 5;
+	//期数
+	string period = 6;
+}
+message CreateDebtDetailReply {
+	string id = 1;
+}
+message UpdateDebtDetailReply {
+	string id = 1;
+}
+
+message DeleteDebtDetailRequest {
+	string id = 1;
+}
+message DeleteDebtDetailReply {
+	bool success = 1;
+}
+
+message GetDebtDetailRequest {
+	string id = 1;
+}
+
+message ListDebtDetailReply {
+	repeated DebtDetailData list = 1;
+}

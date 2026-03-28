@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package post.v1;
+
+option go_package = "blog/api/post/v1;v1";
+option java_multiple_files = true;
+option java_package = "post.v1";
+option objc_class_prefix = "APIPostV1";
+
+enum ErrorReason {
+  GREETER_UNSPECIFIED = 0;
+  USER_NOT_FOUND = 1;
+}

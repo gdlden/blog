@@ -1,0 +1,127 @@
+syntax = "proto3";
+
+package user.v1;
+
+import "google/api/annotations.proto";
+
+
+option go_package = "user/api/user/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.user.v1";
+
+service User {
+	rpc CreateUser (CreateUserRequest) returns (CreateUserReply) {
+		option (google.api.http) = {
+      		post: "/user/add/v1"
+      		body: "*"
+    };
+	}
+	rpc UpdateUser (UpdateUserRequest) returns (UpdateUserReply) {
+		option (google.api.http) = {
+			post: "/user/update/v1"
+			body: "*"
+		};
+	};
+	rpc UpdateMyAvatar (UpdateAvatarRequest) returns (UpdateAvatarReply) {
+		option (google.api.http) = {
+			post: "/user/updateMyAvatar/v1"
+			body: "*"
+		};
+	};
+	rpc GetUser (GetUserRequest) returns (GetUserReply) {
+		option (google.api.http) = {
+			get: "/user/get/v1"
+		};
+	};
+	rpc ListUser (ListUserRequest) returns (ListUserReply) {
+		option (google.api.http) = {
+			get: "/user/get/list"
+		};
+	};
+	rpc UserLogin(UserLoginRequest) returns(LoginReply) {
+		option (google.api.http) = {
+			post: "/user/login/v1"
+			body: "*"
+		};
+	};
+}
+
+message UserCommom {
+string userId = 1;
+string username =2;
+string password = 3;
+string phoneNumber = 4;
+string email = 5;
+}
+message CreateUserRequest {
+	string username =1;
+	string password = 2;
+	string phoneNumber = 3;
+	string email = 4;
+}
+
+message CreateUserReply {
+	string userId = 1;
+	string username =2;
+	string password = 3;
+	string phoneNumber = 4;
+	string email = 5;
+}
+
+message UpdateUserRequest {
+	string userId = 1;
+	string username =2;
+	string password = 3;
+	string phoneNumber = 4;
+	string email = 5;
+}
+message UpdateAvatarRequest {
+	string avatar = 1;
+}
+message UpdateUserReply {
+	string userId = 1;
+	string username =2;
+	string password = 3;
+	string phoneNumber = 4;
+	string email = 5;
+}
+message UpdateAvatarReply {
+bool flag = 1;
+}
+
+message DeleteUserRequest {
+	string userId=1;
+}
+message DeleteUserReply {
+	bool flag=1;
+}
+
+message GetUserRequest {
+	string userId = 1;
+}
+message GetUserReply {
+	string userId = 1;
+	string username =2;
+	string password = 3;
+	string phoneNumber = 4;
+	string email = 5;
+}
+
+message LoginReply {
+	string msg=1;
+	string code=2;
+	string token=3;
+	UserCommom user = 4;
+}
+
+message ListUserRequest {
+}
+message ListUserReply {
+	repeated UserCommom userList=1;
+}
+message UserLoginRequest {
+	string username = 1;
+	string password = 2;
+	string phoneNumber = 3;
+	string emal = 4;
+}

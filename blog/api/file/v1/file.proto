@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package file.v1;
+
+option go_package = "blog/api/file/v1;file";
+option java_multiple_files = true;
+option java_package = "api.file";
+import "google/api/annotations.proto";
+
+service File {
+	rpc CreateFileUploadUrl (CreateFileUploadUrlRequest) returns (CreateFileUploadUrlReply) {
+		option (google.api.http) = {
+			post: "file/createFileUrl/v1"
+			body: "*"
+		};
+	}
+	rpc CreateFile (FileUploadRequest) returns (FileUploadReply) {
+		option (google.api.http) = {
+			post: "file/upload/v1"
+			body: "*"
+		};
+	}
+	rpc GetFile (GetFileRequest) returns (GetFileReply) {
+		option (google.api.http) = {
+			get: "file/get/v1/{id}"
+		};
+	}
+}
+
+
+message  CreateFileUploadUrlRequest {
+	string fileName = 1;
+	string filePath = 2;
+	string fileType = 3;
+}
+message CreateFileUploadUrlReply {
+	string url = 1;
+}
+message FileUploadRequest {
+	string fileId = 1;
+}
+message FileUploadReply {
+	bool saveFlag = 1;
+}
+message GetFileRequest {
+	string id = 1;
+}
+
+message GetFileReply {
+	string id = 1;
+	string fileName = 2;
+	string filePath = 3;
+	string fileType = 4;
+	string fileUrl = 5;
+	string fileExt = 6;
+}
