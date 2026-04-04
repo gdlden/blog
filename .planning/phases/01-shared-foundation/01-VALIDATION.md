@@ -1,7 +1,7 @@
 ---
 phase: 1
 slug: shared-foundation
-status: draft
+status: approved
 nyquist_compliant: false
 wave_0_complete: false
 created: 2026-04-04
