@@ -9,7 +9,7 @@
 
 - [x] **FND-01**: User can log in and remain authenticated across normal page navigation without stale route-guard state.
 - [x] **FND-02**: User can log out or otherwise clear session state cleanly and return to the login page.
-- [ ] **FND-03**: User can navigate between the blog area and debt area within one authenticated site shell.
+- [x] **FND-03**: User can navigate between the blog area and debt area within one authenticated site shell.
 
 ### Blog
 
@@ -63,7 +63,7 @@
 |-------------|-------|--------|
 | FND-01 | Phase 1 | Complete |
 | FND-02 | Phase 1 | Complete |
-| FND-03 | Phase 1 | Pending |
+| FND-03 | Phase 1 | Complete |
 | BLOG-01 | Phase 2 | Pending |
 | BLOG-02 | Phase 2 | Pending |
 | BLOG-03 | Phase 2 | Pending |
