@@ -15,6 +15,7 @@ At any time, the user can reliably record and manage their own blog content, the
 ### Validated
 
 - [x] User can log in to the site with an existing account flow backed by the current backend and frontend implementation.
+  - Validated in Phase 1: Shared Foundation (FND-01, FND-02, FND-03)
 - [x] User can access existing blog post APIs for creating posts, listing posts, and viewing post details through the current backend contracts.
 - [x] User can access existing debt APIs to create, update, delete, query, and list debt records in the current backend structure.
 - [x] User can access debt-detail APIs and supporting backend domain structure, although some CRUD paths still need completion and hardening.
@@ -59,9 +60,9 @@ Existing codebase mapping shows the following realities:
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Keep blog and debt in one product | The user wants one account system with two functional areas in the same site | Pending |
-| Prioritize blog work before debt expansion | The blog is the primary value stream and should become stable first | Pending |
-| Continue on the existing Kratos + Vue stack | The repository already contains working foundations in both backend and frontend | Pending |
+| Keep blog and debt in one product | The user wants one account system with two functional areas in the same site | Validated in Phase 1 |
+| Prioritize blog work before debt expansion | The blog is the primary value stream and should become stable first | Confirmed |
+| Continue on the existing Kratos + Vue stack | The repository already contains working foundations in both backend and frontend | Confirmed |
 | Keep debt v1 focused on records plus summary statistics | The user wants debt management, but not reminders, payments, collaboration, or advanced visualization | Pending |
 
 ## Evolution
@@ -82,4 +83,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-26 after initialization*
+*Last updated: 2026-04-04 after Phase 1 completion*
