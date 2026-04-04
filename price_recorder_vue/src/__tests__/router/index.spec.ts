@@ -23,6 +23,8 @@ describe('router guards', () => {
     const store = useUserStore()
     store.setUserInfo({ token: 'test', userId: 1 })
 
+    await router.push('/')
+    await router.isReady()
     await router.push('/login')
     await router.isReady()
 
