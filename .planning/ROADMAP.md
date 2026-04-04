@@ -22,10 +22,10 @@
 
 **Requirements:** FND-01, FND-02, FND-03
 
-**Plans:** 3 plans in 3 waves
+**Plans:** 1 / 3 plans executed
 
 Plans:
-- [ ] `01-01-PLAN.md` — Refactor Pinia auth store and align Axios interceptor with reactive store state
+- [x] `01-01-PLAN.md` — Refactor Pinia auth store and align Axios interceptor with reactive store state
 - [ ] `01-02-PLAN.md` — Replace stale router auth boolean with reactive guards and update Login.vue for redirects/errors
 - [ ] `01-03-PLAN.md` — Create shared AppLayout with blog/debt navigation and wire authenticated routes
 
