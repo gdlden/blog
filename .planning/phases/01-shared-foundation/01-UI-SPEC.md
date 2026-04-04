@@ -48,13 +48,17 @@ Exceptions: none
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body | 16px | 400 | 1.5 |
-| Label | 14px | 500 | 1.4 |
+| Label | 14px | 400 | 1.4 |
 | Heading | 20px | 600 | 1.2 |
 | Display | 28px | 600 | 1.2 |
 
 Notes:
 - Use `font-sans` (system sans stack) for all text.
 - Keep weights to 400 (regular) and 600 (semibold) only.
+
+### Visual Hierarchy
+- **Login page:** The centered login form card is the focal point. Visual order: Display heading "登录" at top → username/password inputs → primary CTA button. White card on neutral gray background creates contrast and draws the eye.
+- **Authenticated shell:** Sidebar navigation is secondary to main content. Active nav item uses accent background to indicate current location.
 
 ---
 
