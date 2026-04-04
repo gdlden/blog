@@ -12,33 +12,33 @@ describe('router guards', () => {
   })
 
   it('redirects unauthenticated user to /login with redirect query', async () => {
-    await router.push('/test')
+    await router.push('/blog')
     await router.isReady()
 
     expect(router.currentRoute.value.name).toBe('login')
-    expect(router.currentRoute.value.query.redirect).toBe('/test')
+    expect(router.currentRoute.value.query.redirect).toBe('/blog')
   })
 
   it('redirects authenticated user away from /login', async () => {
     const store = useUserStore()
     store.setUserInfo({ token: 'test', userId: 1 })
 
-    await router.push('/')
+    await router.push('/blog')
     await router.isReady()
     await router.push('/login')
     await router.isReady()
 
-    expect(router.currentRoute.value.path).toBe('/')
+    expect(router.currentRoute.value.name).toBe('blog')
   })
 
   it('allows authenticated user to access protected routes', async () => {
     const store = useUserStore()
     store.setUserInfo({ token: 'test', userId: 1 })
 
-    await router.push('/test')
+    await router.push('/blog')
     await router.isReady()
 
-    expect(router.currentRoute.value.path).toBe('/test')
+    expect(router.currentRoute.value.path).toBe('/blog')
   })
 
   it('initializes store from localStorage when isAuthenticated is false', async () => {
@@ -48,10 +48,10 @@ describe('router guards', () => {
     const store = useUserStore()
     expect(store.isAuthenticated).toBe(false)
 
-    await router.push('/test')
+    await router.push('/debt')
     await router.isReady()
 
     expect(store.isAuthenticated).toBe(true)
-    expect(router.currentRoute.value.path).toBe('/test')
+    expect(router.currentRoute.value.path).toBe('/debt')
   })
 })
