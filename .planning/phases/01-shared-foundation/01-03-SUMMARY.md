@@ -81,7 +81,7 @@ Each task was committed atomically:
 2. **Task 2: Create AppLayout.vue with sidebar navigation and logout** — `89bb5f4` (feat)
 3. **Task 3: Wire AppLayout into router and create BlogList/DebtList placeholders** — `df2de86` (feat)
 
-**Plan metadata:** pending
+**Plan metadata:** `df05bcb` (docs: complete plan 03 summary and state updates)
 
 ## Self-Check: PASSED
 
