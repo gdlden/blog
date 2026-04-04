@@ -1,5 +1,5 @@
 import axios from "axios";
-import {useUserStore} from "@/stores/userStore.ts";
+import { useUserStore } from "@/stores/userStore";
 
 const baseURL = "/api";
 const instance = axios.create({ baseURL })
@@ -27,11 +27,9 @@ instance.interceptors.response.use(
 )
 instance.interceptors.request.use(
   req=>{
-    const userInfo = localStorage.getItem("user")
-    if(userInfo != null && userInfo !== "") {
-      console.log(userInfo)
-      const user = JSON.parse(userInfo)
-      req.headers.Authorization = "Bearer " + user.token
+    const userStore = useUserStore()
+    if (userStore.token) {
+      req.headers.Authorization = "Bearer " + userStore.token
     }
     return req;
   }
