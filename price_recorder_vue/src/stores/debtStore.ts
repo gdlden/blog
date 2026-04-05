@@ -1,9 +1,11 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
+import { useToast } from "vue-toastification";
 import * as debtApi from "@/api/debt";
 import type { Debt } from "@/api/debt";
 
 export const useDebtStore = defineStore("debt", () => {
+  const toast = useToast();
   // State
   const debts = ref<Debt[]>([]);
   const currentDebt = ref<Debt | null>(null);
@@ -57,8 +59,10 @@ export const useDebtStore = defineStore("debt", () => {
     loading.value = true;
     try {
       await debtApi.createDebt(data);
+      toast.success('债务记录创建成功');
       await fetchDebts();
     } catch (err: any) {
+      toast.error(err.message || '创建失败');
       throw err;
     } finally {
       loading.value = false;
@@ -69,8 +73,10 @@ export const useDebtStore = defineStore("debt", () => {
     loading.value = true;
     try {
       await debtApi.updateDebt(data);
+      toast.success('债务记录更新成功');
       await fetchDebts();
     } catch (err: any) {
+      toast.error(err.message || '更新失败');
       throw err;
     } finally {
       loading.value = false;
@@ -81,9 +87,11 @@ export const useDebtStore = defineStore("debt", () => {
     loading.value = true;
     try {
       await debtApi.deleteDebt(id);
+      toast.success('债务记录删除成功');
       debts.value = debts.value.filter((debt) => debt.id !== id);
       total.value = Math.max(0, total.value - 1);
     } catch (err: any) {
+      toast.error(err.message || '删除失败');
       throw err;
     } finally {
       loading.value = false;
