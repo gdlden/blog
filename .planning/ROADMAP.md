@@ -13,7 +13,7 @@
 | 2 | Blog Core Workflow | Make the personal blog experience complete and dependable end to end | BLOG-01, BLOG-02, BLOG-03, BLOG-04, BLOG-05, BLOG-06 |
 | 3 | Debt Management and Statistics | Make debt records, debt details, and debt summaries dependable for daily personal tracking | DEBT-01, DEBT-02, DEBT-03, DEBT-04, DEBT-05, DEBT-06, DEBT-07 |
 | 4 | Verification and Delivery Hardening | Add enough backend/frontend verification and workflow clarity to support safe iteration | QUAL-01, QUAL-02, QUAL-03 |
-| 5 | Database Configuration Enhancement | Support injecting database source via environment variables for flexible deployment and configuration management | CFG-01 |
+| 5 | 1/1 | Complete   | 2026-04-05 |
 
 ## Phase Details
 
