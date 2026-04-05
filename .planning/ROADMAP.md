@@ -107,13 +107,13 @@ Plans:
 
 **Requirements:** INT-01, INT-02
 
-**Plans:** 4 plans
+**Plans:** 4/4 plans complete
 
 Plans:
 - [x] `06-01-PLAN.md` — Backend: Enable Post Update/Delete APIs (uncomment proto, implement service/biz/data layers)
 - [x] `06-02-PLAN.md` — Frontend: Blog module (API client, Pinia store, BlogList view with CRUD)
 - [x] `06-03-PLAN.md` — Frontend: Debt module (API client, Pinia store, DebtList view with CRUD and summary)
-- [ ] `06-04-PLAN.md` — Shared: Toast notifications integration for user feedback
+- [x] `06-04-PLAN.md` — Shared: Toast notifications integration for user feedback
 
 **Success Criteria:**
 1. Blog module: Frontend can list, view, create, edit, and delete blog posts via backend APIs.
