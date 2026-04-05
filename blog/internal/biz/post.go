@@ -55,3 +55,11 @@ func (uc *PostUsecase) GetPostById(ctx context.Context, id int64) (*Post, error)
 	uc.log.WithContext(ctx).Infof("GetPostById: %v", id)
 	return uc.repo.FindByID(ctx, id)
 }
+func (uc *PostUsecase) UpdatePost(ctx context.Context, id int64, g *Post) (*Post, error) {
+	uc.log.WithContext(ctx).Infof("UpdatePost: %v", id)
+	return uc.repo.Update(ctx, g)
+}
+func (uc *PostUsecase) DeletePost(ctx context.Context, id int64) error {
+	uc.log.WithContext(ctx).Infof("DeletePost: %v", id)
+	return uc.repo.Delete(ctx, id)
+}
