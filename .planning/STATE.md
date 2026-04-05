@@ -16,7 +16,7 @@ progress:
 
 **Initialized:** 2026-03-26
 **Current phase:** 07
-**Current status:** Phase 07 Plan 01 complete - Debt data layer unit tests
+**Current status:** Phase 07 Plan 02 complete - Post and Debt biz layer unit tests
 
 ## Project Reference
 
@@ -42,8 +42,8 @@ Phase 07 Plan 01 complete. Ready for next plan in Phase 07.
 
 ## Session Notes
 
-- Stopped at: Completed 07-01-PLAN.md
-- Resume file: Phase 07 Plan 01 complete
+- Stopped at: Completed 07-02-PLAN.md
+- Resume file: Phase 07 Plan 02 complete
 
 ## Completed Plans
 
@@ -56,6 +56,7 @@ Phase 07 Plan 01 complete. Ready for next plan in Phase 07.
 - `06-03-PLAN.md` — Frontend debt module with API client, Pinia store, DebtList CRUD UI, and summary statistics (`eb6ce22`, `fedf8a6`, `8861b74`)
 - `06-04-PLAN.md` — Toast notifications integration for blog and debt CRUD operations (`29f4513`, `0b413a0`, `416364f`, `06b5c1c`)
 - `07-01-PLAN.md` — Debt data layer unit tests with SQLite in-memory database (`6a37b4b`)
+- `07-02-PLAN.md` — Post and Debt biz layer unit tests with manual mocks (`36971ef`, `96a5f93`)
 
 ## Decisions
 
@@ -80,6 +81,7 @@ Phase 07 Plan 01 complete. Ready for next plan in Phase 07.
 | 06-frontend-backend-integration | 03 | 2 min | 3 | 3 | 2026-04-05 |
 | 06-frontend-backend-integration | 04 | 5 min | 4 | 5 | 2026-04-05 |
 | 07-backend-unit-tests | 01 | 10 min | 1 | 1 | 2026-04-05 |
+| 07-backend-unit-tests | 02 | 5 min | 2 | 2 | 2026-04-05 |
 
 ---
 *State initialized: 2026-03-26*
