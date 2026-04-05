@@ -32,7 +32,7 @@
 
 ### Quality
 
-- [ ] **QUAL-01**: Critical blog and debt flows have backend tests or verification coverage strong enough to catch common regressions.
+- [x] **QUAL-01**: Critical blog and debt flows have backend tests or verification coverage strong enough to catch common regressions.
 - [ ] **QUAL-02**: Critical frontend auth and navigation flows have automated tests covering current app behavior.
 - [ ] **QUAL-03**: Project setup documents the generated-code or verification workflow well enough that contributors can run core checks reliably.
 
@@ -77,7 +77,7 @@
 | DEBT-05 | Phase 3 | Pending |
 | DEBT-06 | Phase 3 | Pending |
 | DEBT-07 | Phase 3 | Pending |
-| QUAL-01 | Phase 4 | Pending |
+| QUAL-01 | Phase 4 | Complete |
 | QUAL-02 | Phase 4 | Pending |
 | QUAL-03 | Phase 4 | Pending |
 
