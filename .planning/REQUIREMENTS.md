@@ -13,12 +13,12 @@
 
 ### Blog
 
-- [ ] **BLOG-01**: User can view a list of their blog posts in the frontend.
-- [ ] **BLOG-02**: User can view the full content of a selected blog post.
-- [ ] **BLOG-03**: User can create a blog post with title and content.
-- [ ] **BLOG-04**: User can edit an existing blog post they own.
-- [ ] **BLOG-05**: User can delete an existing blog post they own.
-- [ ] **BLOG-06**: User can manage blog posts from an authenticated interface rather than raw API-only access.
+- [x] **BLOG-01**: User can view a list of their blog posts in the frontend.
+- [x] **BLOG-02**: User can view the full content of a selected blog post.
+- [x] **BLOG-03**: User can create a blog post with title and content.
+- [x] **BLOG-04**: User can edit an existing blog post they own.
+- [x] **BLOG-05**: User can delete an existing blog post they own.
+- [x] **BLOG-06**: User can manage blog posts from an authenticated interface rather than raw API-only access.
 
 ### Debt
 
@@ -64,12 +64,12 @@
 | FND-01 | Phase 1 | Complete |
 | FND-02 | Phase 1 | Complete |
 | FND-03 | Phase 1 | Complete |
-| BLOG-01 | Phase 2 | Pending |
-| BLOG-02 | Phase 2 | Pending |
-| BLOG-03 | Phase 2 | Pending |
-| BLOG-04 | Phase 2 | Pending |
-| BLOG-05 | Phase 2 | Pending |
-| BLOG-06 | Phase 2 | Pending |
+| BLOG-01 | Phase 2 | Complete |
+| BLOG-02 | Phase 2 | Complete |
+| BLOG-03 | Phase 2 | Complete |
+| BLOG-04 | Phase 2 | Complete |
+| BLOG-05 | Phase 2 | Complete |
+| BLOG-06 | Phase 2 | Complete |
 | DEBT-01 | Phase 3 | Pending |
 | DEBT-02 | Phase 3 | Pending |
 | DEBT-03 | Phase 3 | Pending |
