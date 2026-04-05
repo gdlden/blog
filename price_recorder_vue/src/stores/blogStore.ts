@@ -1,9 +1,11 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
+import { useToast } from "vue-toastification";
 import * as blogApi from "@/api/blog";
 import type { Post } from "@/api/blog";
 
 export const useBlogStore = defineStore("blog", () => {
+  const toast = useToast();
   // State
   const posts = ref<Post[]>([]);
   const currentPost = ref<Post | null>(null);
@@ -47,8 +49,10 @@ export const useBlogStore = defineStore("blog", () => {
     loading.value = true;
     try {
       await blogApi.createPost(data);
+      toast.success('博文创建成功');
       await fetchPosts();
     } catch (err: any) {
+      toast.error(err.message || '创建失败');
       throw err;
     } finally {
       loading.value = false;
@@ -62,8 +66,10 @@ export const useBlogStore = defineStore("blog", () => {
     loading.value = true;
     try {
       await blogApi.updatePost(id, data);
+      toast.success('博文更新成功');
       await fetchPosts();
     } catch (err: any) {
+      toast.error(err.message || '更新失败');
       throw err;
     } finally {
       loading.value = false;
@@ -74,9 +80,11 @@ export const useBlogStore = defineStore("blog", () => {
     loading.value = true;
     try {
       await blogApi.deletePost(id);
+      toast.success('博文删除成功');
       posts.value = posts.value.filter((post) => post.id !== id);
       total.value = Math.max(0, total.value - 1);
     } catch (err: any) {
+      toast.error(err.message || '删除失败');
       throw err;
     } finally {
       loading.value = false;
