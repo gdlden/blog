@@ -62,7 +62,7 @@ Plans:
 **Success Criteria:**
 1. Debt record CRUD works end to end without stubbed or misleading success paths.
 2. Debt-detail behavior supports accurate record history and summary calculations.
-3. The user can view total debt, repaid amount, outstanding amount, and record-level breakdowns.
+3. The user can view total debt, repaid amount, outstanding amount, and per-record breakdowns.
 4. Debt flows remain aligned with the single-user product scope.
 
 **UI hint:** yes
@@ -106,6 +106,14 @@ Plans:
 **Goal:** Complete frontend integration with backend blog and debt APIs, enabling full CRUD operations for both modules through the Vue frontend.
 
 **Requirements:** INT-01, INT-02
+
+**Plans:** 4 plans
+
+Plans:
+- [ ] `06-01-PLAN.md` — Backend: Enable Post Update/Delete APIs (uncomment proto, implement service/biz/data layers)
+- [ ] `06-02-PLAN.md` — Frontend: Blog module (API client, Pinia store, BlogList view with CRUD)
+- [ ] `06-03-PLAN.md` — Frontend: Debt module (API client, Pinia store, DebtList view with CRUD and summary)
+- [ ] `06-04-PLAN.md` — Shared: Toast notifications integration for user feedback
 
 **Success Criteria:**
 1. Blog module: Frontend can list, view, create, edit, and delete blog posts via backend APIs.
