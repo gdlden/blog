@@ -308,22 +308,46 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/post.v1.AddPostReply'
+    /post/delete/v1:
+        post:
+            tags:
+                - Post
+            operationId: Post_DeletePost
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/post.v1.DeletePostRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/post.v1.DeletePostReply'
+    /post/edit/v1:
+        post:
+            tags:
+                - Post
+            operationId: Post_UpdatePost
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/post.v1.UpdatePostRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/post.v1.UpdatePostReply'
     /post/get/{id}:
         get:
             tags:
                 - Post
-            description: |-
-                rpc EditPostById (HelloRequest) returns (HelloReply) {
-                   option (google.api.http) = {
-                     post: "/post/edit/v1"
-                     body: "*"
-                   };
-                 }
-                 rpc DeletePostById (HelloRequest) returns (HelloReply) {
-                   option (google.api.http) = {
-                     post: "/post/delete/v1/{id}"
-                   };
-                 }
             operationId: Post_GetPostById
             parameters:
                 - name: id
@@ -833,6 +857,16 @@ components:
                     type: string
                 content:
                     type: string
+        post.v1.DeletePostReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+        post.v1.DeletePostRequest:
+            type: object
+            properties:
+                id:
+                    type: string
         post.v1.GetPostByIdReply:
             type: object
             properties:
@@ -864,6 +898,24 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/post.v1.PostEntity'
+        post.v1.UpdatePostReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                title:
+                    type: string
+                content:
+                    type: string
+        post.v1.UpdatePostRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                title:
+                    type: string
+                content:
+                    type: string
         price.v1.CreatePriceReply:
             type: object
             properties:
