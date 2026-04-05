@@ -13,6 +13,7 @@
 | 2 | Blog Core Workflow | Make the personal blog experience complete and dependable end to end | BLOG-01, BLOG-02, BLOG-03, BLOG-04, BLOG-05, BLOG-06 |
 | 3 | Debt Management and Statistics | Make debt records, debt details, and debt summaries dependable for daily personal tracking | DEBT-01, DEBT-02, DEBT-03, DEBT-04, DEBT-05, DEBT-06, DEBT-07 |
 | 4 | Verification and Delivery Hardening | Add enough backend/frontend verification and workflow clarity to support safe iteration | QUAL-01, QUAL-02, QUAL-03 |
+| 5 | Database Configuration Enhancement | Support injecting database source via environment variables for flexible deployment and configuration management | CFG-01 |
 
 ## Phase Details
 
@@ -84,6 +85,20 @@ Plans:
 - Blog is intentionally scheduled ahead of debt because it is the declared v1 priority.
 - Shared auth stability comes first because both product areas depend on it.
 - Debt visualization, reminders, payments, and collaboration stay out of the current roadmap.
+
+### Phase 5: Database Configuration Enhancement
+
+**Goal:** Enable database connection source to be injected via environment variables for flexible deployment and configuration management.
+
+**Requirements:** CFG-01
+
+**Success Criteria:**
+1. Database source can be configured via environment variable (e.g., `DATABASE_URL` or `DB_SOURCE`).
+2. Environment variable takes precedence over YAML config file when present.
+3. Existing config.yaml behavior remains backward compatible.
+4. Clear documentation on supported environment variables and their format.
+
+**UI hint:** no
 
 ---
 *Roadmap created: 2026-03-26*
