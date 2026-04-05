@@ -62,3 +62,26 @@ func (s *PostService) GetPostById(ctx context.Context, req *pb.GetPostByIdReques
 	}
 	return &pb.GetPostByIdReply{}, nil
 }
+
+func (s *PostService) UpdatePost(ctx context.Context, req *pb.UpdatePostRequest) (*pb.UpdatePostReply, error) {
+	id, _ := strconv.ParseInt(req.Id, 10, 64)
+	post, _ := s.pu.UpdatePost(ctx, id, &biz.Post{
+		Id:      req.Id,
+		Title:   req.Title,
+		Content: req.Content,
+	})
+	if post != nil {
+		return &pb.UpdatePostReply{
+			Id:      post.Id,
+			Title:   post.Title,
+			Content: post.Content,
+		}, nil
+	}
+	return &pb.UpdatePostReply{}, nil
+}
+
+func (s *PostService) DeletePost(ctx context.Context, req *pb.DeletePostRequest) (*pb.DeletePostReply, error) {
+	id, _ := strconv.ParseInt(req.Id, 10, 64)
+	err := s.pu.DeletePost(ctx, id)
+	return &pb.DeletePostReply{Success: err == nil}, nil
+}
