@@ -15,6 +15,7 @@
 | 4 | Verification and Delivery Hardening | Add enough backend/frontend verification and workflow clarity to support safe iteration | QUAL-01, QUAL-02, QUAL-03 |
 | 5 | Database Configuration Enhancement | Enable database connection source to be injected via environment variables for flexible deployment | CFG-01 |
 | 6 | Frontend-Backend Integration | Complete frontend integration with backend blog and debt APIs for full CRUD operations | INT-01, INT-02 |
+| 7 | Backend Unit Tests | Add unit tests for critical backend services to catch regressions and support safe iteration | QUAL-01 |
 
 ## Phase Details
 
@@ -122,6 +123,24 @@ Plans:
 4. Consistent data flow between frontend stores and backend services.
 
 **UI hint:** yes
+
+### Phase 7: Backend Unit Tests
+
+**Goal:** Add unit tests for critical backend services (blog and debt) to catch regressions and support safe iteration.
+
+**Requirements:** QUAL-01
+
+**Success Criteria:**
+1. Post service and biz layer have comprehensive unit tests.
+2. Debt service and biz layer have comprehensive unit tests.
+3. DebtDetail service and biz layer have comprehensive unit tests.
+4. Tests use in-memory SQLite for fast, isolated execution.
+5. Critical business logic paths are covered (create, read, update, delete, pagination).
+
+**UI hint:** no
+
+**Canonical refs:**
+- `blog/internal/data/post_test.go` — Existing test pattern to follow
 
 ---
 *Roadmap created: 2026-03-26*
