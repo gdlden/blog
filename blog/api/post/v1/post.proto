@@ -21,17 +21,18 @@ service Post {
       get: "/post/page/v1"
     };
   }
-  // rpc EditPostById (HelloRequest) returns (HelloReply) {
-  //   option (google.api.http) = {
-  //     post: "/post/edit/v1"
-  //     body: "*"
-  //   };
-  // }
-  // rpc DeletePostById (HelloRequest) returns (HelloReply) {
-  //   option (google.api.http) = {
-  //     post: "/post/delete/v1/{id}"
-  //   };
-  // }
+  rpc UpdatePost (UpdatePostRequest) returns (UpdatePostReply) {
+    option (google.api.http) = {
+      post: "/post/edit/v1"
+      body: "*"
+    };
+  }
+  rpc DeletePost (DeletePostRequest) returns (DeletePostReply) {
+    option (google.api.http) = {
+      post: "/post/delete/v1"
+      body: "*"
+    };
+  }
   rpc GetPostById (GetPostByIdRequest) returns (GetPostByIdReply) {
     option (google.api.http) = {
       get: "/post/get/{id}"
@@ -75,4 +76,20 @@ message GetPostByIdReply {
   string id = 1;
   string title = 2;
   string content = 3;
+}
+message UpdatePostRequest {
+  string id = 1;
+  string title = 2;
+  string content = 3;
+}
+message UpdatePostReply {
+  string id = 1;
+  string title = 2;
+  string content = 3;
+}
+message DeletePostRequest {
+  string id = 1;
+}
+message DeletePostReply {
+  bool success = 1;
 }
