@@ -130,12 +130,12 @@ Plans:
 
 **Requirements:** QUAL-01
 
-**Plans:** 3 plans planned, 2 complete
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] `07-01-PLAN.md` — Data layer: Debt repository tests with SQLite in-memory
 - [x] `07-02-PLAN.md` — Biz layer: Post and Debt use case tests with manual mocks
-- [ ] `07-03-PLAN.md` — Service layer: Post and Debt handler tests with mocked use cases
+- [x] `07-03-PLAN.md` — Service layer: Post and Debt handler tests with mocked use cases
 
 **Success Criteria:**
 1. Post service and biz layer have comprehensive unit tests.
