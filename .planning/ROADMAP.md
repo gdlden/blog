@@ -13,7 +13,8 @@
 | 2 | Blog Core Workflow | Make the personal blog experience complete and dependable end to end | BLOG-01, BLOG-02, BLOG-03, BLOG-04, BLOG-05, BLOG-06 |
 | 3 | Debt Management and Statistics | Make debt records, debt details, and debt summaries dependable for daily personal tracking | DEBT-01, DEBT-02, DEBT-03, DEBT-04, DEBT-05, DEBT-06, DEBT-07 |
 | 4 | Verification and Delivery Hardening | Add enough backend/frontend verification and workflow clarity to support safe iteration | QUAL-01, QUAL-02, QUAL-03 |
-| 5 | 1/1 | Complete   | 2026-04-05 |
+| 5 | Database Configuration Enhancement | Enable database connection source to be injected via environment variables for flexible deployment | CFG-01 |
+| 6 | Frontend-Backend Integration | Complete frontend integration with backend blog and debt APIs for full CRUD operations | INT-01, INT-02 |
 
 ## Phase Details
 
@@ -99,6 +100,20 @@ Plans:
 4. Clear documentation on supported environment variables and their format.
 
 **UI hint:** no
+
+### Phase 6: Frontend-Backend Integration
+
+**Goal:** Complete frontend integration with backend blog and debt APIs, enabling full CRUD operations for both modules through the Vue frontend.
+
+**Requirements:** INT-01, INT-02
+
+**Success Criteria:**
+1. Blog module: Frontend can list, view, create, edit, and delete blog posts via backend APIs.
+2. Debt module: Frontend can list, view, create, edit, and delete debt records via backend APIs.
+3. Proper error handling and loading states for all API operations.
+4. Consistent data flow between frontend stores and backend services.
+
+**UI hint:** yes
 
 ---
 *Roadmap created: 2026-03-26*
