@@ -111,8 +111,8 @@ Plans:
 
 Plans:
 - [x] `06-01-PLAN.md` — Backend: Enable Post Update/Delete APIs (uncomment proto, implement service/biz/data layers)
-- [ ] `06-02-PLAN.md` — Frontend: Blog module (API client, Pinia store, BlogList view with CRUD)
-- [ ] `06-03-PLAN.md` — Frontend: Debt module (API client, Pinia store, DebtList view with CRUD and summary)
+- [x] `06-02-PLAN.md` — Frontend: Blog module (API client, Pinia store, BlogList view with CRUD)
+- [x] `06-03-PLAN.md` — Frontend: Debt module (API client, Pinia store, DebtList view with CRUD and summary)
 - [ ] `06-04-PLAN.md` — Shared: Toast notifications integration for user feedback
 
 **Success Criteria:**
