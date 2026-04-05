@@ -27,6 +27,7 @@ type PostPageRequest struct {
 type PostRepo interface {
 	Save(context.Context, *Post) (*Post, error)
 	Update(context.Context, *Post) (*Post, error)
+	Delete(context.Context, int64) error
 	FindByID(context.Context, int64) (*Post, error)
 	ListByHello(context.Context, string) ([]*Post, error)
 	ListAll(context.Context) ([]*Post, error)

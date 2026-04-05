@@ -41,7 +41,19 @@ func (r *postRepo) Save(ctx context.Context, g *biz.Post) (*biz.Post, error) {
 }
 
 func (r *postRepo) Update(ctx context.Context, g *biz.Post) (*biz.Post, error) {
+	id, _ := strconv.ParseUint(g.Id, 10, 64)
+	err := r.data.db.Model(&Post{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"title":   g.Title,
+		"content": g.Content,
+	}).Error
+	if err != nil {
+		return nil, err
+	}
 	return g, nil
+}
+
+func (r *postRepo) Delete(ctx context.Context, id int64) error {
+	return r.data.db.Delete(&Post{}, id).Error
 }
 
 func (r *postRepo) FindByID(ctx context.Context, id int64) (*biz.Post, error) {
