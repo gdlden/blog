@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 
 	"blog/internal/conf"
@@ -61,8 +62,8 @@ func main() {
 	)
 	c := config.New(
 		config.WithSource(
-			file.NewSource(flagconf),       // Base config from YAML
-			env.NewSource("DATA_DATABASE"), // Override with env vars
+			file.NewSource(flagconf), // Base config from YAML
+			env.NewSource(""),        // Override with env vars
 		),
 	)
 	defer c.Close()
@@ -70,6 +71,12 @@ func main() {
 	if err := c.Load(); err != nil {
 		panic(err)
 	}
+
+	value, err := c.Value("DATA_DATABASE_SOURCE").String()
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Printf("data_database_source:" + value)
 
 	var bc conf.Bootstrap
 	if err := c.Scan(&bc); err != nil {

@@ -3,9 +3,145 @@
 
 openapi: 3.0.3
 info:
-    title: DebtDetail API
+    title: ""
     version: 0.0.1
 paths:
+    /debt/delete/v1:
+        post:
+            tags:
+                - Debt
+            operationId: Debt_DeleteDebt
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.debt.v1.DeleteDebtRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.debt.v1.DeleteDebtReply'
+    /debt/get/v1:
+        get:
+            tags:
+                - Debt
+            operationId: Debt_GetDebt
+            parameters:
+                - name: id
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.debt.v1.DebtEntity'
+    /debt/page/v1:
+        get:
+            tags:
+                - Debt
+            operationId: Debt_ListDebt
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: string
+                - name: name
+                  in: query
+                  schema:
+                    type: string
+                - name: bankName
+                  in: query
+                  schema:
+                    type: string
+                - name: bankAccount
+                  in: query
+                  schema:
+                    type: string
+                - name: applyTime
+                  in: query
+                  schema:
+                    type: string
+                - name: endTime
+                  in: query
+                  schema:
+                    type: string
+                - name: amount
+                  in: query
+                  schema:
+                    type: string
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+                - name: remark
+                  in: query
+                  schema:
+                    type: string
+                - name: apr
+                  in: query
+                  schema:
+                    type: string
+                - name: fee
+                  in: query
+                  schema:
+                    type: string
+                - name: tenor
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.debt.v1.ListDebtReply'
+    /debt/save/v1:
+        post:
+            tags:
+                - Debt
+            operationId: Debt_CreateDebt
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.debt.v1.DebtEntity'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.debt.v1.CreateDebtReply'
+    /debt/update/v1:
+        post:
+            tags:
+                - Debt
+            operationId: Debt_UpdateDebt
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.debt.v1.DebtEntity'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.debt.v1.UpdateDebtReply'
     /debtDetail/delete/v1:
         post:
             tags:
@@ -15,7 +151,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/DeleteDebtDetailRequest'
+                            $ref: '#/components/schemas/api.debt.v1.DeleteDebtDetailRequest'
                 required: true
             responses:
                 "200":
@@ -23,13 +159,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/DeleteDebtDetailReply'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Status'
+                                $ref: '#/components/schemas/api.debt.v1.DeleteDebtDetailReply'
     /debtDetail/edit/v1:
         post:
             tags:
@@ -39,7 +169,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/DebtDetailData'
+                            $ref: '#/components/schemas/api.debt.v1.DebtDetailData'
                 required: true
             responses:
                 "200":
@@ -47,13 +177,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/UpdateDebtDetailReply'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Status'
+                                $ref: '#/components/schemas/api.debt.v1.UpdateDebtDetailReply'
     /debtDetail/get/v1:
         get:
             tags:
@@ -70,13 +194,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/DebtDetailData'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Status'
+                                $ref: '#/components/schemas/api.debt.v1.DebtDetailData'
     /debtDetail/list/v1:
         get:
             tags:
@@ -116,13 +234,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/ListDebtDetailReply'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Status'
+                                $ref: '#/components/schemas/api.debt.v1.ListDebtDetailReply'
     /debtDetail/save/v1:
         post:
             tags:
@@ -132,7 +244,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/DebtDetailData'
+                            $ref: '#/components/schemas/api.debt.v1.DebtDetailData'
                 required: true
             responses:
                 "200":
@@ -140,21 +252,369 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/CreateDebtDetailReply'
-                default:
-                    description: Default error response
+                                $ref: '#/components/schemas/api.debt.v1.CreateDebtDetailReply'
+    /helloworld/{name}:
+        get:
+            tags:
+                - Greeter
+            description: Sends a greeting
+            operationId: Greeter_SayHello
+            parameters:
+                - name: name
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/Status'
+                                $ref: '#/components/schemas/helloworld.v1.HelloReply'
+    /ocr/aiocr:
+        post:
+            tags:
+                - Aiocr
+            operationId: Aiocr_Ocr
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ocr.v1.OcrRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ocr.v1.OcrReply'
+    /post/add/v1:
+        post:
+            tags:
+                - Post
+            operationId: Post_CreatePost
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/post.v1.AddPostRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/post.v1.AddPostReply'
+    /post/get/{id}:
+        get:
+            tags:
+                - Post
+            description: |-
+                rpc EditPostById (HelloRequest) returns (HelloReply) {
+                   option (google.api.http) = {
+                     post: "/post/edit/v1"
+                     body: "*"
+                   };
+                 }
+                 rpc DeletePostById (HelloRequest) returns (HelloReply) {
+                   option (google.api.http) = {
+                     post: "/post/delete/v1/{id}"
+                   };
+                 }
+            operationId: Post_GetPostById
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/post.v1.GetPostByIdReply'
+    /post/page/v1:
+        get:
+            tags:
+                - Post
+            operationId: Post_GetPostPage
+            parameters:
+                - name: current
+                  in: query
+                  schema:
+                    type: string
+                - name: size
+                  in: query
+                  schema:
+                    type: string
+                - name: title
+                  in: query
+                  schema:
+                    type: string
+                - name: content
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/post.v1.PostPageReply'
+    /price/add:
+        post:
+            tags:
+                - Price
+            operationId: Price_CreatePrice
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/price.v1.CreatePriceRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/price.v1.CreatePriceReply'
+    /price/list:
+        get:
+            tags:
+                - Price
+            operationId: Price_ListPrice
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/price.v1.ListPriceReply'
+    /realName/add/v1:
+        post:
+            tags:
+                - RealName
+            operationId: RealName_CreateRealName
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.realName.CreateRealNameRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.realName.CreateRealNameReply'
+    /realName/edit/v1:
+        post:
+            tags:
+                - RealName
+            operationId: RealName_UpdateRealName
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.realName.UpdateRealNameRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.realName.UpdateRealNameReply'
+    /realName/get/v1:
+        get:
+            tags:
+                - RealName
+            operationId: RealName_GetRealName
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.realName.GetRealNameReply'
+    /user/add/v1:
+        post:
+            tags:
+                - User
+            operationId: User_CreateUser
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/user.v1.CreateUserRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/user.v1.CreateUserReply'
+    /user/get/list:
+        get:
+            tags:
+                - User
+            operationId: User_ListUser
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/user.v1.ListUserReply'
+    /user/get/v1:
+        get:
+            tags:
+                - User
+            operationId: User_GetUser
+            parameters:
+                - name: userId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/user.v1.GetUserReply'
+    /user/login/v1:
+        post:
+            tags:
+                - User
+            operationId: User_UserLogin
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/user.v1.UserLoginRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/user.v1.LoginReply'
+    /user/update/v1:
+        post:
+            tags:
+                - User
+            operationId: User_UpdateUser
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/user.v1.UpdateUserRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/user.v1.UpdateUserReply'
+    /user/updateMyAvatar/v1:
+        post:
+            tags:
+                - User
+            operationId: User_UpdateMyAvatar
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/user.v1.UpdateAvatarRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/user.v1.UpdateAvatarReply'
+    file/createFileUrl/v1:
+        post:
+            tags:
+                - File
+            operationId: File_CreateFileUploadUrl
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/file.v1.CreateFileUploadUrlRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/file.v1.CreateFileUploadUrlReply'
+    file/get/v1/{id}:
+        get:
+            tags:
+                - File
+            operationId: File_GetFile
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/file.v1.GetFileReply'
+    file/upload/v1:
+        post:
+            tags:
+                - File
+            operationId: File_CreateFile
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/file.v1.FileUploadRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/file.v1.FileUploadReply'
 components:
     schemas:
-        CreateDebtDetailReply:
+        api.debt.v1.CreateDebtDetailReply:
             type: object
             properties:
                 id:
                     type: string
-        DebtDetailData:
+        api.debt.v1.CreateDebtReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                message:
+                    type: string
+        api.debt.v1.DebtDetailData:
             type: object
             properties:
                 id:
@@ -172,51 +632,378 @@ components:
                 period:
                     type: string
                     description: 期数
-        DeleteDebtDetailReply:
-            type: object
-            properties:
-                success:
-                    type: boolean
-        DeleteDebtDetailRequest:
+        api.debt.v1.DebtEntity:
             type: object
             properties:
                 id:
                     type: string
-        GoogleProtobufAny:
+                name:
+                    type: string
+                bankName:
+                    type: string
+                bankAccount:
+                    type: string
+                applyTime:
+                    type: string
+                endTime:
+                    type: string
+                amount:
+                    type: string
+                status:
+                    type: string
+                remark:
+                    type: string
+                apr:
+                    type: string
+                fee:
+                    type: string
+                tenor:
+                    type: string
+        api.debt.v1.DeleteDebtDetailReply:
             type: object
             properties:
-                '@type':
+                success:
+                    type: boolean
+        api.debt.v1.DeleteDebtDetailRequest:
+            type: object
+            properties:
+                id:
                     type: string
-                    description: The type of the serialized message.
-            additionalProperties: true
-            description: Contains an arbitrary serialized message along with a @type that describes the type of the serialized message.
-        ListDebtDetailReply:
+        api.debt.v1.DeleteDebtReply:
+            type: object
+            properties:
+                flag:
+                    type: boolean
+        api.debt.v1.DeleteDebtRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+        api.debt.v1.ListDebtDetailReply:
             type: object
             properties:
                 list:
                     type: array
                     items:
-                        $ref: '#/components/schemas/DebtDetailData'
-        Status:
+                        $ref: '#/components/schemas/api.debt.v1.DebtDetailData'
+        api.debt.v1.ListDebtReply:
             type: object
             properties:
-                code:
-                    type: integer
-                    description: The status code, which should be an enum value of [google.rpc.Code][google.rpc.Code].
-                    format: int32
-                message:
+                page:
                     type: string
-                    description: A developer-facing error message, which should be in English. Any user-facing error message should be localized and sent in the [google.rpc.Status.details][google.rpc.Status.details] field, or localized by the client.
-                details:
+                total:
+                    type: string
+                list:
                     type: array
                     items:
-                        $ref: '#/components/schemas/GoogleProtobufAny'
-                    description: A list of messages that carry the error details.  There is a common set of message types for APIs to use.
-            description: 'The `Status` type defines a logical error model that is suitable for different programming environments, including REST APIs and RPC APIs. It is used by [gRPC](https://github.com/grpc). Each `Status` message contains three pieces of data: error code, error message, and error details. You can find out more about this error model and how to work with it in the [API Design Guide](https://cloud.google.com/apis/design/errors).'
-        UpdateDebtDetailReply:
+                        $ref: '#/components/schemas/api.debt.v1.DebtEntity'
+        api.debt.v1.UpdateDebtDetailReply:
             type: object
             properties:
                 id:
                     type: string
+        api.debt.v1.UpdateDebtReply:
+            type: object
+            properties:
+                message:
+                    type: string
+                id:
+                    type: string
+        api.realName.CreateRealNameReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                status:
+                    type: string
+                statusCh:
+                    type: string
+        api.realName.CreateRealNameRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                faceImage:
+                    type: string
+                bankImage:
+                    type: string
+                idCard:
+                    type: string
+        api.realName.GetRealNameReply:
+            type: object
+            properties:
+                name:
+                    type: string
+                faceImage:
+                    type: string
+                bankImage:
+                    type: string
+                idCard:
+                    type: string
+                status:
+                    type: string
+                statusCh:
+                    type: string
+        api.realName.UpdateRealNameReply:
+            type: object
+            properties:
+                status:
+                    type: string
+                statusCh:
+                    type: string
+        api.realName.UpdateRealNameRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                faceImage:
+                    type: string
+                bankImage:
+                    type: string
+                idCard:
+                    type: string
+        file.v1.CreateFileUploadUrlReply:
+            type: object
+            properties:
+                url:
+                    type: string
+        file.v1.CreateFileUploadUrlRequest:
+            type: object
+            properties:
+                fileName:
+                    type: string
+                filePath:
+                    type: string
+                fileType:
+                    type: string
+        file.v1.FileUploadReply:
+            type: object
+            properties:
+                saveFlag:
+                    type: boolean
+        file.v1.FileUploadRequest:
+            type: object
+            properties:
+                fileId:
+                    type: string
+        file.v1.GetFileReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                fileName:
+                    type: string
+                filePath:
+                    type: string
+                fileType:
+                    type: string
+                fileUrl:
+                    type: string
+                fileExt:
+                    type: string
+        helloworld.v1.HelloReply:
+            type: object
+            properties:
+                message:
+                    type: string
+            description: The response message containing the greetings
+        ocr.v1.OcrReply:
+            type: object
+            properties:
+                res:
+                    type: string
+        ocr.v1.OcrRequest:
+            type: object
+            properties:
+                imgBaseStr:
+                    type: string
+        post.v1.AddPostReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                title:
+                    type: string
+                content:
+                    type: string
+        post.v1.AddPostRequest:
+            type: object
+            properties:
+                title:
+                    type: string
+                content:
+                    type: string
+        post.v1.GetPostByIdReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                title:
+                    type: string
+                content:
+                    type: string
+        post.v1.PostEntity:
+            type: object
+            properties:
+                id:
+                    type: string
+                title:
+                    type: string
+                content:
+                    type: string
+        post.v1.PostPageReply:
+            type: object
+            properties:
+                current:
+                    type: string
+                size:
+                    type: string
+                total:
+                    type: string
+                data:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/post.v1.PostEntity'
+        price.v1.CreatePriceReply:
+            type: object
+            properties:
+                id:
+                    type: string
+        price.v1.CreatePriceRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                price:
+                    type: string
+                priceDate:
+                    type: string
+        price.v1.ListPriceReply:
+            type: object
+            properties: {}
+        user.v1.CreateUserReply:
+            type: object
+            properties:
+                userId:
+                    type: string
+                username:
+                    type: string
+                password:
+                    type: string
+                phoneNumber:
+                    type: string
+                email:
+                    type: string
+        user.v1.CreateUserRequest:
+            type: object
+            properties:
+                username:
+                    type: string
+                password:
+                    type: string
+                phoneNumber:
+                    type: string
+                email:
+                    type: string
+        user.v1.GetUserReply:
+            type: object
+            properties:
+                userId:
+                    type: string
+                username:
+                    type: string
+                password:
+                    type: string
+                phoneNumber:
+                    type: string
+                email:
+                    type: string
+        user.v1.ListUserReply:
+            type: object
+            properties:
+                userList:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/user.v1.UserCommom'
+        user.v1.LoginReply:
+            type: object
+            properties:
+                msg:
+                    type: string
+                code:
+                    type: string
+                token:
+                    type: string
+                user:
+                    $ref: '#/components/schemas/user.v1.UserCommom'
+        user.v1.UpdateAvatarReply:
+            type: object
+            properties:
+                flag:
+                    type: boolean
+        user.v1.UpdateAvatarRequest:
+            type: object
+            properties:
+                avatar:
+                    type: string
+        user.v1.UpdateUserReply:
+            type: object
+            properties:
+                userId:
+                    type: string
+                username:
+                    type: string
+                password:
+                    type: string
+                phoneNumber:
+                    type: string
+                email:
+                    type: string
+        user.v1.UpdateUserRequest:
+            type: object
+            properties:
+                userId:
+                    type: string
+                username:
+                    type: string
+                password:
+                    type: string
+                phoneNumber:
+                    type: string
+                email:
+                    type: string
+        user.v1.UserCommom:
+            type: object
+            properties:
+                userId:
+                    type: string
+                username:
+                    type: string
+                password:
+                    type: string
+                phoneNumber:
+                    type: string
+                email:
+                    type: string
+        user.v1.UserLoginRequest:
+            type: object
+            properties:
+                username:
+                    type: string
+                password:
+                    type: string
+                phoneNumber:
+                    type: string
+                emal:
+                    type: string
 tags:
+    - name: Aiocr
+    - name: Debt
     - name: DebtDetail
+    - name: File
+    - name: Greeter
+      description: The greeting service definition.
+    - name: Post
+    - name: Price
+    - name: RealName
+    - name: User

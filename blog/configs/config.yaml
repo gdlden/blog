@@ -8,7 +8,8 @@ server:
 data:
   database:
     driver: postgres
-    source: host=localhost user=postgres password=postgres dbname=postgres port=5432 sslmode=disable TimeZone=Asia/Shanghai
+#    source: host=localhost user=postgres password=postgres dbname=postgres port=5432 sslmode=disable TimeZone=Asia/Shanghai
+    source: "${DATA_DATABASE_SOURCE}"
   redis:
     addr: 127.0.0.1:6379
     read_timeout: 0.2s
