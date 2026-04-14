@@ -18,10 +18,17 @@ func NewPostService(pu *biz.PostUsecase) *PostService {
 }
 
 func (s *PostService) CreatePost(ctx context.Context, req *pb.AddPostRequest) (*pb.AddPostReply, error) {
-	s.pu.CreatePost(ctx, &biz.Post{
+	post, _ := s.pu.CreatePost(ctx, &biz.Post{
 		Title:   req.Title,
 		Content: req.Content,
 	})
+	if post != nil {
+		return &pb.AddPostReply{
+			Id:      post.Id,
+			Title:   post.Title,
+			Content: post.Content,
+		}, nil
+	}
 	return &pb.AddPostReply{}, nil
 }
 func (s *PostService) GetPostPage(ctx context.Context, req *pb.PostPageRequest) (*pb.PostPageReply, error) {
