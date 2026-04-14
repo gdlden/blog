@@ -28,16 +28,16 @@
 
 | REQ-ID | Phase |
 |--------|-------|
-| API-01 | TBD |
-| API-02 | TBD |
-| API-03 | TBD |
-| API-04 | TBD |
-| API-05 | TBD |
-| TEST-01 | TBD |
-| TEST-02 | TBD |
-| TEST-03 | TBD |
-| TEST-04 | TBD |
-| DOC-01 | TBD |
-| DOC-02 | TBD |
-| DOC-03 | TBD |
-| DOC-04 | TBD |
+| API-01 | 8 |
+| API-02 | 8 |
+| API-03 | 8 |
+| API-04 | 8 |
+| API-05 | 8 |
+| TEST-01 | 9 |
+| TEST-02 | 9 |
+| TEST-03 | 9 |
+| TEST-04 | 9 |
+| DOC-01 | 10 |
+| DOC-02 | 10 |
+| DOC-03 | 10 |
+| DOC-04 | 10 |
