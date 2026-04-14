@@ -6,7 +6,7 @@ const instance = axios.create({ baseURL })
 instance.interceptors.response.use(
   res => {
     // console.log(res.data)
-    if(res.data.code === "200") {
+    if (!res.data.code || res.data.code === "200") {
       return res.data;
     }
     // console.log(JSON.stringify(res.data))
