@@ -67,6 +67,32 @@ This is a brownfield repository with two application roots:
 - **Architecture**: Blog and debt remain in one site with one account system.
 - **Codebase reality**: Frontend test coverage and generated-code workflow documentation are the next priorities.
 
+## Current Milestone: v1.1 Polish & Standardization
+
+**Goal:** Close the remaining quality gaps and standardize the backend-frontend contract so the API is predictable and the project is easier to maintain and contribute to.
+
+**Target features:**
+- Unify all backend HTTP responses under a consistent `{code, message, data}` structure via Kratos-level response encoding.
+- Add automated frontend tests covering critical auth, navigation, and CRUD flows.
+- Document the generated-code and verification workflow so contributors can run `make api`, `make config`, `go test`, and `npm run test:unit` reliably.
+
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd-transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd-complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
