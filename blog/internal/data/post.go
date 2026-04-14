@@ -37,6 +37,7 @@ func (r *postRepo) Save(ctx context.Context, g *biz.Post) (*biz.Post, error) {
 	if res.RowsAffected <= 0 {
 		log.Info("插入失败")
 	}
+	g.Id = strconv.FormatUint(uint64(post.ID), 10)
 	return g, nil
 }
 
