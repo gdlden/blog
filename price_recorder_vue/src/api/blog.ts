@@ -20,27 +20,25 @@ export async function getPosts(
   const params: Record<string, string> = {};
   if (current) params.current = current;
   if (size) params.size = size;
-  return await instance.get("/post/page/v1", { params }).then((res) => res.data);
+  return await instance.get("/post/page/v1", { params });
 }
 
 export async function getPostById(id: string): Promise<Post> {
-  return await instance.get(`/post/get/${id}`).then((res) => res.data);
+  return await instance.get(`/post/get/${id}`);
 }
 
 export async function createPost(data: {
   title: string;
   content: string;
 }): Promise<Post> {
-  return await instance.post("/post/add/v1", data).then((res) => res.data);
+  return await instance.post("/post/add/v1", data);
 }
 
 export async function updatePost(
   id: string,
   data: { title: string; content: string }
 ): Promise<Post> {
-  return await instance
-    .post("/post/edit/v1", { id, ...data })
-    .then((res) => res.data);
+  return await instance.post("/post/edit/v1", { id, ...data });
 }
 
 export async function deletePost(id: string): Promise<void> {

@@ -28,22 +28,22 @@ export async function getDebts(
   const params: Record<string, string> = {};
   if (page) params.page = page;
   if (pageSize) params.pageSize = pageSize;
-  return await instance.get("/debt/page/v1", { params }).then((res) => res.data);
+  return await instance.get("/debt/page/v1", { params });
 }
 
 export async function getDebtById(id: string): Promise<Debt> {
-  return await instance.get("/debt/get/v1", { params: { id } }).then((res) => res.data);
+  return await instance.get("/debt/get/v1", { params: { id } });
 }
 
 export async function createDebt(data: Omit<Debt, "id">): Promise<Debt> {
-  return await instance.post("/debt/save/v1", data).then((res) => res.data);
+  return await instance.post("/debt/save/v1", data);
 }
 
 export async function updateDebt(data: Debt): Promise<Debt> {
-  return await instance.post("/debt/update/v1", data).then((res) => res.data);
+  return await instance.post("/debt/update/v1", data);
 }
 
 export async function deleteDebt(id: string): Promise<boolean> {
   const response = await instance.post("/debt/delete/v1", { id });
-  return response.data.flag;
+  return response.flag;
 }
