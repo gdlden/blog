@@ -69,27 +69,36 @@ function closeModal() {
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto px-4 py-6">
+  <div class="max-w-[980px] mx-auto px-5 py-12">
     <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-semibold text-gray-800">博文</h2>
+    <div class="flex justify-between items-center mb-10">
+      <h2 style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Icons', 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 40px; font-weight: 600; line-height: 1.10; letter-spacing: normal; color: #1d1d1f;">
+        博文
+      </h2>
       <button
         @click="openCreateModal"
-        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+        class="text-white transition-colors"
+        style="background-color: #0071e3; border-radius: 8px; padding: 8px 15px; font-size: 17px; font-weight: 400; line-height: 2.41;"
       >
         新建博文
       </button>
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading" class="text-center py-12">
-      <p class="text-gray-600 text-lg">加载中...</p>
+    <div v-if="loading" class="text-center py-20">
+      <p style="font-size: 17px; letter-spacing: -0.374px; line-height: 1.47; color: rgba(0, 0, 0, 0.48);">
+        加载中...
+      </p>
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="posts.length === 0" class="bg-gray-50 rounded-lg p-12 text-center border border-gray-200">
-      <p class="text-xl font-semibold text-gray-700 mb-2">暂无内容</p>
-      <p class="text-gray-500 mb-4">点击"新建博文"创建第一篇博文</p>
+    <div v-else-if="posts.length === 0" class="text-center py-20">
+      <p style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Icons', 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 28px; font-weight: 400; line-height: 1.14; letter-spacing: 0.196px; color: #1d1d1f; margin-bottom: 8px;">
+        暂无内容
+      </p>
+      <p style="font-size: 14px; letter-spacing: -0.224px; line-height: 1.29; color: rgba(0, 0, 0, 0.48);">
+        点击"新建博文"创建第一篇博文
+      </p>
     </div>
 
     <!-- Card Grid -->
@@ -97,24 +106,34 @@ function closeModal() {
       <div
         v-for="post in posts"
         :key="post.id"
-        class="bg-white rounded-lg shadow border border-gray-200 p-4 flex flex-col"
+        class="bg-white p-5 flex flex-col"
+        style="border-radius: 8px; box-shadow: rgba(0, 0, 0, 0.22) 3px 5px 30px 0px;"
       >
-        <h3 class="text-lg font-semibold text-gray-800 truncate mb-2" :title="post.title">
+        <h3
+          class="truncate mb-2"
+          style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Icons', 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 21px; font-weight: 700; line-height: 1.19; letter-spacing: 0.231px; color: #1d1d1f;"
+          :title="post.title"
+        >
           {{ post.title }}
         </h3>
-        <p class="text-gray-600 text-sm line-clamp-3 flex-1 mb-4">
+        <p
+          class="line-clamp-3 flex-1 mb-5"
+          style="font-size: 14px; font-weight: 400; line-height: 1.29; letter-spacing: -0.224px; color: rgba(0, 0, 0, 0.8);"
+        >
           {{ post.content }}
         </p>
-        <div class="flex justify-end gap-2 pt-4 border-t border-gray-100">
+        <div class="flex justify-end gap-4 pt-4" style="border-top: 1px solid rgba(0, 0, 0, 0.04);">
           <button
             @click="openEditModal(post)"
-            class="text-blue-600 hover:text-blue-800 text-sm font-medium px-3 py-1 rounded hover:bg-blue-50 transition-colors"
+            class="transition-colors"
+            style="font-size: 14px; font-weight: 400; line-height: 1.43; letter-spacing: -0.224px; color: #0066cc;"
           >
             编辑
           </button>
           <button
             @click="handleDelete(post.id)"
-            class="text-red-600 hover:text-red-800 text-sm font-medium px-3 py-1 rounded hover:bg-red-50 transition-colors"
+            class="transition-colors"
+            style="font-size: 14px; font-weight: 400; line-height: 1.43; letter-spacing: -0.224px; color: #0066cc;"
           >
             删除
           </button>
@@ -123,12 +142,15 @@ function closeModal() {
     </div>
 
     <!-- Pagination -->
-    <div v-if="totalPages > 1 && !loading" class="flex justify-center gap-2 mt-8">
+    <div v-if="totalPages > 1 && !loading" class="flex justify-center gap-2 mt-10">
       <button
         @click="changePage(currentPage - 1)"
         :disabled="currentPage <= 1"
-        class="px-3 py-1 rounded border border-gray-300 text-sm font-medium transition-colors"
-        :class="currentPage <= 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'"
+        class="px-3 py-1.5 text-sm font-medium transition-colors"
+        :class="currentPage <= 1 ? 'cursor-not-allowed' : 'hover:bg-white'"
+        :style="currentPage <= 1
+          ? 'background-color: transparent; color: rgba(0, 0, 0, 0.48); border-radius: 8px;'
+          : 'background-color: #ffffff; color: #1d1d1f; border-radius: 8px;'"
       >
         上一页
       </button>
@@ -136,16 +158,21 @@ function closeModal() {
         v-for="page in totalPages"
         :key="page"
         @click="changePage(page)"
-        class="px-3 py-1 rounded border text-sm font-medium transition-colors"
-        :class="page === currentPage ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
+        class="px-3 py-1.5 text-sm font-medium transition-colors"
+        :style="page === currentPage
+          ? 'background-color: #0071e3; color: #ffffff; border-radius: 8px;'
+          : 'background-color: #ffffff; color: #1d1d1f; border-radius: 8px;'"
       >
         {{ page }}
       </button>
       <button
         @click="changePage(currentPage + 1)"
         :disabled="currentPage >= totalPages"
-        class="px-3 py-1 rounded border border-gray-300 text-sm font-medium transition-colors"
-        :class="currentPage >= totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'"
+        class="px-3 py-1.5 text-sm font-medium transition-colors"
+        :class="currentPage >= totalPages ? 'cursor-not-allowed' : 'hover:bg-white'"
+        :style="currentPage >= totalPages
+          ? 'background-color: transparent; color: rgba(0, 0, 0, 0.48); border-radius: 8px;'
+          : 'background-color: #ffffff; color: #1d1d1f; border-radius: 8px;'"
       >
         下一页
       </button>
@@ -154,57 +181,67 @@ function closeModal() {
     <!-- Modal -->
     <div
       v-if="showModal"
-      class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style="background-color: rgba(0, 0, 0, 0.4);"
       @click.self="closeModal"
     >
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-lg">
+      <div class="bg-white w-full max-w-lg" style="border-radius: 12px;">
         <!-- Modal Header -->
-        <div class="flex justify-between items-center px-6 py-4 border-b border-gray-200">
-          <h3 class="text-lg font-semibold text-gray-800">
+        <div class="flex justify-between items-center px-6 py-4" style="border-bottom: 1px solid rgba(0, 0, 0, 0.04);">
+          <h3 style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Icons', 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 21px; font-weight: 700; line-height: 1.19; letter-spacing: 0.231px; color: #1d1d1f;">
             {{ isEditing ? '编辑博文' : '新建博文' }}
           </h3>
           <button
             @click="closeModal"
-            class="text-gray-400 hover:text-gray-600 text-xl leading-none"
+            class="text-2xl leading-none transition-colors"
+            style="color: rgba(0, 0, 0, 0.48);"
           >
-            ×
+            &times;
           </button>
         </div>
 
         <!-- Modal Body -->
-        <div class="px-6 py-4 space-y-4">
+        <div class="px-6 py-5 space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">标题</label>
+            <label class="block mb-1.5" style="font-size: 14px; font-weight: 400; letter-spacing: -0.224px; line-height: 1.43; color: rgba(0, 0, 0, 0.8);">
+              标题
+            </label>
             <input
               v-model="formData.title"
               type="text"
               placeholder="请输入标题"
-              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              class="w-full px-3 py-2.5 outline-none"
+              style="background-color: #fafafc; border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.04); font-size: 17px; letter-spacing: -0.374px; color: #1d1d1f;"
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">内容</label>
+            <label class="block mb-1.5" style="font-size: 14px; font-weight: 400; letter-spacing: -0.224px; line-height: 1.43; color: rgba(0, 0, 0, 0.8);">
+              内容
+            </label>
             <textarea
               v-model="formData.content"
               rows="6"
               placeholder="请输入内容"
-              class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent resize-none"
+              class="w-full px-3 py-2.5 outline-none resize-none"
+              style="background-color: #fafafc; border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.04); font-size: 17px; letter-spacing: -0.374px; color: #1d1d1f;"
             ></textarea>
           </div>
         </div>
 
         <!-- Modal Footer -->
-        <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200">
+        <div class="flex justify-end gap-3 px-6 py-4" style="border-top: 1px solid rgba(0, 0, 0, 0.04);">
           <button
             @click="closeModal"
-            class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
+            class="px-4 py-2 transition-colors"
+            style="background-color: #1d1d1f; color: #ffffff; border-radius: 8px; font-size: 17px; font-weight: 400; line-height: 2.41;"
           >
             取消
           </button>
           <button
             @click="handleSubmit"
             :disabled="!formData.title.trim() || loading"
-            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-lg font-medium transition-colors"
+            class="px-4 py-2 text-white transition-colors disabled:opacity-50"
+            style="background-color: #0071e3; border-radius: 8px; font-size: 17px; font-weight: 400; line-height: 2.41;"
           >
             {{ loading ? '保存中...' : '保存' }}
           </button>

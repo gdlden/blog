@@ -1,9 +1,18 @@
 <script setup lang="ts">
 import { useUserStore } from '@/stores/userStore'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+import { computed } from 'vue'
 
 const userStore = useUserStore()
 const router = useRouter()
+const route = useRoute()
+
+const navItems = [
+  { name: 'blog', path: '/blog', label: '博文' },
+  { name: 'debt', path: '/debt', label: '债务' },
+]
+
+const currentRouteName = computed(() => route.name as string)
 
 function handleLogout() {
   userStore.clearUserInfo()
@@ -12,57 +21,57 @@ function handleLogout() {
 </script>
 
 <template>
-  <div class="flex h-screen bg-white">
-    <aside class="w-56 bg-gray-100 flex flex-col">
-      <div class="p-4 border-b border-gray-200">
-        <h1 class="text-heading font-semibold">Blog Debt Hub</h1>
-      </div>
-      <nav class="flex-1 p-2 space-y-1">
+  <div class="min-h-screen bg-apple-gray">
+    <!-- Apple Glass Navigation -->
+    <nav class="sticky top-0 z-50 h-12 flex items-center px-6" style="background: rgba(0,0,0,0.8); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);">
+      <div class="max-w-[980px] w-full mx-auto flex items-center justify-between">
+        <!-- Logo / Brand -->
         <router-link
           to="/blog"
-          class="block px-3 py-2 rounded text-body hover:bg-gray-200"
-          active-class="bg-blue-600 text-white hover:bg-blue-600"
+          class="text-white text-sm font-semibold tracking-tight"
+          style="font-size: 14px; letter-spacing: -0.224px;"
         >
-          博文
+          Blog Debt Hub
         </router-link>
-        <router-link
-          to="/debt"
-          class="block px-3 py-2 rounded text-body hover:bg-gray-200"
-          active-class="bg-blue-600 text-white hover:bg-blue-600"
-        >
-          债务
-        </router-link>
-      </nav>
-      <div class="p-4 border-t border-gray-200">
-        <div v-if="userStore.userInfo" class="text-label mb-2 truncate">
-          {{ userStore.userInfo.username || '' }}
+
+        <!-- Nav Links -->
+        <div class="flex items-center gap-8">
+          <router-link
+            v-for="item in navItems"
+            :key="item.name"
+            :to="item.path"
+            class="text-white/80 hover:text-white transition-colors"
+            style="font-size: 12px; font-weight: 400;"
+            :class="{ 'text-white': currentRouteName === item.name }"
+          >
+            {{ item.label }}
+          </router-link>
         </div>
-        <button
-          type="button"
-          @click="handleLogout"
-          class="w-full px-3 py-2 rounded bg-red-600 text-white hover:bg-red-700 text-label"
-        >
-          退出登录
-        </button>
+
+        <!-- User & Logout -->
+        <div class="flex items-center gap-4">
+          <span
+            v-if="userStore.userInfo"
+            class="text-white/60 truncate max-w-[120px]"
+            style="font-size: 12px;"
+          >
+            {{ userStore.userInfo.username || '' }}
+          </span>
+          <button
+            type="button"
+            @click="handleLogout"
+            class="text-white/80 hover:text-white transition-colors"
+            style="font-size: 12px;"
+          >
+            退出
+          </button>
+        </div>
       </div>
-    </aside>
-    <main class="flex-1 p-6 overflow-auto">
+    </nav>
+
+    <!-- Main Content -->
+    <main class="min-h-[calc(100vh-48px)]">
       <router-view />
     </main>
   </div>
 </template>
-
-<style scoped>
-.text-heading {
-  font-size: 20px;
-  line-height: 1.2;
-}
-.text-body {
-  font-size: 16px;
-  line-height: 1.5;
-}
-.text-label {
-  font-size: 14px;
-  line-height: 1.4;
-}
-</style>

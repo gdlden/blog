@@ -39,32 +39,49 @@ const cancel = () => {
 </script>
 
 <template>
-  <div class="flex items-center justify-center h-screen bg-gray-100">
-    <div class="bg-white rounded-lg shadow-md p-8 w-full max-w-sm">
-      <h1 class="text-display font-semibold text-center mb-6">登录</h1>
-      <div class="space-y-4">
+  <div class="min-h-screen flex items-center justify-center px-4" style="background-color: #f5f5f7;">
+    <div class="w-full max-w-sm bg-white rounded-xl p-10" style="border-radius: 12px;">
+      <h1 class="text-center mb-8" style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Icons', 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 28px; font-weight: 600; line-height: 1.14; letter-spacing: 0.196px; color: #1d1d1f;">
+        登录
+      </h1>
+
+      <div class="space-y-5">
         <div>
-          <label class="block text-label mb-1">用户名</label>
+          <label class="block mb-1.5" style="font-size: 14px; font-weight: 400; letter-spacing: -0.224px; line-height: 1.43; color: rgba(0, 0, 0, 0.8);">
+            用户名
+          </label>
           <input
             type="text"
             v-model="user.username"
-            class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+            class="w-full px-3 py-2.5 text-base outline-none transition-colors"
+            style="background-color: #fafafc; border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.04); font-size: 17px; letter-spacing: -0.374px; color: #1d1d1f;"
+            @keyup.enter="loginAction"
           />
         </div>
+
         <div>
-          <label class="block text-label mb-1">密码</label>
+          <label class="block mb-1.5" style="font-size: 14px; font-weight: 400; letter-spacing: -0.224px; line-height: 1.43; color: rgba(0, 0, 0, 0.8);">
+            密码
+          </label>
           <input
             type="password"
             v-model="user.password"
-            class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
+            class="w-full px-3 py-2.5 text-base outline-none transition-colors"
+            style="background-color: #fafafc; border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.04); font-size: 17px; letter-spacing: -0.374px; color: #1d1d1f;"
+            @keyup.enter="loginAction"
           />
         </div>
-        <p v-if="errorMessage" class="text-sm text-red-600">{{ errorMessage }}</p>
-        <div class="flex items-center justify-center gap-4 pt-2">
+
+        <p v-if="errorMessage" class="text-sm" style="color: #ff3b30;">
+          {{ errorMessage }}
+        </p>
+
+        <div class="flex items-center justify-center gap-3 pt-2">
           <button
             type="button"
             @click="cancel"
-            class="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+            class="px-4 py-2 text-white transition-colors"
+            style="background-color: #1d1d1f; border-radius: 8px; font-size: 17px; font-weight: 400; line-height: 2.41; letter-spacing: normal;"
           >
             重置
           </button>
@@ -72,7 +89,8 @@ const cancel = () => {
             type="button"
             @click="loginAction"
             :disabled="isLoading"
-            class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+            class="px-4 py-2 text-white transition-colors disabled:opacity-50"
+            style="background-color: #0071e3; border-radius: 8px; font-size: 17px; font-weight: 400; line-height: 2.41; letter-spacing: normal;"
           >
             {{ isLoading ? '登录中...' : '登录' }}
           </button>
@@ -81,14 +99,3 @@ const cancel = () => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.text-display {
-  font-size: 28px;
-  line-height: 1.2;
-}
-.text-label {
-  font-size: 14px;
-  line-height: 1.4;
-}
-</style>
