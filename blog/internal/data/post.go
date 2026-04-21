@@ -84,7 +84,7 @@ func (r *postRepo) FindByPage(ctx context.Context, req *biz.PostPageRequest) ([]
 	if err != nil {
 		return nil, 0, err
 	}
-	err = r.data.db.WithContext(ctx).Offset(int((req.Current - 1) * req.Size)).Limit(int(req.Size)).Find(&posts).Error
+	err = r.data.db.WithContext(ctx).Model(&Post{}).Offset(int((req.Current - 1) * req.Size)).Limit(int(req.Size)).Find(&posts).Error
 	if err != nil {
 		return nil, 0, err
 	}
