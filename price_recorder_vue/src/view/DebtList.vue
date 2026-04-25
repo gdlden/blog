@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useDebtStore } from '@/stores/debtStore'
 
+const router = useRouter()
 const debtStore = useDebtStore()
 const { debts, loading, totalPages, currentPage, totalDebt, repaidAmount, outstandingAmount } = storeToRefs(debtStore)
 
@@ -47,6 +49,10 @@ async function handleDelete(id: string) {
 
 function changePage(page: number) {
   if (page >= 1 && page <= totalPages.value) debtStore.fetchDebts(page)
+}
+
+function goToDetail(id: string) {
+  router.push({ name: 'debtDetail', params: { id } })
 }
 
 function closeModal() { showModal.value = false }
@@ -130,7 +136,7 @@ function statusClass(s: string) {
 
     <!-- Card Grid -->
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-      <div v-for="debt in debts" :key="debt.id" class="group bg-white rounded-2xl p-5 flex flex-col border border-[#f0f0f0] transition-all duration-300 hover:shadow-lg hover:border-[#e8e8ed] hover:-translate-y-0.5">
+      <div v-for="debt in debts" :key="debt.id" @click="goToDetail(debt.id)" class="group bg-white rounded-2xl p-5 flex flex-col border border-[#f0f0f0] transition-all duration-300 hover:shadow-lg hover:border-[#e8e8ed] hover:-translate-y-0.5 cursor-pointer">
         <div class="flex justify-between items-start mb-2">
           <h3 class="text-[17px] font-semibold text-[#1d1d1f] leading-snug line-clamp-1 flex-1" :title="debt.name">{{ debt.name }}</h3>
           <span v-if="debt.status" class="text-xs px-2 py-0.5 rounded-full border font-medium ml-2" :class="statusClass(debt.status)">{{ debt.status }}</span>
@@ -139,10 +145,10 @@ function statusClass(s: string) {
         <p class="text-[22px] font-semibold text-[#1d1d1f] mb-1">¥{{ debt.amount }}</p>
         <p class="text-sm text-[#86868b] line-clamp-2 flex-1 mb-4">{{ debt.remark || '无备注' }}</p>
         <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity pt-3 border-t border-[#f5f5f7]">
-          <button @click="openEditModal(debt)" class="p-1.5 rounded-lg text-[#0071e3] hover:bg-[#0071e3]/10 transition-colors" title="编辑">
+          <button @click.stop="openEditModal(debt)" class="p-1.5 rounded-lg text-[#0071e3] hover:bg-[#0071e3]/10 transition-colors" title="编辑">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
           </button>
-          <button @click="handleDelete(debt.id)" class="p-1.5 rounded-lg text-[#ff3b30] hover:bg-[#ff3b30]/10 transition-colors" title="删除">
+          <button @click.stop="handleDelete(debt.id)" class="p-1.5 rounded-lg text-[#ff3b30] hover:bg-[#ff3b30]/10 transition-colors" title="删除">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
           </button>
         </div>

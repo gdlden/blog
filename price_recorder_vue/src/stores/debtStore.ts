@@ -98,6 +98,20 @@ export const useDebtStore = defineStore("debt", () => {
     }
   }
 
+  async function fetchDebtById(id: string): Promise<Debt | null> {
+    loading.value = true;
+    try {
+      const debt = await debtApi.getDebtById(id);
+      currentDebt.value = debt;
+      return debt;
+    } catch (err: any) {
+      toast.error(err.message || '获取债务详情失败');
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   function setCurrentDebt(debt: Debt | null): void {
     currentDebt.value = debt;
   }
@@ -122,6 +136,7 @@ export const useDebtStore = defineStore("debt", () => {
     createDebt,
     updateDebt,
     deleteDebt,
+    fetchDebtById,
     setCurrentDebt,
   };
 });

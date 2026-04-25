@@ -50,10 +50,49 @@ func (s *DebtDetailService) CreateDebtDetail(ctx context.Context, req *pb.DebtDe
 	}, nil
 }
 func (s *DebtDetailService) UpdateDebtDetail(ctx context.Context, req *pb.DebtDetailData) (*pb.UpdateDebtDetailReply, error) {
-	return &pb.UpdateDebtDetailReply{}, nil
+	id, err := strconv.ParseUint(req.Id, 10, 64)
+	if err != nil {
+		return nil, errors.New("invalid debt detail id")
+	}
+	debtId, err := strconv.Atoi(req.DebtId)
+	if err != nil {
+		return nil, err
+	}
+	period, err := strconv.Atoi(req.Period)
+	if err != nil {
+		return nil, err
+	}
+	principal, err := decimal.NewFromString(req.Principal)
+	if err != nil {
+		return nil, err
+	}
+	interest, err := decimal.NewFromString(req.Interest)
+	if err != nil {
+		return nil, err
+	}
+	err = s.ddu.Edit(ctx, &biz.DebtDetail{
+		Id:          uint(id),
+		DebtId:      uint(debtId),
+		PostingDate: req.PostingDate,
+		Principal:   principal,
+		Interest:    interest,
+		Period:      uint(period),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &pb.UpdateDebtDetailReply{Id: req.Id}, nil
 }
 func (s *DebtDetailService) DeleteDebtDetail(ctx context.Context, req *pb.DeleteDebtDetailRequest) (*pb.DeleteDebtDetailReply, error) {
-	return &pb.DeleteDebtDetailReply{}, nil
+	id, err := strconv.ParseUint(req.Id, 10, 64)
+	if err != nil {
+		return nil, errors.New("invalid debt detail id")
+	}
+	err = s.ddu.Delete(ctx, uint(id))
+	if err != nil {
+		return nil, err
+	}
+	return &pb.DeleteDebtDetailReply{Success: true}, nil
 }
 func (s *DebtDetailService) GetDebtDetail(ctx context.Context, req *pb.GetDebtDetailRequest) (*pb.DebtDetailData, error) {
 	if req == nil || req.Id == "" {
@@ -70,7 +109,11 @@ func (s *DebtDetailService) GetDebtDetail(ctx context.Context, req *pb.GetDebtDe
 	return debtDetailToReply(detail), nil
 }
 func (s *DebtDetailService) ListDebtDetail(ctx context.Context, req *pb.DebtDetailData) (*pb.ListDebtDetailReply, error) {
-	items, err := s.ddu.List(ctx)
+	debtId, err := strconv.ParseUint(req.DebtId, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	items, err := s.ddu.ListByDebtId(ctx, uint(debtId))
 	if err != nil {
 		return nil, err
 	}

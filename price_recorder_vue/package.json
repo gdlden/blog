@@ -37,6 +37,7 @@
     "jiti": "^2.6.1",
     "jsdom": "^27.4.0",
     "npm-run-all2": "^8.0.4",
+    "playwright": "^1.59.1",
     "prettier": "3.8.1",
     "typescript": "~5.9.3",
     "vite": "beta",

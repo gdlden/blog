@@ -19,11 +19,9 @@ type DebtDetail struct {
 type DebtDetailRepo interface {
 	SaveDb(context.Context, *DebtDetail) (string, error)
 	GetByUserIdAndID(context.Context, string, uint) (*DebtDetail, error)
-	ListByUserId(context.Context, string) ([]*DebtDetail, error)
-
-	EditDb(context.Context, *DebtDetail)
-
-	DeleteDb(context.Context, uint)
+	ListByUserIdAndDebtId(context.Context, string, uint) ([]*DebtDetail, error)
+	EditDb(context.Context, *DebtDetail) error
+	DeleteDb(context.Context, string, uint) error
 }
 
 type DebtDetailUsecase struct {
@@ -47,12 +45,32 @@ func (u *DebtDetailUsecase) Get(ctx context.Context, id uint) (*DebtDetail, erro
 	return u.ddRepo.GetByUserIdAndID(ctx, userId, id)
 }
 
-func (u *DebtDetailUsecase) List(ctx context.Context) ([]*DebtDetail, error) {
+func (u *DebtDetailUsecase) ListByDebtId(ctx context.Context, debtId uint) ([]*DebtDetail, error) {
 	userId, err := utils.CurrentUserId(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return u.ddRepo.ListByUserId(ctx, userId)
+	return u.ddRepo.ListByUserIdAndDebtId(ctx, userId, debtId)
+}
+
+func (u *DebtDetailUsecase) Edit(ctx context.Context, b *DebtDetail) error {
+	userId, err := utils.CurrentUserId(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = u.ddRepo.GetByUserIdAndID(ctx, userId, b.Id)
+	if err != nil {
+		return err
+	}
+	return u.ddRepo.EditDb(ctx, b)
+}
+
+func (u *DebtDetailUsecase) Delete(ctx context.Context, id uint) error {
+	userId, err := utils.CurrentUserId(ctx)
+	if err != nil {
+		return err
+	}
+	return u.ddRepo.DeleteDb(ctx, userId, id)
 }
 
 func NewDeptUseCase(repo DebtDetailRepo, logger log.Logger) *DebtDetailUsecase {

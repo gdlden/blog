@@ -135,6 +135,19 @@ pnpm format       # 运行 Prettier
 - 后端测试：放在 `blog/internal/**/*_test.go`，与实现相邻。使用 `go test ./...` 运行。
 - 前端测试：放在 `src/__tests__/*.spec.ts`。使用 `pnpm test:unit` 运行。
 
+## 开发流程规范
+
+### 功能完成后必须联调测试
+
+每写完一个功能（无论前后端），必须启动完整服务进行联调验证，确认编译通过 + 接口正常 + 页面渲染正确后再提交。
+
+**测试步骤：**
+1. `cd blog && make run` 启动后端
+2. `cd price_recorder_vue && pnpm dev` 启动前端
+3. 用 curl 或浏览器验证新增/修改的接口
+4. 用浏览器验证前端页面交互和数据显示
+5. 确认 `go build ./...` 和 `pnpm build` 均编译通过
+
 ## 重要参考
 
 - `blog/FUNCTION_INDEX.md` — 后端函数复用索引

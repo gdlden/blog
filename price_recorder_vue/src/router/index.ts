@@ -29,6 +29,12 @@ const router = createRouter({
           component: () => import('@/view/DebtList.vue'),
           meta: { requiresAuth: true },
         },
+        {
+          name: 'debtDetail',
+          path: 'debt/:id',
+          component: () => import('@/view/DebtDetail.vue'),
+          meta: { requiresAuth: true },
+        },
       ],
     },
   ],
