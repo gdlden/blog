@@ -50,8 +50,10 @@ func (s *PostService) GetPostPage(ctx context.Context, req *pb.PostPageRequest) 
 			})
 		}
 		return &pb.PostPageReply{
-			Data:  postList,
-			Total: strconv.FormatInt(total, 10),
+			Current: req.Current,
+			Size:    req.Size,
+			Data:    postList,
+			Total:   strconv.FormatInt(total, 10),
 		}, nil
 	}
 	return &pb.PostPageReply{}, nil

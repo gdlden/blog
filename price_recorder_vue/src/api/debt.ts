@@ -44,6 +44,6 @@ export async function updateDebt(data: Debt): Promise<Debt> {
 }
 
 export async function deleteDebt(id: string): Promise<boolean> {
-  const response = await instance.post("/debt/delete/v1", { id });
+  const response = await instance.post("/debt/delete/v1", { id }) as { flag: boolean };
   return response.flag;
 }

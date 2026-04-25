@@ -20,7 +20,7 @@ export let user = <userReq>{
 export async function login(data: userReq): Promise<LoginResponse | undefined> {
   return await instance.post("/user/login/v1", data)
     .then(res => {
-      return res.data as LoginResponse
+      return res as unknown as LoginResponse
     })
     .catch((err) => {
       console.log(err)

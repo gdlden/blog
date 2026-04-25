@@ -17,7 +17,7 @@ type Price struct {
 	Name      string `gorm:"comment:'商品名称'"`
 	Price     string `gorm:"comment:'单价'"`
 	PriceDate string `gorm:"comment:'价格日期'"`
-	UserID    string `gorm:"comment:'用户ID`
+	UserID    string `gorm:"comment:'用户ID'"`
 }
 type priceRepo struct {
 	data *Data

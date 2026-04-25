@@ -1,6 +1,6 @@
 <script setup>
 import {onMounted, ref} from "vue";
-import {getAllArticle} from "@/api/Article.js";
+import {getAllArticle} from "@/api/Article";
 const tableData = ref([])
 onMounted(()=>{
   getAllArticle().then(res=>{

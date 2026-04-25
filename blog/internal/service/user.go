@@ -41,7 +41,6 @@ func (s *UserService) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 	return &pb.CreateUserReply{
 		UserId:      user.ID,
 		Username:    user.Username,
-		Password:    user.Password,
 		PhoneNumber: user.PhoneNumber,
 		Email:       user.Email,
 	}, nil
@@ -94,7 +93,6 @@ func (s *UserService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 	return &pb.GetUserReply{
 		UserId:      user.ID,
 		Username:    user.Username,
-		Password:    user.Password,
 		PhoneNumber: user.PhoneNumber,
 		Email:       user.Email,
 	}, nil
