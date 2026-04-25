@@ -25,9 +25,14 @@ make config       # 生成内部配置 protobuf
 make all          # 运行 api + config + generate
 
 # 运行和构建
-make run          # 运行 Kratos 服务（自动加载 .env）
+make run          # 运行 Kratos 服务（需提前设置 DATA_DATABASE_SOURCE 环境变量）
 make build        # 构建二进制文件到 blog/bin/
 go test ./...     # 运行 Go 测试
+
+# 调试（dlv）
+dlv debug ./cmd/blog              # 启动 dlv 并编译运行
+dlv exec ./bin/blog               # 附加到已编译的二进制文件
+dlv test ./internal/biz           # 调试指定包的测试
 
 # 依赖注入
 cd cmd/blog && wire  # 生成 Wire 装配代码
@@ -35,12 +40,13 @@ cd cmd/blog && wire  # 生成 Wire 装配代码
 
 ### 本地开发配置
 
-后端通过环境变量 `DATA_DATABASE_SOURCE` 连接数据库。为避免将真实密码暴露给 Claude，采用以下流程：
+后端通过环境变量 `DATA_DATABASE_SOURCE` 连接数据库。`blog/configs/config.yaml` 中使用 Kratos 占位符 `${DATA_DATABASE_SOURCE}`，服务启动前需在 shell 中导出该变量：
 
-1. 复制 `blog/.env.example` 为 `blog/.env`，填入你的真实数据库连接信息
-2. `blog/.env` 已被 `.gitignore` 排除，不会提交到仓库
-3. `make run` 会自动加载 `blog/.env` 中的环境变量
-4. 调试前后端时，Claude 只需执行 `cd blog && make run`，无需知道密码内容
+```bash
+export DATA_DATABASE_SOURCE="host=localhost user=postgres password=xxx dbname=postgres port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+```
+
+调试前后端时，Claude 只需执行 `cd blog && make run`，无需知道密码内容。
 
 ### 架构分层
 
