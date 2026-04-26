@@ -13,7 +13,7 @@ export const useDebtStore = defineStore("debt", () => {
   const error = ref<string | null>(null);
   const total = ref(0);
   const currentPage = ref(1);
-  const pageSize = ref(10);
+  const pageSize = ref(12);
 
   // Getters
   const debtCount = computed(() => debts.value.length);

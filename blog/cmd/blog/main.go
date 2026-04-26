@@ -76,7 +76,7 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Printf("data_database_source:" + value)
+	fmt.Println("data_database_source:" + value)
 
 	var bc conf.Bootstrap
 	if err := c.Scan(&bc); err != nil {

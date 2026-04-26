@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useDebtStore } from '@/stores/debtStore'
@@ -7,6 +7,15 @@ import { useDebtStore } from '@/stores/debtStore'
 const router = useRouter()
 const debtStore = useDebtStore()
 const { debts, loading, totalPages, currentPage, totalDebt, repaidAmount, outstandingAmount } = storeToRefs(debtStore)
+
+const visiblePages = computed<Array<number | '...'>>(() => {
+  const total = totalPages.value
+  const cur = currentPage.value
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  if (cur <= 4) return [1, 2, 3, 4, 5, '...', total]
+  if (cur >= total - 3) return [1, '...', total - 4, total - 3, total - 2, total - 1, total]
+  return [1, '...', cur - 1, cur, cur + 1, '...', total]
+})
 
 const showModal = ref(false)
 const isEditing = ref(false)
@@ -160,7 +169,10 @@ function statusClass(s: string) {
       <button @click="changePage(currentPage - 1)" :disabled="currentPage <= 1" class="p-2 rounded-lg text-[#86868b] hover:text-[#1d1d1f] hover:bg-[#f5f5f7] disabled:opacity-30 disabled:cursor-not-allowed transition-all">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
       </button>
-      <button v-for="page in totalPages" :key="page" @click="changePage(page)" class="min-w-[36px] h-9 px-2.5 rounded-lg text-sm font-medium transition-all" :class="page === currentPage ? 'bg-[#1d1d1f] text-white' : 'text-[#86868b] hover:text-[#1d1d1f] hover:bg-[#f5f5f7]'">{{ page }}</button>
+      <template v-for="(item, idx) in visiblePages" :key="idx">
+        <span v-if="item === '...'" class="w-9 h-9 flex items-center justify-center text-sm text-[#86868b] select-none">…</span>
+        <button v-else @click="changePage(item)" class="w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-all" :class="item === currentPage ? 'bg-[#1d1d1f] text-white' : 'text-[#86868b] hover:text-[#1d1d1f] hover:bg-[#f5f5f7]'">{{ item }}</button>
+      </template>
       <button @click="changePage(currentPage + 1)" :disabled="currentPage >= totalPages" class="p-2 rounded-lg text-[#86868b] hover:text-[#1d1d1f] hover:bg-[#f5f5f7] disabled:opacity-30 disabled:cursor-not-allowed transition-all">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
       </button>

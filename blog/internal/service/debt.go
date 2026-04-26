@@ -204,6 +204,13 @@ func (s *DebtService) ListDebt(ctx context.Context, req *pb.ListDebtRequest) (*p
 	}, nil
 }
 
+func formatDebtStatus(status int) string {
+	if status == 1 {
+		return "已结清"
+	}
+	return "进行中"
+}
+
 func debtToReply(debt *biz.Debt) *pb.DebtEntity {
 	if debt == nil {
 		return &pb.DebtEntity{}
@@ -216,7 +223,7 @@ func debtToReply(debt *biz.Debt) *pb.DebtEntity {
 		ApplyTime:   debt.ApplyTime,
 		EndTime:     debt.EndTime,
 		Amount:      debt.Amount.String(),
-		Status:      strconv.Itoa(debt.Status),
+		Status:      formatDebtStatus(debt.Status),
 		Remark:      debt.Remark,
 		Apr:         debt.Apr.String(),
 		Fee:         debt.Fee.String(),

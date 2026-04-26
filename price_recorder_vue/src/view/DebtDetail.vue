@@ -58,7 +58,7 @@ async function handleSubmit() {
 }
 
 function statusText(s: string) {
-  if (s === '1') return '已结清'
+  if (s === '1' || s === '已结清') return '已结清'
   return '进行中'
 }
 

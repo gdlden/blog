@@ -120,33 +120,31 @@ func (d *DebtRepo) Save(ctx context.Context, debt *biz.Debt) (uint, error) {
 }
 
 func (d *DebtRepo) Update(ctx context.Context, debt *biz.Debt) error {
-	debtDb := Debt{
-		Name:        debt.Name,
-		BankName:    debt.BankName,
-		BankAccount: debt.BankAccount,
-		Amount:      debt.Amount,
-		Tenor:       debt.Tenor,
-		Status:      debt.Status,
-		Remark:      debt.Remark,
-		Apr:         debt.Apr,
-		Fee:         debt.Fee,
-		UserId:      debt.UserId,
+	updates := map[string]any{
+		"name":         debt.Name,
+		"bank_name":    debt.BankName,
+		"bank_account": debt.BankAccount,
+		"amount":       debt.Amount,
+		"tenor":        debt.Tenor,
+		"status":       debt.Status,
+		"remark":       debt.Remark,
+		"apr":          debt.Apr,
+		"fee":          debt.Fee,
 	}
-	debtDb.ID = uint(debt.Id)
 	if debt.ApplyTime != "" {
 		applyTime, err := time.ParseInLocation("2006-01-02 15:04:05", debt.ApplyTime, time.Local)
 		if err == nil {
-			debtDb.ApplyTime = applyTime
+			updates["apply_time"] = applyTime
 		}
 	}
 
 	if debt.EndTime != "" {
 		endTime, err := time.ParseInLocation("2006-01-02 15:04:05", debt.EndTime, time.Local)
 		if err == nil {
-			debtDb.EndTime = endTime
+			updates["end_time"] = endTime
 		}
 	}
-	tx := d.data.db.WithContext(ctx).Model(&Debt{}).Where("id = ? AND user_id = ?", debt.Id, debt.UserId).Updates(debtDb)
+	tx := d.data.db.WithContext(ctx).Model(&Debt{}).Where("id = ? AND user_id = ?", debt.Id, debt.UserId).Updates(updates)
 	if tx.Error != nil {
 		return tx.Error
 	}
