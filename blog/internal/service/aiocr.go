@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	pb "blog/api/ocr/v1"
@@ -9,25 +10,32 @@ import (
 	ark "github.com/sashabaranov/go-openai"
 )
 
-type AiocrService struct {
-	pb.UnimplementedAiocrServer
+const defaultOCRModel = "doubao-seed-1-6-251015"
+const defaultArkBaseURL = "https://ark.cn-beijing.volces.com/api/v3"
+
+type VisionTextRecognizer interface {
+	RecognizeText(ctx context.Context, imageURL string, prompt string) (string, error)
 }
 
-func NewAiocrService() *AiocrService {
-	return &AiocrService{}
+type ArkVisionTextRecognizer struct {
+	client *ark.Client
+	model  string
 }
 
-func (s *AiocrService) Ocr(ctx context.Context, req *pb.OcrRequest) (*pb.OcrReply, error) {
-	// (os.Getenv(""))
-	config := ark.DefaultConfig("")
-	config.BaseURL = "https://ark.cn-beijing.volces.com/api/v3"
-	client := ark.NewClientWithConfig(config)
+func NewArkVisionTextRecognizer(apiKey string) *ArkVisionTextRecognizer {
+	config := ark.DefaultConfig(apiKey)
+	config.BaseURL = defaultArkBaseURL
+	return &ArkVisionTextRecognizer{
+		client: ark.NewClientWithConfig(config),
+		model:  defaultOCRModel,
+	}
+}
 
-	fmt.Println("----- image input request -----")
-	resp, err := client.CreateChatCompletion(
-		context.Background(),
+func (r *ArkVisionTextRecognizer) RecognizeText(ctx context.Context, imageURL string, prompt string) (string, error) {
+	resp, err := r.client.CreateChatCompletion(
+		ctx,
 		ark.ChatCompletionRequest{
-			Model: "doubao-seed-1-6-251015",
+			Model: r.model,
 			Messages: []ark.ChatCompletionMessage{
 				{
 					Role: ark.ChatMessageRoleUser,
@@ -35,12 +43,12 @@ func (s *AiocrService) Ocr(ctx context.Context, req *pb.OcrRequest) (*pb.OcrRepl
 						{
 							Type: ark.ChatMessagePartTypeImageURL,
 							ImageURL: &ark.ChatMessageImageURL{
-								URL: req.ImgBaseStr,
+								URL: imageURL,
 							},
 						},
 						{
 							Type: ark.ChatMessagePartTypeText,
-							Text: "直接输出图片内容，不要输出其他东西",
+							Text: prompt,
 						},
 					},
 				},
@@ -49,15 +57,31 @@ func (s *AiocrService) Ocr(ctx context.Context, req *pb.OcrRequest) (*pb.OcrRepl
 		},
 	)
 	if err != nil {
-		fmt.Printf("ChatCompletion error: %v\n", err)
-		// return
+		return "", err
 	}
-	if resp.Choices[0].Message.ReasoningContent != "" {
-		// fmt.Println(resp.Choices[0].Message.ReasoningContent)
+	if len(resp.Choices) == 0 {
+		return "", errors.New("ocr returned no choices")
 	}
-	res := resp.Choices[0].Message.Content
+	return resp.Choices[0].Message.Content, nil
+}
 
-	return &pb.OcrReply{
-		Res: res,
-	}, nil
+type AiocrService struct {
+	recognizer VisionTextRecognizer
+	pb.UnimplementedAiocrServer
+}
+
+func NewAiocrService() *AiocrService {
+	return NewAiocrServiceWithRecognizer(NewArkVisionTextRecognizer(""))
+}
+
+func NewAiocrServiceWithRecognizer(recognizer VisionTextRecognizer) *AiocrService {
+	return &AiocrService{recognizer: recognizer}
+}
+
+func (s *AiocrService) Ocr(ctx context.Context, req *pb.OcrRequest) (*pb.OcrReply, error) {
+	res, err := s.recognizer.RecognizeText(ctx, req.ImgBaseStr, "直接输出图片内容，不要输出其他东西")
+	if err != nil {
+		return nil, fmt.Errorf("ocr failed: %w", err)
+	}
+	return &pb.OcrReply{Res: res}, nil
 }
