@@ -9,6 +9,7 @@ export const useDebtDetailStore = defineStore("debtDetail", () => {
 
   const details = ref<DebtDetail[]>([]);
   const loading = ref(false);
+  const ocrLoading = ref(false);
   const error = ref<string | null>(null);
 
   const totalPrincipal = computed(() => {
@@ -76,9 +77,22 @@ export const useDebtDetailStore = defineStore("debtDetail", () => {
     }
   }
 
+  async function recognizeOcr(file: File, debtId: string) {
+    ocrLoading.value = true;
+    try {
+      return await debtDetailApi.recognizeDebtDetailOcr(file, debtId);
+    } catch (err: any) {
+      toast.error(err.message || "OCR识别失败");
+      throw err;
+    } finally {
+      ocrLoading.value = false;
+    }
+  }
+
   return {
     details,
     loading,
+    ocrLoading,
     error,
     totalPrincipal,
     totalInterest,
@@ -87,5 +101,6 @@ export const useDebtDetailStore = defineStore("debtDetail", () => {
     createDetail,
     updateDetail,
     deleteDetail,
+    recognizeOcr,
   };
 });

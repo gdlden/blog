@@ -9,6 +9,11 @@ export interface DebtDetail {
   period: string;
 }
 
+export interface DebtDetailOcrReply {
+  rawText: string;
+  items: Omit<DebtDetail, "id">[];
+}
+
 export async function getDebtDetails(debtId: string): Promise<DebtDetail[]> {
   const response = await instance.get("/debtDetail/list/v1", { params: { debtId } }) as { list: DebtDetail[] };
   return response.list || [];
@@ -29,4 +34,18 @@ export async function updateDebtDetail(data: DebtDetail): Promise<DebtDetail> {
 export async function deleteDebtDetail(id: string): Promise<boolean> {
   const response = await instance.post("/debtDetail/delete/v1", { id }) as { success: boolean };
   return response.success;
+}
+
+export async function recognizeDebtDetailOcr(
+  file: File,
+  debtId: string,
+  year = new Date().getFullYear(),
+): Promise<DebtDetailOcrReply> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("debtId", debtId);
+  formData.append("year", String(year));
+  return await instance.post("/debtDetail/ocr/v1", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
 }
