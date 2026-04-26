@@ -197,6 +197,22 @@ func TestRecognizeDebtDetailOCR_NilServiceReturnsErrorWithoutPanic(t *testing.T)
 	})
 }
 
+func TestRecognizeDebtDetailOCR_ZeroValueServiceReturnsErrorWithoutPanic(t *testing.T) {
+	image := testJPEGBytes()
+	service := &DebtDetailService{}
+
+	require.NotPanics(t, func() {
+		_, err := service.RecognizeDebtDetailOCR(context.Background(), &DebtDetailOCRRequest{
+			DebtId: "9",
+			Image:  newMemoryMultipartFile(image),
+			Header: newTestImageHeader("debt.jpg", "image/jpeg", int64(len(image))),
+			Year:   2026,
+		})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "recognizer unavailable")
+	})
+}
+
 func TestBuildOCRImageDataURI_RejectsOversizedImageHeader(t *testing.T) {
 	image := testJPEGBytes()
 
