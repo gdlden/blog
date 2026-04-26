@@ -21,20 +21,34 @@ func NewDebtDetailService(usecase *biz.DebtDetailUsecase) *DebtDetailService {
 	}
 }
 
+func parseOptionalInt(s string) (int, error) {
+	if s == "" {
+		return 0, nil
+	}
+	return strconv.Atoi(s)
+}
+
+func parseOptionalDecimal(s string) (decimal.Decimal, error) {
+	if s == "" {
+		return decimal.Zero, nil
+	}
+	return decimal.NewFromString(s)
+}
+
 func (s *DebtDetailService) CreateDebtDetail(ctx context.Context, req *pb.DebtDetailData) (*pb.CreateDebtDetailReply, error) {
 	debtId, err := strconv.Atoi(req.DebtId)
 	if err != nil {
 		return nil, err
 	}
-	period, err := strconv.Atoi(req.Period)
+	period, err := parseOptionalInt(req.Period)
 	if err != nil {
 		return nil, err
 	}
-	principal, err := decimal.NewFromString(req.Principal)
+	principal, err := parseOptionalDecimal(req.Principal)
 	if err != nil {
 		return nil, err
 	}
-	interest, err := decimal.NewFromString(req.Interest)
+	interest, err := parseOptionalDecimal(req.Interest)
 	if err != nil {
 		return nil, err
 	}
@@ -45,6 +59,9 @@ func (s *DebtDetailService) CreateDebtDetail(ctx context.Context, req *pb.DebtDe
 		Interest:    interest,
 		Period:      uint(period),
 	})
+	if err != nil {
+		return nil, err
+	}
 	return &pb.CreateDebtDetailReply{
 		Id: id,
 	}, nil
@@ -58,15 +75,15 @@ func (s *DebtDetailService) UpdateDebtDetail(ctx context.Context, req *pb.DebtDe
 	if err != nil {
 		return nil, err
 	}
-	period, err := strconv.Atoi(req.Period)
+	period, err := parseOptionalInt(req.Period)
 	if err != nil {
 		return nil, err
 	}
-	principal, err := decimal.NewFromString(req.Principal)
+	principal, err := parseOptionalDecimal(req.Principal)
 	if err != nil {
 		return nil, err
 	}
-	interest, err := decimal.NewFromString(req.Interest)
+	interest, err := parseOptionalDecimal(req.Interest)
 	if err != nil {
 		return nil, err
 	}

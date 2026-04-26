@@ -38,7 +38,14 @@ function openCreateModal() {
 
 function openEditModal(detail: any) {
   isEditing.value = true
-  formData.value = { ...detail }
+  formData.value = {
+    id: detail.id ?? '',
+    debtId: detail.debtId ?? debtId,
+    postingDate: detail.postingDate?.split(' ')?.[0] ?? '',
+    principal: detail.principal ?? '',
+    interest: detail.interest ?? '',
+    period: detail.period ?? '',
+  }
   showModal.value = true
 }
 
@@ -48,7 +55,10 @@ async function handleSubmit() {
   try {
     const payload = {
       ...formData.value,
-      postingDate: formData.value.postingDate + ' 00:00:00'
+      postingDate: formData.value.postingDate + ' 00:00:00',
+      principal: String(formData.value.principal ?? ''),
+      interest: String(formData.value.interest ?? ''),
+      period: String(formData.value.period ?? ''),
     }
     if (isEditing.value) await detailStore.updateDetail(payload)
     else { const { id, ...rest } = payload; await detailStore.createDetail(rest) }
