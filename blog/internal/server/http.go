@@ -61,6 +61,7 @@ func NewHTTPServer(c *conf.Server, greeter *service.GreeterService,
 	priceV1.RegisterPriceHTTPServer(srv, priceService)
 	debtV1.RegisterDebtHTTPServer(srv, debtService)
 	debtV1.RegisterDebtDetailHTTPServer(srv, detailService)
+	srv.Route("/").POST("/debtDetail/ocr/v1", detailService.RecognizeDebtDetailOCRHTTP)
 	return srv
 }
 func NewWhiteListMatcher() selector.MatchFunc {

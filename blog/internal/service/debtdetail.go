@@ -11,13 +11,22 @@ import (
 )
 
 type DebtDetailService struct {
-	ddu *biz.DebtDetailUsecase
+	ddu           *biz.DebtDetailUsecase
+	ocrRecognizer VisionTextRecognizer
 	pb.UnimplementedDebtDetailServer
 }
 
 func NewDebtDetailService(usecase *biz.DebtDetailUsecase) *DebtDetailService {
+	return NewDebtDetailServiceWithRecognizer(usecase, NewArkVisionTextRecognizer(""))
+}
+
+func NewDebtDetailServiceWithRecognizer(usecase *biz.DebtDetailUsecase, recognizer VisionTextRecognizer) *DebtDetailService {
+	if recognizer == nil {
+		recognizer = NewArkVisionTextRecognizer("")
+	}
 	return &DebtDetailService{
-		ddu: usecase,
+		ddu:           usecase,
+		ocrRecognizer: recognizer,
 	}
 }
 
