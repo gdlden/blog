@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/shopspring/decimal"
 )
@@ -18,7 +19,7 @@ type DebtDetailOCRItem struct {
 	Period      string `json:"period"`
 }
 
-var debtDetailOCRLinePattern = regexp.MustCompile(`(?i)(?:第\s*)?(\d+)\s*期.*?本金\s*[¥￥]?\s*([0-9,]+(?:\.\d{1,2})?).*?利息\s*[¥￥]?\s*([0-9,]+(?:\.\d{1,2})?).*?入账日\s*((?:\d{4}[-/])?\d{1,2}[-/]\d{1,2})`)
+var debtDetailOCRLinePattern = regexp.MustCompile(`(?i)(?:第\s*)?(\d+)\s*期.*?本金\s*[:：]?\s*[¥￥]?\s*([0-9,]+(?:\.\d{1,2})?).*?利息\s*[:：]?\s*[¥￥]?\s*([0-9,]+(?:\.\d{1,2})?).*?入账日(?:期)?\s*[:：]?\s*((?:\d{4}[-/])?\d{1,2}[-/]\d{1,2})`)
 
 func ParseDebtDetailOCRText(rawText string, debtId string, defaultYear int) ([]DebtDetailOCRItem, error) {
 	lines := strings.Split(rawText, "\n")
@@ -80,7 +81,7 @@ func parseOCRPostingDate(value string, defaultYear int) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		return fmt.Sprintf("%04d-%02d-%02d 00:00:00", defaultYear, month, day), nil
+		return formatValidOCRPostingDate(defaultYear, month, day)
 	}
 	if len(parts) == 3 {
 		year, err := strconv.Atoi(parts[0])
@@ -95,9 +96,21 @@ func parseOCRPostingDate(value string, defaultYear int) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		return fmt.Sprintf("%04d-%02d-%02d 00:00:00", year, month, day), nil
+		return formatValidOCRPostingDate(year, month, day)
 	}
 	return "", fmt.Errorf("invalid posting date: %s", value)
+}
+
+func formatValidOCRPostingDate(year int, month int, day int) (string, error) {
+	normalizedDate := fmt.Sprintf("%04d-%02d-%02d", year, month, day)
+	parsedDate, err := time.Parse("2006-01-02", normalizedDate)
+	if err != nil {
+		return "", err
+	}
+	if parsedDate.Format("2006-01-02") != normalizedDate {
+		return "", fmt.Errorf("invalid posting date: %s", normalizedDate)
+	}
+	return normalizedDate + " 00:00:00", nil
 }
 
 func normalizeOCRAmount(value string) (string, error) {
