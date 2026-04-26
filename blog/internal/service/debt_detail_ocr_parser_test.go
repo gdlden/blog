@@ -82,9 +82,20 @@ func TestParseDebtDetailOCRText_InvalidDates(t *testing.T) {
 
 			require.Error(t, err)
 			assert.Empty(t, items)
-			assert.Contains(t, err.Error(), "no debt detail rows parsed")
+			assert.Contains(t, err.Error(), "invalid debt detail row")
 		})
 	}
+}
+
+func TestParseDebtDetailOCRText_MixedValidAndInvalidDateRows(t *testing.T) {
+	raw := `第1期 本金 1000 利息 10 入账日2026-03-15
+第2期 本金 900 利息 9 入账日2026-02-31`
+
+	items, err := ParseDebtDetailOCRText(raw, "1", 2026)
+
+	require.Error(t, err)
+	assert.Empty(t, items)
+	assert.Contains(t, err.Error(), "invalid debt detail row")
 }
 
 func TestParseDebtDetailOCRText_NoRows(t *testing.T) {

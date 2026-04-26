@@ -25,13 +25,19 @@ func ParseDebtDetailOCRText(rawText string, debtId string, defaultYear int) ([]D
 	lines := strings.Split(rawText, "\n")
 	items := make([]DebtDetailOCRItem, 0, len(lines))
 	for _, line := range lines {
-		item, ok := parseDebtDetailOCRLine(line, debtId, defaultYear)
+		item, ok, err := parseDebtDetailOCRLine(line, debtId, defaultYear)
+		if err != nil {
+			return nil, err
+		}
 		if ok {
 			items = append(items, item)
 		}
 	}
 	if len(items) == 0 {
-		item, ok := parseDebtDetailOCRLine(rawText, debtId, defaultYear)
+		item, ok, err := parseDebtDetailOCRLine(rawText, debtId, defaultYear)
+		if err != nil {
+			return nil, err
+		}
 		if ok {
 			items = append(items, item)
 		}
@@ -42,22 +48,22 @@ func ParseDebtDetailOCRText(rawText string, debtId string, defaultYear int) ([]D
 	return items, nil
 }
 
-func parseDebtDetailOCRLine(line string, debtId string, defaultYear int) (DebtDetailOCRItem, bool) {
+func parseDebtDetailOCRLine(line string, debtId string, defaultYear int) (DebtDetailOCRItem, bool, error) {
 	match := debtDetailOCRLinePattern.FindStringSubmatch(line)
 	if len(match) != 5 {
-		return DebtDetailOCRItem{}, false
+		return DebtDetailOCRItem{}, false, nil
 	}
 	postingDate, err := parseOCRPostingDate(match[4], defaultYear)
 	if err != nil {
-		return DebtDetailOCRItem{}, false
+		return DebtDetailOCRItem{}, false, fmt.Errorf("invalid debt detail row: %w", err)
 	}
 	principal, err := normalizeOCRAmount(match[2])
 	if err != nil {
-		return DebtDetailOCRItem{}, false
+		return DebtDetailOCRItem{}, false, fmt.Errorf("invalid debt detail row: %w", err)
 	}
 	interest, err := normalizeOCRAmount(match[3])
 	if err != nil {
-		return DebtDetailOCRItem{}, false
+		return DebtDetailOCRItem{}, false, fmt.Errorf("invalid debt detail row: %w", err)
 	}
 	return DebtDetailOCRItem{
 		DebtId:      debtId,
@@ -65,7 +71,7 @@ func parseDebtDetailOCRLine(line string, debtId string, defaultYear int) (DebtDe
 		Principal:   principal,
 		Interest:    interest,
 		PostingDate: postingDate,
-	}, true
+	}, true, nil
 }
 
 func parseOCRPostingDate(value string, defaultYear int) (string, error) {
