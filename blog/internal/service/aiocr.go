@@ -75,6 +75,9 @@ func NewAiocrService() *AiocrService {
 }
 
 func NewAiocrServiceWithRecognizer(recognizer VisionTextRecognizer) *AiocrService {
+	if recognizer == nil {
+		recognizer = NewArkVisionTextRecognizer("")
+	}
 	return &AiocrService{recognizer: recognizer}
 }
 
