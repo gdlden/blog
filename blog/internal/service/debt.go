@@ -21,6 +21,16 @@ func NewDebtService(du *biz.DebtUsecase) *DebtService {
 	}
 }
 
+func parseDebtStatus(status string) (int, error) {
+	switch status {
+	case "进行中":
+		return 0, nil
+	case "已结清":
+		return 1, nil
+	}
+	return strconv.Atoi(status)
+}
+
 func (s *DebtService) CreateDebt(ctx context.Context, req *pb.DebtEntity) (*pb.CreateDebtReply, error) {
 	amount, err := decimal.NewFromString(req.Amount)
 	if err != nil {
@@ -38,7 +48,7 @@ func (s *DebtService) CreateDebt(ctx context.Context, req *pb.DebtEntity) (*pb.C
 	if err != nil {
 		return nil, err
 	}
-	status, err := strconv.Atoi(req.Status)
+	status, err := parseDebtStatus(req.Status)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +98,7 @@ func (s *DebtService) UpdateDebt(ctx context.Context, req *pb.DebtEntity) (*pb.U
 	if err != nil {
 		return nil, err
 	}
-	status, err := strconv.Atoi(req.Status)
+	status, err := parseDebtStatus(req.Status)
 	if err != nil {
 		return nil, err
 	}
