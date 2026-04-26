@@ -14,6 +14,7 @@ export const useDebtStore = defineStore("debt", () => {
   const total = ref(0);
   const currentPage = ref(1);
   const pageSize = ref(12);
+  const bankNameFilter = ref("");
 
   // Getters
   const debtCount = computed(() => debts.value.length);
@@ -36,13 +37,14 @@ export const useDebtStore = defineStore("debt", () => {
   });
 
   // Actions
-  async function fetchDebts(page?: number, size?: number): Promise<void> {
+  async function fetchDebts(page?: number, size?: number, bankName?: string): Promise<void> {
     loading.value = true;
     error.value = null;
     try {
       const pageNum = page ?? currentPage.value;
       const pageSizeNum = size ?? pageSize.value;
-      const response = await debtApi.getDebts(String(pageNum), String(pageSizeNum));
+      const filter = bankName ?? bankNameFilter.value;
+      const response = await debtApi.getDebts(String(pageNum), String(pageSizeNum), filter || undefined);
       debts.value = response.list || [];
       total.value = parseInt(response.total || "0", 10);
       currentPage.value = pageNum;
@@ -125,6 +127,7 @@ export const useDebtStore = defineStore("debt", () => {
     total,
     currentPage,
     pageSize,
+    bankNameFilter,
     // Getters
     debtCount,
     totalPages,

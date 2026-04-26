@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useDebtStore } from '@/stores/debtStore'
 
 const router = useRouter()
 const debtStore = useDebtStore()
-const { debts, loading, totalPages, currentPage, totalDebt, repaidAmount, outstandingAmount } = storeToRefs(debtStore)
+const { debts, loading, totalPages, currentPage, totalDebt, repaidAmount, outstandingAmount, bankNameFilter } = storeToRefs(debtStore)
 
 const visiblePages = computed<Array<number | '...'>>(() => {
   const total = totalPages.value
@@ -15,6 +15,12 @@ const visiblePages = computed<Array<number | '...'>>(() => {
   if (cur <= 4) return [1, 2, 3, 4, 5, '...', total]
   if (cur >= total - 3) return [1, '...', total - 4, total - 3, total - 2, total - 1, total]
   return [1, '...', cur - 1, cur, cur + 1, '...', total]
+})
+
+let filterTimer: number | undefined
+watch(bankNameFilter, () => {
+  if (filterTimer) window.clearTimeout(filterTimer)
+  filterTimer = window.setTimeout(() => debtStore.fetchDebts(1), 300)
 })
 
 const showModal = ref(false)
@@ -35,16 +41,25 @@ function openCreateModal() {
 
 function openEditModal(debt: any) {
   isEditing.value = true
-  formData.value = { ...debt }
+  formData.value = {
+    ...debt,
+    applyTime: debt.applyTime ? debt.applyTime.slice(0, 10) : '',
+    endTime: debt.endTime ? debt.endTime.slice(0, 10) : ''
+  }
   showModal.value = true
 }
 
 async function handleSubmit() {
   if (!formData.value.name.trim()) return
   isSubmitting.value = true
+  const payload = {
+    ...formData.value,
+    applyTime: formData.value.applyTime ? formData.value.applyTime + ' 00:00:00' : '',
+    endTime: formData.value.endTime ? formData.value.endTime + ' 00:00:00' : ''
+  }
   try {
-    if (isEditing.value) await debtStore.updateDebt(formData.value)
-    else { const { id, ...rest } = formData.value; await debtStore.createDebt(rest) }
+    if (isEditing.value) await debtStore.updateDebt(payload)
+    else { const { id, ...rest } = payload; await debtStore.createDebt(rest) }
     showModal.value = false
   } catch (err: any) { alert(err.message || '操作失败') }
   finally { isSubmitting.value = false }
@@ -80,10 +95,16 @@ function statusClass(s: string) {
         <h1 class="text-[32px] font-semibold tracking-tight text-[#1d1d1f]">债务</h1>
         <p class="mt-1 text-sm text-[#86868b]">管理你的债务和还款计划</p>
       </div>
-      <button @click="openCreateModal" class="inline-flex items-center gap-2 px-5 py-2.5 text-white text-[15px] font-medium rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm" style="background: linear-gradient(135deg, #0071e3, #0063c7);">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-        新建债务
-      </button>
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#86868b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
+          <input v-model="bankNameFilter" type="text" placeholder="按银行名筛选" class="pl-9 pr-3 py-2 bg-white border border-[#e8e8ed] rounded-xl text-sm text-[#1d1d1f] outline-none transition-all w-56 focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/10"/>
+        </div>
+        <button @click="openCreateModal" class="inline-flex items-center gap-2 px-5 py-2.5 text-white text-[15px] font-medium rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm" style="background: linear-gradient(135deg, #0071e3, #0063c7);">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          新建债务
+        </button>
+      </div>
     </div>
 
     <!-- Summary Cards -->

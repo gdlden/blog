@@ -23,11 +23,13 @@ export interface DebtPageResponse {
 
 export async function getDebts(
   page?: string,
-  pageSize?: string
+  pageSize?: string,
+  bankName?: string
 ): Promise<DebtPageResponse> {
   const params: Record<string, string> = {};
   if (page) params.page = page;
   if (pageSize) params.pageSize = pageSize;
+  if (bankName) params.bankName = bankName;
   return await instance.get("/debt/page/v1", { params });
 }
 
