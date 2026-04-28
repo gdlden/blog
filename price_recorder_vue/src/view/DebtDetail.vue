@@ -12,11 +12,13 @@ const debtId = route.params.id as string
 const debtStore = useDebtStore()
 const detailStore = useDebtDetailStore()
 const { currentDebt, loading: debtLoading } = storeToRefs(debtStore)
-const { details, loading: detailLoading, totalPrincipal, totalInterest, totalRepaid } = storeToRefs(detailStore)
+const { details, loading: detailLoading, ocrLoading, totalPrincipal, totalInterest, totalRepaid } = storeToRefs(detailStore)
 
 const showModal = ref(false)
 const isEditing = ref(false)
 const isSubmitting = ref(false)
+const ocrMessage = ref('')
+const ocrError = ref('')
 const formData = ref({
   id: '', debtId: '', postingDate: '', principal: '', interest: '', period: ''
 })
@@ -33,6 +35,7 @@ function goBack() {
 function openCreateModal() {
   isEditing.value = false
   formData.value = { id: '', debtId, postingDate: '', principal: '', interest: '', period: '' }
+  clearOcrState()
   showModal.value = true
 }
 
@@ -46,6 +49,7 @@ function openEditModal(detail: any) {
     interest: detail.interest ?? '',
     period: detail.period ?? '',
   }
+  clearOcrState()
   showModal.value = true
 }
 
@@ -83,6 +87,47 @@ function formatAmount(n: number) { return n.toLocaleString('zh-CN', { minimumFra
 function statusClass(s: string) {
   if (s === '1' || s === '已结清') return 'bg-green-50 text-green-700 border-green-200'
   return 'bg-blue-50 text-blue-700 border-blue-200'
+}
+
+function clearOcrState() {
+  ocrMessage.value = ''
+  ocrError.value = ''
+}
+
+function normalizeOcrPostingDate(value: string) {
+  return value.trim().split(/[ T]/)[0] || ''
+}
+
+async function handleOcrFileChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  clearOcrState()
+  try {
+    const reply = await detailStore.recognizeOcr(file, debtId)
+    const firstItem = reply?.items?.[0]
+    if (!firstItem) {
+      ocrError.value = '未识别到可用明细'
+      return
+    }
+
+    formData.value = {
+      id: '',
+      debtId: firstItem.debtId || debtId,
+      postingDate: normalizeOcrPostingDate(firstItem.postingDate || ''),
+      principal: firstItem.principal || '',
+      interest: firstItem.interest || '',
+      period: firstItem.period || '',
+    }
+    ocrMessage.value = reply.items.length > 1
+      ? `OCR识别成功，已回填第1条（共${reply.items.length}条）`
+      : 'OCR识别成功，已回填明细'
+  } catch (err: any) {
+    ocrError.value = err.message || 'OCR识别失败'
+  } finally {
+    input.value = ''
+  }
 }
 </script>
 
@@ -244,6 +289,28 @@ function statusClass(s: string) {
             </button>
           </div>
           <div class="px-6 py-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div v-if="!isEditing" class="md:col-span-2 rounded-xl border border-dashed border-[#d2d2d7] bg-[#fafafc] p-4">
+              <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p class="text-sm font-medium text-[#1d1d1f]">OCR识别</p>
+                  <p class="mt-0.5 text-xs text-[#86868b]">上传还款明细截图，自动回填当前明细</p>
+                </div>
+                <label class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-medium text-[#1d1d1f] border border-[#e8e8ed] transition-colors hover:bg-[#f5f5f7]">
+                  <svg class="w-4 h-4 text-[#0071e3]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 4v12m0-12l-4 4m4-4l4 4"/></svg>
+                  {{ ocrLoading ? '识别中...' : '选择图片' }}
+                  <input
+                    data-testid="debt-detail-ocr-file"
+                    type="file"
+                    accept="image/*"
+                    class="sr-only"
+                    :disabled="ocrLoading"
+                    @change="handleOcrFileChange"
+                  />
+                </label>
+              </div>
+              <p v-if="ocrMessage" class="mt-3 text-xs text-green-700">{{ ocrMessage }}</p>
+              <p v-if="ocrError" class="mt-3 text-xs text-[#ff3b30]">{{ ocrError }}</p>
+            </div>
             <div><label class="block mb-1.5 text-sm font-medium text-[#1d1d1f]">入账日期</label><input v-model="formData.postingDate" type="date" class="w-full px-4 py-2.5 bg-[#fafafc] border border-[#e8e8ed] rounded-xl text-[15px] text-[#1d1d1f] outline-none transition-all focus:border-[#0071e3] focus:bg-white focus:ring-2 focus:ring-[#0071e3]/10"/></div>
             <div><label class="block mb-1.5 text-sm font-medium text-[#1d1d1f]">期数</label><input v-model="formData.period" type="number" placeholder="请输入期数" class="w-full px-4 py-2.5 bg-[#fafafc] border border-[#e8e8ed] rounded-xl text-[15px] text-[#1d1d1f] outline-none transition-all placeholder:text-[#c7c7cc] focus:border-[#0071e3] focus:bg-white focus:ring-2 focus:ring-[#0071e3]/10"/></div>
             <div><label class="block mb-1.5 text-sm font-medium text-[#1d1d1f]">本金</label><input v-model="formData.principal" type="number" step="0.01" placeholder="请输入本金" class="w-full px-4 py-2.5 bg-[#fafafc] border border-[#e8e8ed] rounded-xl text-[15px] text-[#1d1d1f] outline-none transition-all placeholder:text-[#c7c7cc] focus:border-[#0071e3] focus:bg-white focus:ring-2 focus:ring-[#0071e3]/10"/></div>
