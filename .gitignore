@@ -41,7 +41,7 @@ blog/cmd/blog/wire_gen.go
 
 # Local environment secrets
 blog/.env
-blog
+blog/blog
 .claude/worktrees
 .planning
 images

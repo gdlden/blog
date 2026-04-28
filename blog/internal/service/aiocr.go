@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"strings"
 
 	pb "blog/api/ocr/v1"
 
@@ -12,6 +14,8 @@ import (
 
 const defaultOCRModel = "doubao-seed-1-6-251015"
 const defaultArkBaseURL = "https://ark.cn-beijing.volces.com/api/v3"
+const defaultOCRProvider = "ark"
+const defaultPaddleOCRCommand = "paddleocr"
 
 type VisionTextRecognizer interface {
 	RecognizeText(ctx context.Context, imageURL string, prompt string) (string, error)
@@ -71,12 +75,12 @@ type AiocrService struct {
 }
 
 func NewAiocrService() *AiocrService {
-	return NewAiocrServiceWithRecognizer(NewArkVisionTextRecognizer(""))
+	return NewAiocrServiceWithRecognizer(NewVisionTextRecognizerFromEnv())
 }
 
 func NewAiocrServiceWithRecognizer(recognizer VisionTextRecognizer) *AiocrService {
 	if recognizer == nil {
-		recognizer = NewArkVisionTextRecognizer("")
+		recognizer = NewVisionTextRecognizerFromEnv()
 	}
 	return &AiocrService{recognizer: recognizer}
 }
@@ -87,4 +91,27 @@ func (s *AiocrService) Ocr(ctx context.Context, req *pb.OcrRequest) (*pb.OcrRepl
 		return nil, fmt.Errorf("ocr failed: %w", err)
 	}
 	return &pb.OcrReply{Res: res}, nil
+}
+
+func NewVisionTextRecognizerFromEnv() VisionTextRecognizer {
+	provider := strings.TrimSpace(os.Getenv("OCR_PROVIDER"))
+	if provider == "" {
+		provider = defaultOCRProvider
+	}
+	return newVisionTextRecognizer(provider)
+}
+
+func newVisionTextRecognizer(provider string) VisionTextRecognizer {
+	switch strings.ToLower(strings.TrimSpace(provider)) {
+	case "paddle", "paddleocr":
+		command := strings.TrimSpace(os.Getenv("PADDLE_OCR_COMMAND"))
+		if command == "" {
+			command = defaultPaddleOCRCommand
+		}
+		return NewPaddleOCRTextRecognizer(command)
+	case "ark", "":
+		return NewArkVisionTextRecognizer("")
+	default:
+		return NewArkVisionTextRecognizer("")
+	}
 }
