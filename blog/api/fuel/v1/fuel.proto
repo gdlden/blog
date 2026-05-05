@@ -1,0 +1,171 @@
+syntax = "proto3";
+
+package api.fuel.v1;
+
+option go_package = "blog/api/fuel/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.fuel.v1";
+
+import "google/api/annotations.proto";
+
+service Fuel {
+	rpc CreateVehicle (FuelVehicle) returns (SaveFuelReply) {
+		option (google.api.http) = {
+			post: "/fuel/vehicle/save/v1"
+			body: "*"
+		};
+	};
+	rpc UpdateVehicle (FuelVehicle) returns (SaveFuelReply) {
+		option (google.api.http) = {
+			post: "/fuel/vehicle/update/v1"
+			body: "*"
+		};
+	};
+	rpc DeleteVehicle (DeleteFuelVehicleRequest) returns (DeleteFuelReply) {
+		option (google.api.http) = {
+			post: "/fuel/vehicle/delete/v1"
+			body: "*"
+		};
+	};
+	rpc GetVehicle (GetFuelVehicleRequest) returns (FuelVehicle) {
+		option (google.api.http) = {
+			get: "/fuel/vehicle/get/v1"
+		};
+	};
+	rpc ListVehicles (ListFuelVehiclesRequest) returns (ListFuelVehiclesReply) {
+		option (google.api.http) = {
+			get: "/fuel/vehicle/page/v1"
+		};
+	};
+	rpc CreateRefuelRecord (RefuelRecord) returns (SaveFuelReply) {
+		option (google.api.http) = {
+			post: "/fuel/refuel/save/v1"
+			body: "*"
+		};
+	};
+	rpc UpdateRefuelRecord (RefuelRecord) returns (SaveFuelReply) {
+		option (google.api.http) = {
+			post: "/fuel/refuel/update/v1"
+			body: "*"
+		};
+	};
+	rpc DeleteRefuelRecord (DeleteRefuelRecordRequest) returns (DeleteFuelReply) {
+		option (google.api.http) = {
+			post: "/fuel/refuel/delete/v1"
+			body: "*"
+		};
+	};
+	rpc GetRefuelRecord (GetRefuelRecordRequest) returns (RefuelRecord) {
+		option (google.api.http) = {
+			get: "/fuel/refuel/get/v1"
+		};
+	};
+	rpc ListRefuelRecords (ListRefuelRecordsRequest) returns (ListRefuelRecordsReply) {
+		option (google.api.http) = {
+			get: "/fuel/refuel/page/v1"
+		};
+	};
+	rpc GetFuelStats (GetFuelStatsRequest) returns (FuelStats) {
+		option (google.api.http) = {
+			get: "/fuel/stats/v1"
+		};
+	};
+}
+
+message SaveFuelReply {
+	string id = 1;
+	string message = 2;
+}
+
+message DeleteFuelReply {
+	bool flag = 1;
+}
+
+message FuelVehicle {
+	int64 id = 1;
+	string name = 2;
+	string plateNo = 3;
+	string brand = 4;
+	string model = 5;
+	string tankCapacity = 6;
+	string remark = 7;
+}
+
+message DeleteFuelVehicleRequest {
+	string id = 1;
+}
+
+message GetFuelVehicleRequest {
+	string id = 1;
+}
+
+message ListFuelVehiclesRequest {
+	int64 page = 1;
+	int64 pageSize = 2;
+	string name = 3;
+	string plateNo = 4;
+}
+
+message ListFuelVehiclesReply {
+	int64 page = 1;
+	int64 total = 2;
+	repeated FuelVehicle list = 3;
+}
+
+message RefuelRecord {
+	int64 id = 1;
+	int64 vehicleId = 2;
+	string refuelTime = 3;
+	string odometer = 4;
+	string volume = 5;
+	string unitPrice = 6;
+	string amount = 7;
+	string station = 8;
+	bool isFull = 9;
+	string remark = 10;
+	string intervalConsumption = 11;
+}
+
+message DeleteRefuelRecordRequest {
+	string id = 1;
+}
+
+message GetRefuelRecordRequest {
+	string id = 1;
+}
+
+message ListRefuelRecordsRequest {
+	int64 page = 1;
+	int64 pageSize = 2;
+	string vehicleId = 3;
+}
+
+message ListRefuelRecordsReply {
+	int64 page = 1;
+	int64 total = 2;
+	repeated RefuelRecord list = 3;
+}
+
+message GetFuelStatsRequest {
+	string vehicleId = 1;
+}
+
+message FuelStats {
+	int64 vehicleId = 1;
+	string totalDistance = 2;
+	string totalVolume = 3;
+	string totalAmount = 4;
+	string averageConsumption = 5;
+	string latestConsumption = 6;
+	string costPerKm = 7;
+	repeated FuelTrendPoint trend = 8;
+}
+
+message FuelTrendPoint {
+	string refuelTime = 1;
+	string odometer = 2;
+	string consumption = 3;
+	string distance = 4;
+	string volume = 5;
+	string refuelRecordId = 6;
+}

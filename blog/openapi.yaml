@@ -253,6 +253,219 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/api.debt.v1.CreateDebtDetailReply'
+    /fuel/refuel/delete/v1:
+        post:
+            tags:
+                - Fuel
+            operationId: Fuel_DeleteRefuelRecord
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.fuel.v1.DeleteRefuelRecordRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.fuel.v1.DeleteFuelReply'
+    /fuel/refuel/get/v1:
+        get:
+            tags:
+                - Fuel
+            operationId: Fuel_GetRefuelRecord
+            parameters:
+                - name: id
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.fuel.v1.RefuelRecord'
+    /fuel/refuel/page/v1:
+        get:
+            tags:
+                - Fuel
+            operationId: Fuel_ListRefuelRecords
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: string
+                - name: vehicleId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.fuel.v1.ListRefuelRecordsReply'
+    /fuel/refuel/save/v1:
+        post:
+            tags:
+                - Fuel
+            operationId: Fuel_CreateRefuelRecord
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.fuel.v1.RefuelRecord'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.fuel.v1.SaveFuelReply'
+    /fuel/refuel/update/v1:
+        post:
+            tags:
+                - Fuel
+            operationId: Fuel_UpdateRefuelRecord
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.fuel.v1.RefuelRecord'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.fuel.v1.SaveFuelReply'
+    /fuel/stats/v1:
+        get:
+            tags:
+                - Fuel
+            operationId: Fuel_GetFuelStats
+            parameters:
+                - name: vehicleId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.fuel.v1.FuelStats'
+    /fuel/vehicle/delete/v1:
+        post:
+            tags:
+                - Fuel
+            operationId: Fuel_DeleteVehicle
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.fuel.v1.DeleteFuelVehicleRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.fuel.v1.DeleteFuelReply'
+    /fuel/vehicle/get/v1:
+        get:
+            tags:
+                - Fuel
+            operationId: Fuel_GetVehicle
+            parameters:
+                - name: id
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.fuel.v1.FuelVehicle'
+    /fuel/vehicle/page/v1:
+        get:
+            tags:
+                - Fuel
+            operationId: Fuel_ListVehicles
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: string
+                - name: name
+                  in: query
+                  schema:
+                    type: string
+                - name: plateNo
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.fuel.v1.ListFuelVehiclesReply'
+    /fuel/vehicle/save/v1:
+        post:
+            tags:
+                - Fuel
+            operationId: Fuel_CreateVehicle
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.fuel.v1.FuelVehicle'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.fuel.v1.SaveFuelReply'
+    /fuel/vehicle/update/v1:
+        post:
+            tags:
+                - Fuel
+            operationId: Fuel_UpdateVehicle
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.fuel.v1.FuelVehicle'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.fuel.v1.SaveFuelReply'
     /helloworld/{name}:
         get:
             tags:
@@ -733,6 +946,128 @@ components:
                     type: string
                 id:
                     type: string
+        api.fuel.v1.DeleteFuelReply:
+            type: object
+            properties:
+                flag:
+                    type: boolean
+        api.fuel.v1.DeleteFuelVehicleRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+        api.fuel.v1.DeleteRefuelRecordRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+        api.fuel.v1.FuelStats:
+            type: object
+            properties:
+                vehicleId:
+                    type: string
+                totalDistance:
+                    type: string
+                totalVolume:
+                    type: string
+                totalAmount:
+                    type: string
+                averageConsumption:
+                    type: string
+                latestConsumption:
+                    type: string
+                costPerKm:
+                    type: string
+                trend:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.fuel.v1.FuelTrendPoint'
+        api.fuel.v1.FuelTrendPoint:
+            type: object
+            properties:
+                refuelTime:
+                    type: string
+                odometer:
+                    type: string
+                consumption:
+                    type: string
+                distance:
+                    type: string
+                volume:
+                    type: string
+                refuelRecordId:
+                    type: string
+        api.fuel.v1.FuelVehicle:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                plateNo:
+                    type: string
+                brand:
+                    type: string
+                model:
+                    type: string
+                tankCapacity:
+                    type: string
+                remark:
+                    type: string
+        api.fuel.v1.ListFuelVehiclesReply:
+            type: object
+            properties:
+                page:
+                    type: string
+                total:
+                    type: string
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.fuel.v1.FuelVehicle'
+        api.fuel.v1.ListRefuelRecordsReply:
+            type: object
+            properties:
+                page:
+                    type: string
+                total:
+                    type: string
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.fuel.v1.RefuelRecord'
+        api.fuel.v1.RefuelRecord:
+            type: object
+            properties:
+                id:
+                    type: string
+                vehicleId:
+                    type: string
+                refuelTime:
+                    type: string
+                odometer:
+                    type: string
+                volume:
+                    type: string
+                unitPrice:
+                    type: string
+                amount:
+                    type: string
+                station:
+                    type: string
+                isFull:
+                    type: boolean
+                remark:
+                    type: string
+                intervalConsumption:
+                    type: string
+        api.fuel.v1.SaveFuelReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                message:
+                    type: string
         api.realName.CreateRealNameReply:
             type: object
             properties:
@@ -1053,6 +1388,7 @@ tags:
     - name: Debt
     - name: DebtDetail
     - name: File
+    - name: Fuel
     - name: Greeter
       description: The greeting service definition.
     - name: Post

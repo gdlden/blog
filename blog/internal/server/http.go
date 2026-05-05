@@ -2,6 +2,7 @@ package server
 
 import (
 	debtV1 "blog/api/debt/v1"
+	fuelV1 "blog/api/fuel/v1"
 	v1 "blog/api/helloworld/v1"
 	ocrv1 "blog/api/ocr/v1"
 	postV1 "blog/api/post/v1"
@@ -29,6 +30,7 @@ func NewHTTPServer(c *conf.Server, greeter *service.GreeterService,
 	priceService *service.PriceService,
 	debtService *service.DebtService,
 	detailService *service.DebtDetailService,
+	fuelService *service.FuelService,
 	logger log.Logger) *http.Server {
 	var opts = []http.ServerOption{
 		http.Middleware(
@@ -61,6 +63,7 @@ func NewHTTPServer(c *conf.Server, greeter *service.GreeterService,
 	priceV1.RegisterPriceHTTPServer(srv, priceService)
 	debtV1.RegisterDebtHTTPServer(srv, debtService)
 	debtV1.RegisterDebtDetailHTTPServer(srv, detailService)
+	fuelV1.RegisterFuelHTTPServer(srv, fuelService)
 	srv.Route("/").POST("/debtDetail/ocr/v1", detailService.RecognizeDebtDetailOCRHTTP)
 	return srv
 }

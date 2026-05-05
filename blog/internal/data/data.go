@@ -12,7 +12,7 @@ import (
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewGreeterRepo, NewPostRepo, NewUserRepo, NewDb, NewPriceRepo, NewDebtRepo, NewDebtDetailRepo)
+var ProviderSet = wire.NewSet(NewData, NewGreeterRepo, NewPostRepo, NewUserRepo, NewDb, NewPriceRepo, NewDebtRepo, NewDebtDetailRepo, NewFuelVehicleRepo, NewRefuelRecordRepo)
 
 // Data .
 type Data struct {
@@ -29,6 +29,8 @@ func NewDb(c *conf.Data) *gorm.DB {
 	models := []interface{}{
 		&Debt{},
 		&DebtDetail{},
+		&FuelVehicle{},
+		&RefuelRecord{},
 		&Post{},
 		&Price{},
 		&model.User{},

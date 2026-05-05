@@ -58,6 +58,30 @@ func newDebtDetailOCRTestService(recognizer VisionTextRecognizer) *DebtDetailSer
 	return NewDebtDetailServiceWithRecognizer(biz.NewDeptUseCase(noopDebtDetailRepo{}, log.DefaultLogger), recognizer)
 }
 
+func TestNewDebtDetailOCRRecognizerFromEnv_DefaultsToPaddleOCR(t *testing.T) {
+	t.Setenv("OCR_PROVIDER", "")
+	t.Setenv("PADDLE_OCR_COMMAND", "local-paddleocr")
+
+	recognizer := NewDebtDetailOCRRecognizerFromEnv()
+
+	fallback, ok := recognizer.(*FallbackVisionTextRecognizer)
+	require.True(t, ok)
+	paddle, ok := fallback.primary.(*PaddleOCRTextRecognizer)
+	require.True(t, ok)
+	assert.Equal(t, "local-paddleocr", paddle.command)
+	_, ok = fallback.secondary.(*ArkVisionTextRecognizer)
+	assert.True(t, ok)
+}
+
+func TestNewDebtDetailOCRRecognizerFromEnv_ExplicitArk(t *testing.T) {
+	t.Setenv("OCR_PROVIDER", "ark")
+
+	recognizer := NewDebtDetailOCRRecognizerFromEnv()
+
+	_, ok := recognizer.(*ArkVisionTextRecognizer)
+	assert.True(t, ok)
+}
+
 type memoryMultipartFile struct {
 	*bytes.Reader
 }

@@ -27,7 +27,7 @@ describe('AppLayout.vue', () => {
     vi.restoreAllMocks()
   })
 
-  it('renders sidebar with "博文" and "债务" links', async () => {
+  it('renders sidebar with "博文", "债务" and "油耗" links', async () => {
     const { default: AppLayout } = await import('@/components/AppLayout.vue')
     const wrapper = mount(AppLayout, {
       global: {
@@ -37,6 +37,7 @@ describe('AppLayout.vue', () => {
 
     expect(wrapper.text()).toContain('博文')
     expect(wrapper.text()).toContain('债务')
+    expect(wrapper.text()).toContain('油耗')
   })
 
   it('renders logout button with text "退出"', async () => {
@@ -58,7 +59,7 @@ describe('AppLayout.vue', () => {
       },
     })
 
-    const logoutButton = wrapper.findAll('button').find(b => b.text() === '退出')
+    const logoutButton = wrapper.findAll('button').find((b) => b.text() === '退出')
     expect(logoutButton).toBeDefined()
     await logoutButton!.trigger('click')
 
@@ -82,8 +83,8 @@ describe('AppLayout.vue', () => {
     const links = wrapper.findAllComponents(RouterLinkStub)
     expect(links.length).toBeGreaterThanOrEqual(2)
 
-    const blogLink = links.find(l => l.props().to === '/blog' && l.classes().includes('relative'))
-    const debtLink = links.find(l => l.props().to === '/debt' && l.classes().includes('relative'))
+    const blogLink = links.find((l) => l.props().to === '/blog' && l.classes().includes('relative'))
+    const debtLink = links.find((l) => l.props().to === '/debt' && l.classes().includes('relative'))
 
     expect(blogLink!.classes()).toContain('bg-white/15')
     expect(debtLink!.classes()).not.toContain('bg-white/15')

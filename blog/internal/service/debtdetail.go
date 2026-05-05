@@ -17,12 +17,12 @@ type DebtDetailService struct {
 }
 
 func NewDebtDetailService(usecase *biz.DebtDetailUsecase) *DebtDetailService {
-	return NewDebtDetailServiceWithRecognizer(usecase, NewVisionTextRecognizerFromEnv())
+	return NewDebtDetailServiceWithRecognizer(usecase, NewDebtDetailOCRRecognizerFromEnv())
 }
 
 func NewDebtDetailServiceWithRecognizer(usecase *biz.DebtDetailUsecase, recognizer VisionTextRecognizer) *DebtDetailService {
 	if recognizer == nil {
-		recognizer = NewVisionTextRecognizerFromEnv()
+		recognizer = NewDebtDetailOCRRecognizerFromEnv()
 	}
 	return &DebtDetailService{
 		ddu:           usecase,

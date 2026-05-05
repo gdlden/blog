@@ -15,10 +15,38 @@ import (
 const defaultOCRModel = "doubao-seed-1-6-251015"
 const defaultArkBaseURL = "https://ark.cn-beijing.volces.com/api/v3"
 const defaultOCRProvider = "ark"
+const defaultDebtDetailOCRProvider = "paddle"
 const defaultPaddleOCRCommand = "paddleocr"
 
 type VisionTextRecognizer interface {
 	RecognizeText(ctx context.Context, imageURL string, prompt string) (string, error)
+}
+
+type FallbackVisionTextRecognizer struct {
+	primary   VisionTextRecognizer
+	secondary VisionTextRecognizer
+}
+
+func NewFallbackVisionTextRecognizer(primary VisionTextRecognizer, secondary VisionTextRecognizer) *FallbackVisionTextRecognizer {
+	return &FallbackVisionTextRecognizer{
+		primary:   primary,
+		secondary: secondary,
+	}
+}
+
+func (r *FallbackVisionTextRecognizer) RecognizeText(ctx context.Context, imageURL string, prompt string) (string, error) {
+	if r == nil {
+		return "", errors.New("ocr recognizer unavailable")
+	}
+	if r.primary != nil {
+		if result, err := r.primary.RecognizeText(ctx, imageURL, prompt); err == nil {
+			return result, nil
+		}
+	}
+	if r.secondary != nil {
+		return r.secondary.RecognizeText(ctx, imageURL, prompt)
+	}
+	return "", errors.New("ocr recognizer unavailable")
 }
 
 type ArkVisionTextRecognizer struct {
@@ -97,6 +125,17 @@ func NewVisionTextRecognizerFromEnv() VisionTextRecognizer {
 	provider := strings.TrimSpace(os.Getenv("OCR_PROVIDER"))
 	if provider == "" {
 		provider = defaultOCRProvider
+	}
+	return newVisionTextRecognizer(provider)
+}
+
+func NewDebtDetailOCRRecognizerFromEnv() VisionTextRecognizer {
+	provider := strings.TrimSpace(os.Getenv("OCR_PROVIDER"))
+	if provider == "" {
+		return NewFallbackVisionTextRecognizer(
+			newVisionTextRecognizer(defaultDebtDetailOCRProvider),
+			newVisionTextRecognizer("ark"),
+		)
 	}
 	return newVisionTextRecognizer(provider)
 }

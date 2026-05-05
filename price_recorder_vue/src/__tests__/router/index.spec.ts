@@ -41,6 +41,20 @@ describe('router guards', () => {
     expect(router.currentRoute.value.path).toBe('/blog')
   })
 
+  it('allows authenticated user to access fuel routes', async () => {
+    const store = useUserStore()
+    store.setUserInfo({ token: 'test', userId: 1 })
+
+    await router.push('/fuel')
+    await router.isReady()
+    expect(router.currentRoute.value.path).toBe('/fuel')
+
+    await router.push('/fuel/42')
+    await router.isReady()
+    expect(router.currentRoute.value.name).toBe('fuelDetail')
+    expect(router.currentRoute.value.params.vehicleId).toBe('42')
+  })
+
   it('initializes store from localStorage when isAuthenticated is false', async () => {
     const stored = { token: 'stored-token', userId: 2 }
     localStorage.setItem('user', JSON.stringify(stored))
