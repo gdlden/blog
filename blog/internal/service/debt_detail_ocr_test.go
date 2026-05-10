@@ -58,19 +58,20 @@ func newDebtDetailOCRTestService(recognizer VisionTextRecognizer) *DebtDetailSer
 	return NewDebtDetailServiceWithRecognizer(biz.NewDeptUseCase(noopDebtDetailRepo{}, log.DefaultLogger), recognizer)
 }
 
-func TestNewDebtDetailOCRRecognizerFromEnv_DefaultsToPaddleOCR(t *testing.T) {
+func TestNewDebtDetailOCRRecognizerFromEnv_DefaultsToKimiThenPaddleOCR(t *testing.T) {
 	t.Setenv("OCR_PROVIDER", "")
+	t.Setenv("KIMI_API_KEY", "kimi-test-key")
 	t.Setenv("PADDLE_OCR_COMMAND", "local-paddleocr")
 
 	recognizer := NewDebtDetailOCRRecognizerFromEnv()
 
 	fallback, ok := recognizer.(*FallbackVisionTextRecognizer)
 	require.True(t, ok)
-	paddle, ok := fallback.primary.(*PaddleOCRTextRecognizer)
+	_, ok = fallback.primary.(*KimiVisionTextRecognizer)
+	require.True(t, ok)
+	paddle, ok := fallback.secondary.(*PaddleOCRTextRecognizer)
 	require.True(t, ok)
 	assert.Equal(t, "local-paddleocr", paddle.command)
-	_, ok = fallback.secondary.(*ArkVisionTextRecognizer)
-	assert.True(t, ok)
 }
 
 func TestNewDebtDetailOCRRecognizerFromEnv_ExplicitArk(t *testing.T) {

@@ -14,8 +14,11 @@ import (
 
 const defaultOCRModel = "doubao-seed-1-6-251015"
 const defaultArkBaseURL = "https://ark.cn-beijing.volces.com/api/v3"
-const defaultOCRProvider = "ark"
-const defaultDebtDetailOCRProvider = "paddle"
+const defaultKimiOCRModel = "kimi-k2.6"
+const defaultKimiBaseURL = "https://api.moonshot.ai/v1"
+const defaultOCRProvider = "kimi"
+const defaultDebtDetailOCRProvider = "kimi"
+const defaultDebtDetailFallbackOCRProvider = "paddle"
 const defaultPaddleOCRCommand = "paddleocr"
 
 type VisionTextRecognizer interface {
@@ -97,6 +100,57 @@ func (r *ArkVisionTextRecognizer) RecognizeText(ctx context.Context, imageURL st
 	return resp.Choices[0].Message.Content, nil
 }
 
+type KimiVisionTextRecognizer struct {
+	client *ark.Client
+	model  string
+}
+
+func NewKimiVisionTextRecognizer(apiKey string) *KimiVisionTextRecognizer {
+	config := ark.DefaultConfig(strings.TrimSpace(apiKey))
+	config.BaseURL = defaultKimiBaseURL
+	model := strings.TrimSpace(os.Getenv("KIMI_OCR_MODEL"))
+	if model == "" {
+		model = defaultKimiOCRModel
+	}
+	return &KimiVisionTextRecognizer{
+		client: ark.NewClientWithConfig(config),
+		model:  model,
+	}
+}
+
+func (r *KimiVisionTextRecognizer) RecognizeText(ctx context.Context, imageURL string, prompt string) (string, error) {
+	resp, err := r.client.CreateChatCompletion(
+		ctx,
+		ark.ChatCompletionRequest{
+			Model: r.model,
+			Messages: []ark.ChatCompletionMessage{
+				{
+					Role: ark.ChatMessageRoleUser,
+					MultiContent: []ark.ChatMessagePart{
+						{
+							Type: ark.ChatMessagePartTypeImageURL,
+							ImageURL: &ark.ChatMessageImageURL{
+								URL: imageURL,
+							},
+						},
+						{
+							Type: ark.ChatMessagePartTypeText,
+							Text: prompt,
+						},
+					},
+				},
+			},
+		},
+	)
+	if err != nil {
+		return "", err
+	}
+	if len(resp.Choices) == 0 {
+		return "", errors.New("ocr returned no choices")
+	}
+	return resp.Choices[0].Message.Content, nil
+}
+
 type AiocrService struct {
 	recognizer VisionTextRecognizer
 	pb.UnimplementedAiocrServer
@@ -134,7 +188,7 @@ func NewDebtDetailOCRRecognizerFromEnv() VisionTextRecognizer {
 	if provider == "" {
 		return NewFallbackVisionTextRecognizer(
 			newVisionTextRecognizer(defaultDebtDetailOCRProvider),
-			newVisionTextRecognizer("ark"),
+			newVisionTextRecognizer(defaultDebtDetailFallbackOCRProvider),
 		)
 	}
 	return newVisionTextRecognizer(provider)
@@ -148,6 +202,12 @@ func newVisionTextRecognizer(provider string) VisionTextRecognizer {
 			command = defaultPaddleOCRCommand
 		}
 		return NewPaddleOCRTextRecognizer(command)
+	case "kimi", "moonshot":
+		apiKey := strings.TrimSpace(os.Getenv("KIMI_API_KEY"))
+		if apiKey == "" {
+			apiKey = strings.TrimSpace(os.Getenv("MOONSHOT_API_KEY"))
+		}
+		return NewKimiVisionTextRecognizer(apiKey)
 	case "ark", "":
 		return NewArkVisionTextRecognizer("")
 	default:

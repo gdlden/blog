@@ -20,12 +20,13 @@ func (r *recordingVisionTextRecognizer) RecognizeText(ctx context.Context, image
 	return r.result, r.err
 }
 
-func TestNewVisionTextRecognizerFromEnv_DefaultsToArk(t *testing.T) {
+func TestNewVisionTextRecognizerFromEnv_DefaultsToKimi(t *testing.T) {
 	t.Setenv("OCR_PROVIDER", "")
+	t.Setenv("KIMI_API_KEY", "kimi-test-key")
 
 	recognizer := NewVisionTextRecognizerFromEnv()
 
-	_, ok := recognizer.(*ArkVisionTextRecognizer)
+	_, ok := recognizer.(*KimiVisionTextRecognizer)
 	assert.True(t, ok)
 }
 
@@ -47,6 +48,28 @@ func TestNewVisionTextRecognizerFromEnv_SelectsPaddle(t *testing.T) {
 	paddle, ok := recognizer.(*PaddleOCRTextRecognizer)
 	require.True(t, ok)
 	assert.Equal(t, "custom-paddleocr", paddle.command)
+}
+
+func TestNewVisionTextRecognizerFromEnv_SelectsKimi(t *testing.T) {
+	t.Setenv("OCR_PROVIDER", "kimi")
+	t.Setenv("KIMI_API_KEY", "kimi-test-key")
+	t.Setenv("KIMI_OCR_MODEL", "kimi-test-model")
+
+	recognizer := NewVisionTextRecognizerFromEnv()
+
+	kimi, ok := recognizer.(*KimiVisionTextRecognizer)
+	require.True(t, ok)
+	assert.Equal(t, "kimi-test-model", kimi.model)
+}
+
+func TestNewVisionTextRecognizerFromEnv_SelectsMoonshotAlias(t *testing.T) {
+	t.Setenv("OCR_PROVIDER", "moonshot")
+	t.Setenv("MOONSHOT_API_KEY", "moonshot-test-key")
+
+	recognizer := NewVisionTextRecognizerFromEnv()
+
+	_, ok := recognizer.(*KimiVisionTextRecognizer)
+	assert.True(t, ok)
 }
 
 func TestFallbackVisionTextRecognizer_ReturnsPrimaryResult(t *testing.T) {
