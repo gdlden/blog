@@ -4,25 +4,17 @@ import { useUserStore } from "@/stores/userStore";
 const baseURL = "/api";
 const instance = axios.create({ baseURL })
 instance.interceptors.response.use(
-  res => {
-    // console.log(res.data)
-    if (!res.data.code || res.data.code === "200") {
-      return res.data;
+  (res) => {
+    const body = res.data as { code?: number; message?: string; data?: any } | undefined;
+    if (!body || body.code === 200) {
+      return body?.data;
     }
-    // console.log(JSON.stringify(res.data))
-    return Promise.reject(res.data)
+    return Promise.reject(new Error(body.message || "请求失败"));
   },
-  err =>{
-
-    if(err.response) {
-      console.log(err.response.status)
-      console.log(err.response.data)
-      // console.log(err.response.headers)
-      alert(err.response.data.message)
-    } else {
-      console.log(err+"w22")
-    }
-    return Promise.reject(err);
+  (err) => {
+    const msg = err.response?.data?.message || err.message || "网络错误";
+    alert(msg);
+    return Promise.reject(new Error(msg));
   }
 )
 instance.interceptors.request.use(

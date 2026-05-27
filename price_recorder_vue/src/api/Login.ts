@@ -17,13 +17,6 @@ export let user = <userReq>{
   password: "",
 }
 
-export async function login(data: userReq): Promise<LoginResponse | undefined> {
-  return await instance.post("/user/login/v1", data)
-    .then(res => {
-      return res as unknown as LoginResponse
-    })
-    .catch((err) => {
-      console.log(err)
-      return undefined
-    })
+export async function login(data: userReq): Promise<LoginResponse> {
+  return await instance.post("/user/login/v1", data) as LoginResponse;
 }

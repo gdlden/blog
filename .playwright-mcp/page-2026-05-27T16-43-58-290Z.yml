@@ -1,0 +1,18 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - heading "登录" [level=1] [ref=e5]
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - generic [ref=e8]: 用户名
+        - textbox [ref=e9]
+      - generic [ref=e10]:
+        - generic [ref=e11]: 密码
+        - textbox [ref=e12]
+      - generic [ref=e13]:
+        - button "重置" [ref=e14]
+        - button "登录" [ref=e15]
+  - generic [ref=e16]:
+    - generic "Toggle devtools panel" [ref=e17] [cursor=pointer]:
+      - img [ref=e18]
+    - generic "Toggle Component Inspector" [ref=e23] [cursor=pointer]:
+      - img [ref=e24]

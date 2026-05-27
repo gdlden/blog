@@ -45,6 +45,8 @@ func NewHTTPServer(c *conf.Server, greeter *service.GreeterService,
 				// Path("/post/add/v1").
 				Match(NewWhiteListMatcher()).Build(),
 		),
+		http.ResponseEncoder(CustomResponseEncoder),
+		http.ErrorEncoder(CustomErrorEncoder),
 	}
 	if c.Http.Network != "" {
 		opts = append(opts, http.Network(c.Http.Network))
