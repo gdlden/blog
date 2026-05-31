@@ -34,6 +34,7 @@ func NewHTTPServer(c *conf.Server, greeter *service.GreeterService,
 	logger log.Logger) *http.Server {
 	var opts = []http.ServerOption{
 		http.Middleware(
+			corsMiddleware(),
 			recovery.Recovery(),
 			tracing.Server(),
 			logging.Server(logger),
