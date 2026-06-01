@@ -40,5 +40,17 @@ func (s *PriceService) GetPrice(ctx context.Context, req *pb.GetPriceRequest) (*
 	return &pb.GetPriceReply{}, nil
 }
 func (s *PriceService) ListPrice(ctx context.Context, req *pb.ListPriceRequest) (*pb.ListPriceReply, error) {
-	return &pb.ListPriceReply{}, nil
+	prices, err := s.pc.ListAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	list := make([]*pb.PriceInfo, 0, len(prices))
+	for _, p := range prices {
+		list = append(list, &pb.PriceInfo{
+			Name:      p.Name,
+			Price:     p.Price,
+			PriceDate: p.PriceDate,
+		})
+	}
+	return &pb.ListPriceReply{List: list}, nil
 }

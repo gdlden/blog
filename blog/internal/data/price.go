@@ -65,5 +65,18 @@ func (r *priceRepo) ListByHello(ctx context.Context, str string) ([]*biz.Price, 
 	return make([]*biz.Price, 0), nil
 }
 func (r *priceRepo) ListAll(ctx context.Context) ([]*biz.Price, error) {
-	return make([]*biz.Price, 0), nil
+	var prices []Price
+	result := r.data.db.Order("created_at DESC").Find(&prices)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	list := make([]*biz.Price, 0, len(prices))
+	for _, p := range prices {
+		list = append(list, &biz.Price{
+			Name:      p.Name,
+			Price:     p.Price,
+			PriceDate: p.PriceDate,
+		})
+	}
+	return list, nil
 }

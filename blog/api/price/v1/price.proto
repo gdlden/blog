@@ -41,5 +41,14 @@ message DeletePriceReply {}
 message GetPriceRequest {}
 message GetPriceReply {}
 
+message PriceInfo {
+  uint32 id = 1;
+  string name = 2;
+  string price = 3;
+  string priceDate = 4;
+}
+
 message ListPriceRequest {}
-message ListPriceReply {}
+message ListPriceReply {
+  repeated PriceInfo list = 1;
+}

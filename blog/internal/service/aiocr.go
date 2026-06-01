@@ -178,7 +178,7 @@ func (s *AiocrService) Ocr(ctx context.Context, req *pb.OcrRequest) (*pb.OcrRepl
 func NewVisionTextRecognizerFromEnv() VisionTextRecognizer {
 	provider := strings.TrimSpace(os.Getenv("OCR_PROVIDER"))
 	if provider == "" {
-		provider = defaultOCRProvider
+		provider = "paddle"
 	}
 	return newVisionTextRecognizer(provider)
 }

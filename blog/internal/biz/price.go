@@ -43,3 +43,8 @@ func (uc *PriceUscase) CreatePrice(ctx context.Context, g *Price) uint {
 	// uc.log.WithContext(ctx).Infof("CreateGreeter: %v", )
 	return uc.repo.Save(ctx, g)
 }
+
+// ListAll returns all price records.
+func (uc *PriceUscase) ListAll(ctx context.Context) ([]*Price, error) {
+	return uc.repo.ListAll(ctx)
+}

@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(gsd-help)",
+      "Bash(claude mcp *)",
+      "Bash(claude plugins *)",
+      "Bash(claude hooks *)",
+      "WebSearch",
+      "Skill(update-config)",
+      "Bash(where jq *)",
+      "Bash(npx jq *)",
+      "Bash(powershell *)",
+      "Bash(go fmt *)"
+    ]
+  }
+}
