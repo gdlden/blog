@@ -20,13 +20,22 @@ func (r *recordingVisionTextRecognizer) RecognizeText(ctx context.Context, image
 	return r.result, r.err
 }
 
-func TestNewVisionTextRecognizerFromEnv_DefaultsToKimi(t *testing.T) {
+func TestNewVisionTextRecognizerFromEnv_DefaultsToPaddle(t *testing.T) {
+	t.Setenv("OCR_PROVIDER", "")
+
+	recognizer := NewVisionTextRecognizerFromEnv()
+
+	_, ok := recognizer.(*PaddleOCRTextRecognizer)
+	assert.True(t, ok)
+}
+
+func TestNewVisionTextRecognizerFromEnv_DefaultsToPaddleEvenWithKimiKey(t *testing.T) {
 	t.Setenv("OCR_PROVIDER", "")
 	t.Setenv("KIMI_API_KEY", "kimi-test-key")
 
 	recognizer := NewVisionTextRecognizerFromEnv()
 
-	_, ok := recognizer.(*KimiVisionTextRecognizer)
+	_, ok := recognizer.(*PaddleOCRTextRecognizer)
 	assert.True(t, ok)
 }
 

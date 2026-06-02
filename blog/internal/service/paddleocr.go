@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	_ "embed"
 	"encoding/base64"
 	"fmt"
 	"net/url"
@@ -10,6 +11,20 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
+)
+
+//go:embed paddleocr_helper.py
+var paddleOCRHelperScript string
+
+const defaultPaddleOCRPython = `C:\Users\hukss\anaconda3\python.exe`
+const envPaddleOCRPython = "PADDLE_OCR_PYTHON"
+const envPaddleOCRDisableEmbed = "PADDLE_OCR_DISABLE_EMBED"
+
+var (
+	extractScriptOnce   sync.Once
+	cachedScriptPath    string
+	cachedScriptPathErr error
 )
 
 var paddleOCRRecTextPattern = regexp.MustCompile(`['"]rec_text['"]\s*:\s*\[([^\]]*)\]`)
@@ -28,9 +43,48 @@ func NewPaddleOCRTextRecognizer(command string) *PaddleOCRTextRecognizer {
 	}
 	parts := strings.Fields(command)
 	if len(parts) == 1 && filepath.Base(parts[0]) == defaultPaddleOCRCommand {
-		parts = append(parts, "ocr", "-i")
+		pythonPath := strings.TrimSpace(os.Getenv(envPaddleOCRPython))
+		if pythonPath == "" {
+			pythonPath = defaultPaddleOCRPython
+		}
+		scriptPath, err := extractPaddleOCRHelper()
+		if err != nil {
+			// Fall back to -c if temp file extraction fails
+			return newPaddleOCRTextRecognizer(pythonPath, []string{"-c", paddleOCRHelperScript})
+		}
+		return newPaddleOCRTextRecognizer(pythonPath, []string{scriptPath})
 	}
 	return newPaddleOCRTextRecognizer(parts[0], parts[1:])
+}
+
+// extractPaddleOCRHelper writes the embedded Python script to a temp file (once, cached).
+func extractPaddleOCRHelper() (string, error) {
+	extractScriptOnce.Do(func() {
+		// Allow tests to override via env var (e.g., point to a custom script)
+		if path := strings.TrimSpace(os.Getenv(envPaddleOCRDisableEmbed)); path != "" {
+			cachedScriptPath = path
+			return
+		}
+		f, err := os.CreateTemp("", "paddleocr_helper-*.py")
+		if err != nil {
+			cachedScriptPathErr = err
+			return
+		}
+		path := f.Name()
+		if _, err := f.WriteString(paddleOCRHelperScript); err != nil {
+			_ = f.Close()
+			_ = os.Remove(path)
+			cachedScriptPathErr = err
+			return
+		}
+		if err := f.Close(); err != nil {
+			_ = os.Remove(path)
+			cachedScriptPathErr = err
+			return
+		}
+		cachedScriptPath = path
+	})
+	return cachedScriptPath, cachedScriptPathErr
 }
 
 func newPaddleOCRTextRecognizer(command string, args []string) *PaddleOCRTextRecognizer {
