@@ -51,12 +51,9 @@ func TestNewPaddleOCRTextRecognizer_DefaultCommandUsesCondaPython(t *testing.T) 
 	recognizer := NewPaddleOCRTextRecognizer("paddleocr")
 
 	assert.Equal(t, "custom-python.exe", recognizer.command)
-	require.Len(t, recognizer.args, 1)
-	// args[0] is the temp script path — verify it's a valid .py file
-	assert.True(t, strings.HasSuffix(recognizer.args[0], ".py"), "expected .py script path, got: %s", recognizer.args[0])
-	content, err := os.ReadFile(recognizer.args[0])
-	require.NoError(t, err)
-	assert.Contains(t, string(content), "PaddleOCR")
+	assert.Empty(t, recognizer.args, "sidecar mode has empty args")
+	// sidecar mode uses the embedded server script (not in args)
+	assert.True(t, recognizer.useSidecar, "paddleocr mode should use sidecar")
 }
 
 func TestNewPaddleOCRTextRecognizer_FallsBackToCustomCommand(t *testing.T) {
@@ -73,17 +70,19 @@ func TestNewPaddleOCRTextRecognizer_DefaultsPythonPathWhenEnvUnset(t *testing.T)
 	assert.Equal(t, defaultPaddleOCRPython, recognizer.command)
 }
 
-func TestNewPaddleOCRTextRecognizer_FallbackToCWhenTempFileFails(t *testing.T) {
+func TestNewPaddleOCRTextRecognizer_SidecarMode(t *testing.T) {
 	t.Setenv(envPaddleOCRPython, "custom-python.exe")
-	// Force extraction to fail by corrupting the cached state
-	// Reset by using a fresh sub-test (sync.Once persists within a process, but test order is undefined)
-	// Instead, just verify the args look right for temp file mode
 	recognizer := NewPaddleOCRTextRecognizer("paddleocr")
 
 	assert.Equal(t, "custom-python.exe", recognizer.command)
-	require.Len(t, recognizer.args, 1)
-	// Must be a temp file path, not "-c"
-	assert.NotEqual(t, "-c", recognizer.args[0], "should use temp file, not -c")
+	assert.Empty(t, recognizer.args)
+	assert.True(t, recognizer.useSidecar)
+
+	// Verify human-readable command default
+	t.Setenv(envPaddleOCRPython, "")
+	recognizer2 := NewPaddleOCRTextRecognizer("paddleocr")
+	assert.Equal(t, defaultPaddleOCRPython, recognizer2.command)
+	assert.True(t, recognizer2.useSidecar)
 }
 
 func TestPaddleOCRTextRecognizer_RecognizeTextReturnsCommandError(t *testing.T) {
