@@ -13,99 +13,23 @@ import (
 	ark "github.com/sashabaranov/go-openai"
 )
 
-const defaultOCRModel = "doubao-seed-1-6-251015"
-const defaultArkBaseURL = "https://ark.cn-beijing.volces.com/api/v3"
 const defaultKimiOCRModel = "kimi-k2.6"
 const defaultKimiBaseURL = "https://api.moonshot.ai/v1"
-const defaultOCRProvider = "kimi"
-const defaultDebtDetailOCRProvider = "kimi"
-const defaultDebtDetailFallbackOCRProvider = "paddle"
-const defaultPaddleOCRCommand = "paddleocr"
 
+// VisionTextRecognizer is the interface for OCR text recognition.
+// Currently only implemented by KimiVisionTextRecognizer.
 type VisionTextRecognizer interface {
 	RecognizeText(ctx context.Context, imageURL string, prompt string) (string, error)
 }
 
-type FallbackVisionTextRecognizer struct {
-	primary   VisionTextRecognizer
-	secondary VisionTextRecognizer
-}
-
-func NewFallbackVisionTextRecognizer(primary VisionTextRecognizer, secondary VisionTextRecognizer) *FallbackVisionTextRecognizer {
-	return &FallbackVisionTextRecognizer{
-		primary:   primary,
-		secondary: secondary,
-	}
-}
-
-func (r *FallbackVisionTextRecognizer) RecognizeText(ctx context.Context, imageURL string, prompt string) (string, error) {
-	if r == nil {
-		return "", errors.New("ocr recognizer unavailable")
-	}
-	if r.primary != nil {
-		if result, err := r.primary.RecognizeText(ctx, imageURL, prompt); err == nil {
-			return result, nil
-		}
-	}
-	if r.secondary != nil {
-		return r.secondary.RecognizeText(ctx, imageURL, prompt)
-	}
-	return "", errors.New("ocr recognizer unavailable")
-}
-
-type ArkVisionTextRecognizer struct {
-	client *ark.Client
-	model  string
-}
-
-func NewArkVisionTextRecognizer(apiKey string) *ArkVisionTextRecognizer {
-	config := ark.DefaultConfig(apiKey)
-	config.BaseURL = defaultArkBaseURL
-	return &ArkVisionTextRecognizer{
-		client: ark.NewClientWithConfig(config),
-		model:  defaultOCRModel,
-	}
-}
-
-func (r *ArkVisionTextRecognizer) RecognizeText(ctx context.Context, imageURL string, prompt string) (string, error) {
-	resp, err := r.client.CreateChatCompletion(
-		ctx,
-		ark.ChatCompletionRequest{
-			Model: r.model,
-			Messages: []ark.ChatCompletionMessage{
-				{
-					Role: ark.ChatMessageRoleUser,
-					MultiContent: []ark.ChatMessagePart{
-						{
-							Type: ark.ChatMessagePartTypeImageURL,
-							ImageURL: &ark.ChatMessageImageURL{
-								URL: imageURL,
-							},
-						},
-						{
-							Type: ark.ChatMessagePartTypeText,
-							Text: prompt,
-						},
-					},
-				},
-			},
-			ReasoningEffort: "medium",
-		},
-	)
-	if err != nil {
-		return "", err
-	}
-	if len(resp.Choices) == 0 {
-		return "", errors.New("ocr returned no choices")
-	}
-	return resp.Choices[0].Message.Content, nil
-}
-
+// KimiVisionTextRecognizer uses the Kimi (Moonshot) API for vision-based text recognition.
 type KimiVisionTextRecognizer struct {
 	client *ark.Client
 	model  string
 }
 
+// NewKimiVisionTextRecognizer creates a Kimi recognizer with the given API key.
+// The model can be overridden via the KIMI_OCR_MODEL environment variable.
 func NewKimiVisionTextRecognizer(apiKey string) *KimiVisionTextRecognizer {
 	config := ark.DefaultConfig(strings.TrimSpace(apiKey))
 	config.BaseURL = defaultKimiBaseURL
@@ -119,6 +43,7 @@ func NewKimiVisionTextRecognizer(apiKey string) *KimiVisionTextRecognizer {
 	}
 }
 
+// RecognizeText sends an image URL and prompt to the Kimi API and returns the recognized text.
 func (r *KimiVisionTextRecognizer) RecognizeText(ctx context.Context, imageURL string, prompt string) (string, error) {
 	resp, err := r.client.CreateChatCompletion(
 		ctx,
@@ -152,15 +77,18 @@ func (r *KimiVisionTextRecognizer) RecognizeText(ctx context.Context, imageURL s
 	return resp.Choices[0].Message.Content, nil
 }
 
+// AiocrService implements the AiocrServer gRPC/HTTP service.
 type AiocrService struct {
 	recognizer VisionTextRecognizer
 	pb.UnimplementedAiocrServer
 }
 
+// NewAiocrService creates an AiocrService using the recognizer from environment config.
 func NewAiocrService() *AiocrService {
 	return NewAiocrServiceWithRecognizer(NewVisionTextRecognizerFromEnv())
 }
 
+// NewAiocrServiceWithRecognizer creates an AiocrService with an explicit recognizer (for testing).
 func NewAiocrServiceWithRecognizer(recognizer VisionTextRecognizer) *AiocrService {
 	if recognizer == nil {
 		recognizer = NewVisionTextRecognizerFromEnv()
@@ -168,6 +96,7 @@ func NewAiocrServiceWithRecognizer(recognizer VisionTextRecognizer) *AiocrServic
 	return &AiocrService{recognizer: recognizer}
 }
 
+// Ocr handles OCR requests by delegating to the configured VisionTextRecognizer.
 func (s *AiocrService) Ocr(ctx context.Context, req *pb.OcrRequest) (*pb.OcrReply, error) {
 	// Use a fresh context with generous timeout, not the HTTP request context
 	// (Kratos' http.Timeout may cancel the request context prematurely)
@@ -180,42 +109,18 @@ func (s *AiocrService) Ocr(ctx context.Context, req *pb.OcrRequest) (*pb.OcrRepl
 	return &pb.OcrReply{Res: res}, nil
 }
 
+// NewVisionTextRecognizerFromEnv reads KIMI_API_KEY (with MOONSHOT_API_KEY fallback)
+// and returns a KimiVisionTextRecognizer.
 func NewVisionTextRecognizerFromEnv() VisionTextRecognizer {
-	provider := strings.TrimSpace(os.Getenv("OCR_PROVIDER"))
-	if provider == "" {
-		provider = "paddle"
+	apiKey := strings.TrimSpace(os.Getenv("KIMI_API_KEY"))
+	if apiKey == "" {
+		apiKey = strings.TrimSpace(os.Getenv("MOONSHOT_API_KEY"))
 	}
-	return newVisionTextRecognizer(provider)
+	return NewKimiVisionTextRecognizer(apiKey)
 }
 
+// NewDebtDetailOCRRecognizerFromEnv returns a Kimi recognizer for debt detail OCR.
+// Previously supported a fallback chain; now always returns Kimi.
 func NewDebtDetailOCRRecognizerFromEnv() VisionTextRecognizer {
-	provider := strings.TrimSpace(os.Getenv("OCR_PROVIDER"))
-	if provider == "" {
-		return NewFallbackVisionTextRecognizer(
-			newVisionTextRecognizer(defaultDebtDetailOCRProvider),
-			newVisionTextRecognizer(defaultDebtDetailFallbackOCRProvider),
-		)
-	}
-	return newVisionTextRecognizer(provider)
-}
-
-func newVisionTextRecognizer(provider string) VisionTextRecognizer {
-	switch strings.ToLower(strings.TrimSpace(provider)) {
-	case "paddle", "paddleocr":
-		command := strings.TrimSpace(os.Getenv("PADDLE_OCR_COMMAND"))
-		if command == "" {
-			command = defaultPaddleOCRCommand
-		}
-		return NewPaddleOCRTextRecognizer(command)
-	case "kimi", "moonshot":
-		apiKey := strings.TrimSpace(os.Getenv("KIMI_API_KEY"))
-		if apiKey == "" {
-			apiKey = strings.TrimSpace(os.Getenv("MOONSHOT_API_KEY"))
-		}
-		return NewKimiVisionTextRecognizer(apiKey)
-	case "ark", "":
-		return NewArkVisionTextRecognizer("")
-	default:
-		return NewArkVisionTextRecognizer("")
-	}
+	return NewVisionTextRecognizerFromEnv()
 }
