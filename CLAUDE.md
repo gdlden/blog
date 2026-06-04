@@ -120,6 +120,8 @@ pnpm format       # 运行 Prettier
 
 **API 契约**：protobuf 文件维护在 `blog/api/` 下。修改后运行 `make api` 重新生成绑定和 `blog/openapi.yaml`。
 
+** 在windows上优先使用powershell
+
 ## 跨领域关注点
 
 **认证**：后端 JWT 中间件在 `blog/internal/server/http.go` 中，带路由白名单。前端 token 存在 localStorage，通过 `src/utils/request.ts` 中的 Axios 拦截器附加。用户身份通过 `blog/internal/utils/userutil.go` 提取。
