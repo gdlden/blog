@@ -69,9 +69,7 @@ export DATA_DATABASE_SOURCE="host=localhost user=postgres password=xxx dbname=po
 5. 在 `blog/internal/data/<domain>.go` 或 `blog/internal/model/` 中实现 repo（共享模型）
 6. 如新增构造函数，更新 `blog/internal/{data,biz,service}/*.go` 中的 Wire provider
 
-### 函数复用规则
 
-在 `blog/internal` 中新增后端函数前，先查看 `blog/FUNCTION_INDEX.md` 是否有可复用的现有函数。添加/删除/修改函数时，在同一次变更中同步更新索引。PR 描述中应确认已执行此操作。
 
 ## 前端开发（price_recorder_vue/）
 
@@ -157,8 +155,5 @@ pnpm format       # 运行 Prettier
 6. 确认 `go build ./...` 和 `pnpm build` 均编译通过
 
 ## 重要参考
-
-- `blog/FUNCTION_INDEX.md` — 后端函数复用索引
+- 'DESIGN.md' - 前端页面设计规范
 - `blog/openapi.yaml` — HTTP 端点生成的 OpenAPI 规范
-- `AGENTS.md` — 详细的仓库规格说明（中文）
-- `.planning/codebase/` — 架构和结构文档

@@ -25,6 +25,7 @@ type PriceRep interface {
 	FindByID(context.Context, int64) (*Price, error)
 	ListByHello(context.Context, string) ([]*Price, error)
 	ListAll(context.Context) ([]*Price, error)
+	Delete(context.Context, int64) error
 }
 
 // GreeterUsecase is a Greeter usecase.
@@ -47,4 +48,9 @@ func (uc *PriceUscase) CreatePrice(ctx context.Context, g *Price) uint {
 // ListAll returns all price records.
 func (uc *PriceUscase) ListAll(ctx context.Context) ([]*Price, error) {
 	return uc.repo.ListAll(ctx)
+}
+
+// DeletePrice deletes a price record by ID.
+func (uc *PriceUscase) DeletePrice(ctx context.Context, id int64) error {
+	return uc.repo.Delete(ctx, id)
 }

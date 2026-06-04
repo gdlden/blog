@@ -14,7 +14,11 @@ service Price {
 		};
 	}
 	rpc UpdatePrice (UpdatePriceRequest) returns (UpdatePriceReply);
-	rpc DeletePrice (DeletePriceRequest) returns (DeletePriceReply);
+	rpc DeletePrice (DeletePriceRequest) returns (DeletePriceReply) {
+		option (google.api.http) = {
+			delete: "/price/{id}"
+		};
+	}
 	rpc GetPrice (GetPriceRequest) returns (GetPriceReply);
 	rpc ListPrice (ListPriceRequest) returns (ListPriceReply) {
 		option (google.api.http) = {
@@ -35,7 +39,9 @@ message CreatePriceReply {
 message UpdatePriceRequest {}
 message UpdatePriceReply {}
 
-message DeletePriceRequest {}
+message DeletePriceRequest {
+  int64 id = 1;
+}
 message DeletePriceReply {}
 
 message GetPriceRequest {}

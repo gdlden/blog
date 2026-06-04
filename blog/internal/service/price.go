@@ -34,6 +34,9 @@ func (s *PriceService) UpdatePrice(ctx context.Context, req *pb.UpdatePriceReque
 	return &pb.UpdatePriceReply{}, nil
 }
 func (s *PriceService) DeletePrice(ctx context.Context, req *pb.DeletePriceRequest) (*pb.DeletePriceReply, error) {
+	if err := s.pc.DeletePrice(ctx, req.Id); err != nil {
+		return nil, err
+	}
 	return &pb.DeletePriceReply{}, nil
 }
 func (s *PriceService) GetPrice(ctx context.Context, req *pb.GetPriceRequest) (*pb.GetPriceReply, error) {

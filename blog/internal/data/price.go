@@ -61,6 +61,17 @@ func (r *priceRepo) Update(ctx context.Context, p *biz.Price) (*biz.Price, error
 func (r *priceRepo) FindByID(ctx context.Context, id int64) (*biz.Price, error) {
 	return &biz.Price{}, nil
 }
+func (r *priceRepo) Delete(ctx context.Context, id int64) error {
+	result := r.data.db.Delete(&Price{}, id)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
 func (r *priceRepo) ListByHello(ctx context.Context, str string) ([]*biz.Price, error) {
 	return make([]*biz.Price, 0), nil
 }

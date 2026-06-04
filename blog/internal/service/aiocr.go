@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	pb "blog/api/ocr/v1"
 
@@ -168,7 +169,11 @@ func NewAiocrServiceWithRecognizer(recognizer VisionTextRecognizer) *AiocrServic
 }
 
 func (s *AiocrService) Ocr(ctx context.Context, req *pb.OcrRequest) (*pb.OcrReply, error) {
-	res, err := s.recognizer.RecognizeText(ctx, req.ImgBaseStr, "直接输出图片内容，不要输出其他东西")
+	// Use a fresh context with generous timeout, not the HTTP request context
+	// (Kratos' http.Timeout may cancel the request context prematurely)
+	ocrCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	res, err := s.recognizer.RecognizeText(ocrCtx, req.ImgBaseStr, "直接输出图片内容，不要输出其他东西")
 	if err != nil {
 		return nil, fmt.Errorf("ocr failed: %w", err)
 	}
