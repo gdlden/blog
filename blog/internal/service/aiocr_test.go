@@ -2,13 +2,15 @@ package service
 
 import (
 	"context"
-	"errors"
 	"testing"
+
+	pb "blog/api/ocr/v1"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+// recordingVisionTextRecognizer is a test double that records calls.
 type recordingVisionTextRecognizer struct {
 	result string
 	err    error
@@ -20,89 +22,77 @@ func (r *recordingVisionTextRecognizer) RecognizeText(ctx context.Context, image
 	return r.result, r.err
 }
 
-func TestNewVisionTextRecognizerFromEnv_DefaultsToPaddle(t *testing.T) {
-	t.Setenv("OCR_PROVIDER", "")
-
-	recognizer := NewVisionTextRecognizerFromEnv()
-
-	_, ok := recognizer.(*PaddleOCRTextRecognizer)
-	assert.True(t, ok)
-}
-
-func TestNewVisionTextRecognizerFromEnv_DefaultsToPaddleEvenWithKimiKey(t *testing.T) {
-	t.Setenv("OCR_PROVIDER", "")
+func TestNewVisionTextRecognizerFromEnv_ReturnsKimi(t *testing.T) {
 	t.Setenv("KIMI_API_KEY", "kimi-test-key")
-
-	recognizer := NewVisionTextRecognizerFromEnv()
-
-	_, ok := recognizer.(*PaddleOCRTextRecognizer)
-	assert.True(t, ok)
-}
-
-func TestNewVisionTextRecognizerFromEnv_SelectsArk(t *testing.T) {
-	t.Setenv("OCR_PROVIDER", "ark")
-
-	recognizer := NewVisionTextRecognizerFromEnv()
-
-	_, ok := recognizer.(*ArkVisionTextRecognizer)
-	assert.True(t, ok)
-}
-
-func TestNewVisionTextRecognizerFromEnv_SelectsPaddle(t *testing.T) {
-	t.Setenv("OCR_PROVIDER", "paddle")
-	t.Setenv("PADDLE_OCR_COMMAND", "custom-paddleocr")
-
-	recognizer := NewVisionTextRecognizerFromEnv()
-
-	paddle, ok := recognizer.(*PaddleOCRTextRecognizer)
-	require.True(t, ok)
-	assert.Equal(t, "custom-paddleocr", paddle.command)
-}
-
-func TestNewVisionTextRecognizerFromEnv_SelectsKimi(t *testing.T) {
-	t.Setenv("OCR_PROVIDER", "kimi")
-	t.Setenv("KIMI_API_KEY", "kimi-test-key")
-	t.Setenv("KIMI_OCR_MODEL", "kimi-test-model")
-
-	recognizer := NewVisionTextRecognizerFromEnv()
-
-	kimi, ok := recognizer.(*KimiVisionTextRecognizer)
-	require.True(t, ok)
-	assert.Equal(t, "kimi-test-model", kimi.model)
-}
-
-func TestNewVisionTextRecognizerFromEnv_SelectsMoonshotAlias(t *testing.T) {
-	t.Setenv("OCR_PROVIDER", "moonshot")
-	t.Setenv("MOONSHOT_API_KEY", "moonshot-test-key")
+	t.Setenv("MOONSHOT_API_KEY", "")
 
 	recognizer := NewVisionTextRecognizerFromEnv()
 
 	_, ok := recognizer.(*KimiVisionTextRecognizer)
-	assert.True(t, ok)
+	assert.True(t, ok, "should return KimiVisionTextRecognizer")
 }
 
-func TestFallbackVisionTextRecognizer_ReturnsPrimaryResult(t *testing.T) {
-	primary := &recordingVisionTextRecognizer{result: "local text"}
-	secondary := &recordingVisionTextRecognizer{result: "ark text"}
-	recognizer := NewFallbackVisionTextRecognizer(primary, secondary)
+func TestNewVisionTextRecognizerFromEnv_ReturnsKimiEvenWithoutAnyKey(t *testing.T) {
+	t.Setenv("KIMI_API_KEY", "")
+	t.Setenv("MOONSHOT_API_KEY", "")
 
-	result, err := recognizer.RecognizeText(context.Background(), "image", "prompt")
+	recognizer := NewVisionTextRecognizerFromEnv()
 
-	require.NoError(t, err)
-	assert.Equal(t, "local text", result)
-	assert.Equal(t, 1, primary.calls)
-	assert.Equal(t, 0, secondary.calls)
+	_, ok := recognizer.(*KimiVisionTextRecognizer)
+	assert.True(t, ok, "should return KimiVisionTextRecognizer even without API key")
 }
 
-func TestFallbackVisionTextRecognizer_UsesSecondaryWhenPrimaryFails(t *testing.T) {
-	primary := &recordingVisionTextRecognizer{err: errors.New("signal: killed")}
-	secondary := &recordingVisionTextRecognizer{result: "ark text"}
-	recognizer := NewFallbackVisionTextRecognizer(primary, secondary)
+func TestNewVisionTextRecognizerFromEnv_UsesMoonshotAPIKeyFallback(t *testing.T) {
+	t.Setenv("KIMI_API_KEY", "")
+	t.Setenv("MOONSHOT_API_KEY", "moonshot-fallback-key")
 
-	result, err := recognizer.RecognizeText(context.Background(), "image", "prompt")
+	recognizer := NewVisionTextRecognizerFromEnv()
+
+	kimi, ok := recognizer.(*KimiVisionTextRecognizer)
+	require.True(t, ok, "should return KimiVisionTextRecognizer")
+	// The client is constructed with the Moonshot key internally;
+	// we verify the recognizer was created without panicking.
+	assert.NotNil(t, kimi.client)
+}
+
+func TestNewKimiVisionTextRecognizer_UsesEnvModel(t *testing.T) {
+	t.Setenv("KIMI_OCR_MODEL", "kimi-custom-model")
+
+	recognizer := NewKimiVisionTextRecognizer("test-key")
+
+	assert.Equal(t, "kimi-custom-model", recognizer.model)
+}
+
+func TestNewKimiVisionTextRecognizer_DefaultModel(t *testing.T) {
+	t.Setenv("KIMI_OCR_MODEL", "")
+
+	recognizer := NewKimiVisionTextRecognizer("test-key")
+
+	assert.Equal(t, defaultKimiOCRModel, recognizer.model)
+}
+
+func TestAiocrService_Ocr_DelegatesToRecognizer(t *testing.T) {
+	rec := &recordingVisionTextRecognizer{result: "ocr result text"}
+	service := NewAiocrServiceWithRecognizer(rec)
+
+	reply, err := service.Ocr(context.Background(), &pb.OcrRequest{
+		ImgBaseStr: "data:image/png;base64,abc123",
+	})
 
 	require.NoError(t, err)
-	assert.Equal(t, "ark text", result)
-	assert.Equal(t, 1, primary.calls)
-	assert.Equal(t, 1, secondary.calls)
+	assert.Equal(t, "ocr result text", reply.Res)
+	assert.Equal(t, 1, rec.calls)
+}
+
+func TestAiocrService_Ocr_ReturnsErrorFromRecognizer(t *testing.T) {
+	rec := &recordingVisionTextRecognizer{err: assert.AnError}
+	service := NewAiocrServiceWithRecognizer(rec)
+
+	_, err := service.Ocr(context.Background(), &pb.OcrRequest{
+		ImgBaseStr: "data:image/png;base64,abc123",
+	})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "ocr failed")
+	assert.Equal(t, 1, rec.calls)
 }

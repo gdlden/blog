@@ -58,29 +58,22 @@ func newDebtDetailOCRTestService(recognizer VisionTextRecognizer) *DebtDetailSer
 	return NewDebtDetailServiceWithRecognizer(biz.NewDeptUseCase(noopDebtDetailRepo{}, log.DefaultLogger), recognizer)
 }
 
-func TestNewDebtDetailOCRRecognizerFromEnv_DefaultsToKimiThenPaddleOCR(t *testing.T) {
-	t.Setenv("OCR_PROVIDER", "")
+func TestNewDebtDetailOCRRecognizerFromEnv_ReturnsKimi(t *testing.T) {
 	t.Setenv("KIMI_API_KEY", "kimi-test-key")
-	t.Setenv("PADDLE_OCR_COMMAND", "local-paddleocr")
 
 	recognizer := NewDebtDetailOCRRecognizerFromEnv()
 
-	fallback, ok := recognizer.(*FallbackVisionTextRecognizer)
-	require.True(t, ok)
-	_, ok = fallback.primary.(*KimiVisionTextRecognizer)
-	require.True(t, ok)
-	paddle, ok := fallback.secondary.(*PaddleOCRTextRecognizer)
-	require.True(t, ok)
-	assert.Equal(t, "local-paddleocr", paddle.command)
+	_, ok := recognizer.(*KimiVisionTextRecognizer)
+	assert.True(t, ok, "NewDebtDetailOCRRecognizerFromEnv should return Kimi")
 }
 
-func TestNewDebtDetailOCRRecognizerFromEnv_ExplicitArk(t *testing.T) {
-	t.Setenv("OCR_PROVIDER", "ark")
+func TestNewDebtDetailOCRRecognizerFromEnv_ReturnsKimiEvenWithoutKey(t *testing.T) {
+	t.Setenv("KIMI_API_KEY", "")
 
 	recognizer := NewDebtDetailOCRRecognizerFromEnv()
 
-	_, ok := recognizer.(*ArkVisionTextRecognizer)
-	assert.True(t, ok)
+	_, ok := recognizer.(*KimiVisionTextRecognizer)
+	assert.True(t, ok, "NewDebtDetailOCRRecognizerFromEnv should return Kimi even without API key")
 }
 
 type memoryMultipartFile struct {
