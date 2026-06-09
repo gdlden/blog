@@ -11,8 +11,9 @@ var (
 // ErrUserNotFound = errors.NotFound(v1.ErrorReason_USER_NOT_FOUND.String(), "user not found")
 )
 
-// Greeter is a Greeter model.
+// Price is a price model.
 type Price struct {
+	ID        uint
 	Name      string
 	Price     string
 	PriceDate string
@@ -48,6 +49,16 @@ func (uc *PriceUscase) CreatePrice(ctx context.Context, g *Price) uint {
 // ListAll returns all price records.
 func (uc *PriceUscase) ListAll(ctx context.Context) ([]*Price, error) {
 	return uc.repo.ListAll(ctx)
+}
+
+// GetPrice returns a price record by ID.
+func (uc *PriceUscase) GetPrice(ctx context.Context, id int64) (*Price, error) {
+	return uc.repo.FindByID(ctx, id)
+}
+
+// UpdatePrice updates a price record.
+func (uc *PriceUscase) UpdatePrice(ctx context.Context, p *Price) (*Price, error) {
+	return uc.repo.Update(ctx, p)
 }
 
 // DeletePrice deletes a price record by ID.

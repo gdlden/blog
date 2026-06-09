@@ -56,10 +56,36 @@ func (r *priceRepo) Save(ctx context.Context, p *biz.Price) uint {
 	return price.ID
 }
 func (r *priceRepo) Update(ctx context.Context, p *biz.Price) (*biz.Price, error) {
-	return p, nil
+	var price Price
+	result := r.data.db.First(&price, p.ID)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	price.Name = p.Name
+	price.Price = p.Price
+	price.PriceDate = p.PriceDate
+	if err := r.data.db.Save(&price).Error; err != nil {
+		return nil, err
+	}
+	return &biz.Price{
+		ID:        price.ID,
+		Name:      price.Name,
+		Price:     price.Price,
+		PriceDate: price.PriceDate,
+	}, nil
 }
 func (r *priceRepo) FindByID(ctx context.Context, id int64) (*biz.Price, error) {
-	return &biz.Price{}, nil
+	var price Price
+	result := r.data.db.First(&price, id)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &biz.Price{
+		ID:        price.ID,
+		Name:      price.Name,
+		Price:     price.Price,
+		PriceDate: price.PriceDate,
+	}, nil
 }
 func (r *priceRepo) Delete(ctx context.Context, id int64) error {
 	result := r.data.db.Delete(&Price{}, id)
@@ -84,6 +110,7 @@ func (r *priceRepo) ListAll(ctx context.Context) ([]*biz.Price, error) {
 	list := make([]*biz.Price, 0, len(prices))
 	for _, p := range prices {
 		list = append(list, &biz.Price{
+			ID:        p.ID,
 			Name:      p.Name,
 			Price:     p.Price,
 			PriceDate: p.PriceDate,
