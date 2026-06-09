@@ -79,7 +79,6 @@ func NewWhiteListMatcher() selector.MatchFunc {
 	whiteList["/shop.interface.v1.ShopInterface/Register"] = struct{}{}
 	whiteList["/user.v1.User/UserLogin"] = struct{}{}
 	whiteList["/ocr.v1.Aiocr/Ocr"] = struct{}{}
-	whiteList["/api.price.Price/CreatePrice"] = struct{}{}
 	return func(ctx context.Context, operation string) bool {
 		if _, ok := whiteList[operation]; ok {
 			return false
