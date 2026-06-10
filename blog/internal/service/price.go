@@ -6,6 +6,8 @@ import (
 
 	pb "blog/api/price/v1"
 	"blog/internal/biz"
+
+	"github.com/shopspring/decimal"
 )
 
 type PriceService struct {
@@ -20,71 +22,68 @@ func NewPriceService(pcu *biz.PriceUscase) *PriceService {
 }
 
 func (s *PriceService) CreatePrice(ctx context.Context, req *pb.CreatePriceRequest) (*pb.CreatePriceReply, error) {
-	id := s.pc.CreatePrice(ctx, &biz.Price{
-		Name:      req.Name,
-		Price:     req.Price,
-		PriceDate: req.PriceDate,
+	weight, _ := decimal.NewFromString(req.Weight)
+	unitPrice, _ := decimal.NewFromString(req.UnitPrice)
+	id, err := s.pc.CreatePrice(ctx, &biz.Price{
+		ProductName: req.ProductName,
+		Weight:      weight,
+		UnitPrice:   unitPrice,
+		PriceDate:   req.PriceDate,
 	})
-	rId := strconv.FormatUint(uint64(id), 10)
+	if err != nil {
+		return nil, err
+	}
 	return &pb.CreatePriceReply{
-		Id: rId,
+		Id: strconv.FormatUint(uint64(id), 10),
 	}, nil
 }
+
 func (s *PriceService) UpdatePrice(ctx context.Context, req *pb.UpdatePriceRequest) (*pb.UpdatePriceReply, error) {
-	p, err := s.pc.UpdatePrice(ctx, &biz.Price{
-		ID:        uint(req.Id),
-		Name:      req.Name,
-		Price:     req.Price,
-		PriceDate: req.PriceDate,
+	weight, _ := decimal.NewFromString(req.Weight)
+	unitPrice, _ := decimal.NewFromString(req.UnitPrice)
+	err := s.pc.UpdatePrice(ctx, &biz.Price{
+		ID:          uint(req.Id),
+		ProductName: req.ProductName,
+		Weight:      weight,
+		UnitPrice:   unitPrice,
+		PriceDate:   req.PriceDate,
 	})
 	if err != nil {
 		return nil, err
 	}
 	return &pb.UpdatePriceReply{
-		Info: &pb.PriceInfo{
-			Id:        uint32(p.ID),
-			Name:      p.Name,
-			Price:     p.Price,
-			PriceDate: p.PriceDate,
-		},
+		Info: priceToInfo(&biz.Price{
+			ID:          uint(req.Id),
+			ProductName: req.ProductName,
+			Weight:      weight,
+			UnitPrice:   unitPrice,
+			PriceDate:   req.PriceDate,
+			TotalPrice:  weight.Mul(unitPrice).Round(2),
+		}),
 	}, nil
 }
+
 func (s *PriceService) DeletePrice(ctx context.Context, req *pb.DeletePriceRequest) (*pb.DeletePriceReply, error) {
-	if err := s.pc.DeletePrice(ctx, req.Id); err != nil {
+	if err := s.pc.DeletePrice(ctx, uint(req.Id)); err != nil {
 		return nil, err
 	}
 	return &pb.DeletePriceReply{}, nil
 }
+
 func (s *PriceService) GetPrice(ctx context.Context, req *pb.GetPriceRequest) (*pb.GetPriceReply, error) {
-	p, err := s.pc.GetPrice(ctx, int64(req.Id))
+	p, err := s.pc.GetPrice(ctx, uint(req.Id))
 	if err != nil {
 		return nil, err
 	}
 	return &pb.GetPriceReply{
-		Info: &pb.PriceInfo{
-			Id:        uint32(p.ID),
-			Name:      p.Name,
-			Price:     p.Price,
-			PriceDate: p.PriceDate,
-		},
+		Info: priceToInfo(p),
 	}, nil
 }
+
 func (s *PriceService) ListPrice(ctx context.Context, req *pb.ListPriceRequest) (*pb.ListPriceReply, error) {
-	prices, err := s.pc.ListAll(ctx)
-	if err != nil {
-		return nil, err
-	}
-	list := make([]*pb.PriceInfo, 0, len(prices))
-	for _, p := range prices {
-		list = append(list, &pb.PriceInfo{
-			Id:        uint32(p.ID),
-			Name:      p.Name,
-			Price:     p.Price,
-			PriceDate: p.PriceDate,
-		})
-	}
-	return &pb.ListPriceReply{List: list}, nil
+	return &pb.ListPriceReply{}, nil
 }
+
 func (s *PriceService) PagePrice(ctx context.Context, req *pb.ListPriceRequest) (*pb.PagePriceReply, error) {
 	current, _ := strconv.Atoi(req.Current)
 	size, _ := strconv.Atoi(req.Size)
@@ -104,12 +103,7 @@ func (s *PriceService) PagePrice(ctx context.Context, req *pb.ListPriceRequest) 
 	}
 	data := make([]*pb.PriceInfo, 0, len(prices))
 	for _, p := range prices {
-		data = append(data, &pb.PriceInfo{
-			Id:        uint32(p.ID),
-			Name:      p.Name,
-			Price:     p.Price,
-			PriceDate: p.PriceDate,
-		})
+		data = append(data, priceToInfo(p))
 	}
 	return &pb.PagePriceReply{
 		Current: req.Current,
@@ -117,4 +111,18 @@ func (s *PriceService) PagePrice(ctx context.Context, req *pb.ListPriceRequest) 
 		Total:   strconv.FormatInt(total, 10),
 		Data:    data,
 	}, nil
+}
+
+func priceToInfo(p *biz.Price) *pb.PriceInfo {
+	if p == nil {
+		return nil
+	}
+	return &pb.PriceInfo{
+		Id:          uint32(p.ID),
+		ProductName: p.ProductName,
+		Weight:      p.Weight.String(),
+		UnitPrice:   p.UnitPrice.String(),
+		TotalPrice:  p.TotalPrice.String(),
+		PriceDate:   p.PriceDate,
+	}
 }

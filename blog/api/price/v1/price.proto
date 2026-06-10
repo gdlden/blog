@@ -9,42 +9,43 @@ option go_package = "price/api/price/v1;v1";
 service Price {
 	rpc CreatePrice (CreatePriceRequest) returns (CreatePriceReply) {
 		option (google.api.http) = {
-			post: "/price/add"
+			post: "/price/add/v1"
 			body: "*"
 		};
 	}
 	rpc UpdatePrice (UpdatePriceRequest) returns (UpdatePriceReply) {
 		option (google.api.http) = {
-			put: "/price/{id}"
+			put: "/price/{id}/v1"
 			body: "*"
 		};
 	}
 	rpc ListPrice (ListPriceRequest) returns (ListPriceReply) {
 		option (google.api.http) = {
-			get: "/price/page"
+			get: "/price/page/v1"
 		};
 	}
 	rpc PagePrice (ListPriceRequest) returns (PagePriceReply) {
 		option (google.api.http) = {
-			get: "/price/list"
+			get: "/price/list/v1"
 		};
 	}
 	rpc DeletePrice (DeletePriceRequest) returns (DeletePriceReply) {
 		option (google.api.http) = {
-			post: "/price/{id}/delete"
+			post: "/price/{id}/delete/v1"
 		};
 	}
 	rpc GetPrice (GetPriceRequest) returns (GetPriceReply) {
 		option (google.api.http) = {
-			get: "/price/{id}"
+			get: "/price/{id}/v1"
 		};
 	}
 }
 
 message CreatePriceRequest {
-	string name =1;
-	string price = 2;
-	string priceDate =3; 
+	string productName = 1;
+	string weight = 2;
+	string unitPrice = 3;
+	string priceDate = 4;
 }
 message CreatePriceReply {
 	string id = 1;
@@ -52,9 +53,10 @@ message CreatePriceReply {
 
 message UpdatePriceRequest {
   uint32 id = 1;
-  string name = 2;
-  string price = 3;
-  string priceDate = 4;
+  string productName = 2;
+  string weight = 3;
+  string unitPrice = 4;
+  string priceDate = 5;
 }
 message UpdatePriceReply {
   PriceInfo info = 1;
@@ -74,9 +76,11 @@ message GetPriceReply {
 
 message PriceInfo {
   uint32 id = 1;
-  string name = 2;
-  string price = 3;
-  string priceDate = 4;
+  string productName = 2;
+  string weight = 3;
+  string unitPrice = 4;
+  string totalPrice = 5;
+  string priceDate = 6;
 }
 
 message ListPriceRequest {

@@ -4,21 +4,21 @@ import (
 	"blog/internal/biz"
 	"context"
 	"errors"
-	"fmt"
-	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
-	jwtv5 "github.com/golang-jwt/jwt/v5"
 
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
 type Price struct {
 	gorm.Model
-	Name      string `gorm:"comment:'商品名称'"`
-	Price     string `gorm:"comment:'单价'"`
-	PriceDate string `gorm:"comment:'价格日期'"`
-	UserID    string `gorm:"comment:'用户ID'"`
+	ProductName string          `gorm:"comment:'商品名称'"`
+	Weight      decimal.Decimal `gorm:"type:decimal(10,2);comment:'重量'"`
+	UnitPrice   decimal.Decimal `gorm:"type:decimal(10,2);comment:'单价'"`
+	PriceDate   string          `gorm:"comment:'日期'"`
+	UserID      string          `gorm:"comment:'用户ID';index"`
 }
+
 type priceRepo struct {
 	data *Data
 	log  *log.Helper
@@ -30,113 +30,105 @@ func NewPriceRepo(data *Data, logger log.Logger) biz.PriceRep {
 		log:  log.NewHelper(logger),
 	}
 }
-func (r *priceRepo) Save(ctx context.Context, p *biz.Price) uint {
-	var price Price
-	price.Name = p.Name
-	price.Price = p.Price
-	price.PriceDate = p.PriceDate
 
-	token, ok := jwt.FromContext(ctx)
-	if !ok {
-		log.Info("未登录")
+func (r *priceRepo) Save(ctx context.Context, p *biz.Price) (uint, error) {
+	price := Price{
+		ProductName: p.ProductName,
+		Weight:      p.Weight,
+		UnitPrice:   p.UnitPrice,
+		PriceDate:   p.PriceDate,
+		UserID:      p.UserId,
 	}
-	userInfoMap := token.(jwtv5.MapClaims)
-	userId := userInfoMap["userId"]
+	result := r.data.db.WithContext(ctx).Create(&price)
+	if result.Error != nil {
+		return 0, result.Error
+	}
+	return price.ID, nil
+}
 
-	price.UserID = userId.(string)
-	err := r.data.db.Where(&Price{Name: price.Name}).First(&price)
-	if !errors.Is(err.Error, gorm.ErrRecordNotFound) {
-		return 0
+func (r *priceRepo) Update(ctx context.Context, p *biz.Price) error {
+	updates := map[string]any{
+		"product_name": p.ProductName,
+		"weight":       p.Weight,
+		"unit_price":   p.UnitPrice,
+		"price_date":   p.PriceDate,
 	}
-
-	error := r.data.db.Create(&price)
-	if error != nil {
-		fmt.Println(error)
+	tx := r.data.db.WithContext(ctx).
+		Model(&Price{}).
+		Where("id = ? AND user_id = ?", p.ID, p.UserId).
+		Updates(updates)
+	if tx.Error != nil {
+		return tx.Error
 	}
-	return price.ID
-}
-func (r *priceRepo) Update(ctx context.Context, p *biz.Price) (*biz.Price, error) {
-	var price Price
-	result := r.data.db.First(&price, p.ID)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-	price.Name = p.Name
-	price.Price = p.Price
-	price.PriceDate = p.PriceDate
-	if err := r.data.db.Save(&price).Error; err != nil {
-		return nil, err
-	}
-	return &biz.Price{
-		ID:        price.ID,
-		Name:      price.Name,
-		Price:     price.Price,
-		PriceDate: price.PriceDate,
-	}, nil
-}
-func (r *priceRepo) FindByID(ctx context.Context, id int64) (*biz.Price, error) {
-	var price Price
-	result := r.data.db.First(&price, id)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-	return &biz.Price{
-		ID:        price.ID,
-		Name:      price.Name,
-		Price:     price.Price,
-		PriceDate: price.PriceDate,
-	}, nil
-}
-func (r *priceRepo) Delete(ctx context.Context, id int64) error {
-	result := r.data.db.Delete(&Price{}, id)
-	if result.Error != nil {
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound
+	if tx.RowsAffected == 0 {
+		return errors.New("no updatable price record found for current user")
 	}
 	return nil
 }
 
-func (r *priceRepo) ListByHello(ctx context.Context, str string) ([]*biz.Price, error) {
-	return make([]*biz.Price, 0), nil
+func (r *priceRepo) FindByUserIdAndID(ctx context.Context, userId string, id uint) (*biz.Price, error) {
+	var price Price
+	tx := r.data.db.WithContext(ctx).Where("user_id = ? AND id = ?", userId, id).First(&price)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	return mapPriceToBiz(&price), nil
 }
-func (r *priceRepo) FindByPage(ctx context.Context, req *biz.PricePageRequest) ([]*biz.Price, int64, error) {
-	var prices []Price
-	var count int64
-	err := r.data.db.WithContext(ctx).Model(&Price{}).Count(&count).Error
+
+func (r *priceRepo) FindByPage(ctx context.Context, userId string, req *biz.PricePageRequest) ([]*biz.Price, int64, error) {
+	db := r.data.db.WithContext(ctx).Model(&Price{}).Where("user_id = ?", userId)
+	var total int64
+	err := db.Count(&total).Error
 	if err != nil {
 		return nil, 0, err
 	}
-	err = r.data.db.WithContext(ctx).Model(&Price{}).Order("created_at DESC").Offset(int((req.Current - 1) * req.Size)).Limit(int(req.Size)).Find(&prices).Error
+
+	page := req.Current
+	size := req.Size
+	if page < 1 {
+		page = 1
+	}
+	if size < 1 || size > 100 {
+		size = 10
+	}
+
+	var prices []Price
+	err = db.Order("created_at DESC").
+		Offset(int((page - 1) * size)).
+		Limit(int(size)).
+		Find(&prices).Error
 	if err != nil {
 		return nil, 0, err
 	}
+
 	list := make([]*biz.Price, 0, len(prices))
 	for _, p := range prices {
-		list = append(list, &biz.Price{
-			ID:        p.ID,
-			Name:      p.Name,
-			Price:     p.Price,
-			PriceDate: p.PriceDate,
-		})
+		list = append(list, mapPriceToBiz(&p))
 	}
-	return list, count, nil
+	return list, total, nil
 }
-func (r *priceRepo) ListAll(ctx context.Context) ([]*biz.Price, error) {
-	var prices []Price
-	result := r.data.db.Order("created_at DESC").Find(&prices)
-	if result.Error != nil {
-		return nil, result.Error
+
+func (r *priceRepo) DeleteByUserIdAndID(ctx context.Context, userId string, id uint) error {
+	tx := r.data.db.WithContext(ctx).Where("user_id = ? AND id = ?", userId, id).Delete(&Price{})
+	if tx.Error != nil {
+		return tx.Error
 	}
-	list := make([]*biz.Price, 0, len(prices))
-	for _, p := range prices {
-		list = append(list, &biz.Price{
-			ID:        p.ID,
-			Name:      p.Name,
-			Price:     p.Price,
-			PriceDate: p.PriceDate,
-		})
+	if tx.RowsAffected == 0 {
+		return errors.New("no deletable price record found or permission denied")
 	}
-	return list, nil
+	return nil
+}
+
+func mapPriceToBiz(price *Price) *biz.Price {
+	if price == nil {
+		return nil
+	}
+	return &biz.Price{
+		ID:          price.ID,
+		ProductName: price.ProductName,
+		Weight:      price.Weight,
+		UnitPrice:   price.UnitPrice,
+		PriceDate:   price.PriceDate,
+		UserId:      price.UserID,
+	}
 }

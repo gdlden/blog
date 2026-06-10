@@ -1,22 +1,22 @@
 package biz
 
 import (
+	"blog/internal/utils"
 	"context"
 
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/shopspring/decimal"
 )
 
-var (
-// ErrUserNotFound is user not found.
-// ErrUserNotFound = errors.NotFound(v1.ErrorReason_USER_NOT_FOUND.String(), "user not found")
-)
-
-// Price is a price model.
+// Price is a price model for grocery receipts.
 type Price struct {
-	ID        uint
-	Name      string
-	Price     string
-	PriceDate string
+	ID           uint
+	ProductName  string
+	Weight       decimal.Decimal
+	UnitPrice    decimal.Decimal
+	TotalPrice   decimal.Decimal
+	PriceDate    string
+	UserId       string
 }
 
 type PricePageRequest struct {
@@ -24,55 +24,87 @@ type PricePageRequest struct {
 	Size    int
 }
 
-// GreeterRepo is a Greater repo.
+// PriceRep is the price repository interface.
 type PriceRep interface {
-	Save(context.Context, *Price) uint
-	Update(context.Context, *Price) (*Price, error)
-	FindByID(context.Context, int64) (*Price, error)
-	ListByHello(context.Context, string) ([]*Price, error)
-	ListAll(context.Context) ([]*Price, error)
-	FindByPage(context.Context, *PricePageRequest) ([]*Price, int64, error)
-	Delete(context.Context, int64) error
+	Save(context.Context, *Price) (uint, error)
+	Update(context.Context, *Price) error
+	FindByUserIdAndID(context.Context, string, uint) (*Price, error)
+	FindByPage(context.Context, string, *PricePageRequest) ([]*Price, int64, error)
+	DeleteByUserIdAndID(context.Context, string, uint) error
 }
 
-// GreeterUsecase is a Greeter usecase.
+// PriceUscase is the price use case.
 type PriceUscase struct {
 	repo PriceRep
 	log  *log.Helper
 }
 
-// NewGreeterUsecase new a Greeter usecase.
+// NewPriceUsecase creates a new PriceUscase.
 func NewPriceUsecase(repo PriceRep, logger log.Logger) *PriceUscase {
 	return &PriceUscase{repo: repo, log: log.NewHelper(logger)}
 }
 
-// GetPricePage returns paginated price records.
+// GetPricePage returns paginated price records for current user.
 func (uc *PriceUscase) GetPricePage(ctx context.Context, req *PricePageRequest) ([]*Price, int64, error) {
-	return uc.repo.FindByPage(ctx, req)
+	userId, err := utils.CurrentUserId(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	prices, total, err := uc.repo.FindByPage(ctx, userId, req)
+	if err != nil {
+		return nil, 0, err
+	}
+	// Calculate total price for each record
+	for _, p := range prices {
+		p.TotalPrice = p.Weight.Mul(p.UnitPrice).Round(2)
+	}
+	return prices, total, nil
 }
 
-// CreateGreeter creates a Greeter, and returns the new Greeter.
-func (uc *PriceUscase) CreatePrice(ctx context.Context, g *Price) uint {
-	// uc.log.WithContext(ctx).Infof("CreateGreeter: %v", )
+// CreatePrice creates a new price record.
+func (uc *PriceUscase) CreatePrice(ctx context.Context, g *Price) (uint, error) {
+	userId, err := utils.CurrentUserId(ctx)
+	if err != nil {
+		return 0, err
+	}
+	g.UserId = userId
 	return uc.repo.Save(ctx, g)
 }
 
-// ListAll returns all price records.
-func (uc *PriceUscase) ListAll(ctx context.Context) ([]*Price, error) {
-	return uc.repo.ListAll(ctx)
+// GetPrice returns a price record by ID for current user.
+func (uc *PriceUscase) GetPrice(ctx context.Context, id uint) (*Price, error) {
+	userId, err := utils.CurrentUserId(ctx)
+	if err != nil {
+		return nil, err
+	}
+	p, err := uc.repo.FindByUserIdAndID(ctx, userId, id)
+	if err != nil {
+		return nil, err
+	}
+	p.TotalPrice = p.Weight.Mul(p.UnitPrice).Round(2)
+	return p, nil
 }
 
-// GetPrice returns a price record by ID.
-func (uc *PriceUscase) GetPrice(ctx context.Context, id int64) (*Price, error) {
-	return uc.repo.FindByID(ctx, id)
-}
-
-// UpdatePrice updates a price record.
-func (uc *PriceUscase) UpdatePrice(ctx context.Context, p *Price) (*Price, error) {
+// UpdatePrice updates a price record for current user.
+func (uc *PriceUscase) UpdatePrice(ctx context.Context, p *Price) error {
+	userId, err := utils.CurrentUserId(ctx)
+	if err != nil {
+		return err
+	}
+	// Verify ownership
+	_, err = uc.repo.FindByUserIdAndID(ctx, userId, p.ID)
+	if err != nil {
+		return err
+	}
+	p.UserId = userId
 	return uc.repo.Update(ctx, p)
 }
 
-// DeletePrice deletes a price record by ID.
-func (uc *PriceUscase) DeletePrice(ctx context.Context, id int64) error {
-	return uc.repo.Delete(ctx, id)
+// DeletePrice deletes a price record by ID for current user.
+func (uc *PriceUscase) DeletePrice(ctx context.Context, id uint) error {
+	userId, err := utils.CurrentUserId(ctx)
+	if err != nil {
+		return err
+	}
+	return uc.repo.DeleteByUserIdAndID(ctx, userId, id)
 }

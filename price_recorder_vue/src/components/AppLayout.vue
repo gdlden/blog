@@ -13,6 +13,7 @@ const navItems = [
   { name: 'blog', path: '/blog', label: '博文' },
   { name: 'debt', path: '/debt', label: '债务' },
   { name: 'fuel', path: '/fuel', label: '油耗' },
+  { name: 'price', path: '/price', label: '价格' },
 ]
 
 const currentRouteName = computed(() => route.name as string)
