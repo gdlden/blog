@@ -21,6 +21,11 @@ service Price {
 	}
 	rpc ListPrice (ListPriceRequest) returns (ListPriceReply) {
 		option (google.api.http) = {
+			get: "/price/page"
+		};
+	}
+	rpc PagePrice (ListPriceRequest) returns (PagePriceReply) {
+		option (google.api.http) = {
 			get: "/price/list"
 		};
 	}
@@ -74,7 +79,16 @@ message PriceInfo {
   string priceDate = 4;
 }
 
-message ListPriceRequest {}
+message ListPriceRequest {
+  string current = 1;
+  string size = 2;
+}
 message ListPriceReply {
   repeated PriceInfo list = 1;
+}
+message PagePriceReply {
+  string current = 1;
+  string size = 2;
+  string total = 3;
+  repeated PriceInfo data = 4;
 }

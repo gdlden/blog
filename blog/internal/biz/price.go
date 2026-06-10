@@ -19,6 +19,11 @@ type Price struct {
 	PriceDate string
 }
 
+type PricePageRequest struct {
+	Current int
+	Size    int
+}
+
 // GreeterRepo is a Greater repo.
 type PriceRep interface {
 	Save(context.Context, *Price) uint
@@ -26,6 +31,7 @@ type PriceRep interface {
 	FindByID(context.Context, int64) (*Price, error)
 	ListByHello(context.Context, string) ([]*Price, error)
 	ListAll(context.Context) ([]*Price, error)
+	FindByPage(context.Context, *PricePageRequest) ([]*Price, int64, error)
 	Delete(context.Context, int64) error
 }
 
@@ -38,6 +44,11 @@ type PriceUscase struct {
 // NewGreeterUsecase new a Greeter usecase.
 func NewPriceUsecase(repo PriceRep, logger log.Logger) *PriceUscase {
 	return &PriceUscase{repo: repo, log: log.NewHelper(logger)}
+}
+
+// GetPricePage returns paginated price records.
+func (uc *PriceUscase) GetPricePage(ctx context.Context, req *PricePageRequest) ([]*Price, int64, error) {
+	return uc.repo.FindByPage(ctx, req)
 }
 
 // CreateGreeter creates a Greeter, and returns the new Greeter.

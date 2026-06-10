@@ -101,6 +101,28 @@ func (r *priceRepo) Delete(ctx context.Context, id int64) error {
 func (r *priceRepo) ListByHello(ctx context.Context, str string) ([]*biz.Price, error) {
 	return make([]*biz.Price, 0), nil
 }
+func (r *priceRepo) FindByPage(ctx context.Context, req *biz.PricePageRequest) ([]*biz.Price, int64, error) {
+	var prices []Price
+	var count int64
+	err := r.data.db.WithContext(ctx).Model(&Price{}).Count(&count).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	err = r.data.db.WithContext(ctx).Model(&Price{}).Order("created_at DESC").Offset(int((req.Current - 1) * req.Size)).Limit(int(req.Size)).Find(&prices).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	list := make([]*biz.Price, 0, len(prices))
+	for _, p := range prices {
+		list = append(list, &biz.Price{
+			ID:        p.ID,
+			Name:      p.Name,
+			Price:     p.Price,
+			PriceDate: p.PriceDate,
+		})
+	}
+	return list, count, nil
+}
 func (r *priceRepo) ListAll(ctx context.Context) ([]*biz.Price, error) {
 	var prices []Price
 	result := r.data.db.Order("created_at DESC").Find(&prices)

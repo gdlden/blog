@@ -85,3 +85,36 @@ func (s *PriceService) ListPrice(ctx context.Context, req *pb.ListPriceRequest) 
 	}
 	return &pb.ListPriceReply{List: list}, nil
 }
+func (s *PriceService) PagePrice(ctx context.Context, req *pb.ListPriceRequest) (*pb.PagePriceReply, error) {
+	current, _ := strconv.Atoi(req.Current)
+	size, _ := strconv.Atoi(req.Size)
+	if current < 1 {
+		current = 1
+	}
+	if size < 1 || size > 100 {
+		size = 10
+	}
+
+	prices, total, err := s.pc.GetPricePage(ctx, &biz.PricePageRequest{
+		Current: current,
+		Size:    size,
+	})
+	if err != nil {
+		return nil, err
+	}
+	data := make([]*pb.PriceInfo, 0, len(prices))
+	for _, p := range prices {
+		data = append(data, &pb.PriceInfo{
+			Id:        uint32(p.ID),
+			Name:      p.Name,
+			Price:     p.Price,
+			PriceDate: p.PriceDate,
+		})
+	}
+	return &pb.PagePriceReply{
+		Current: req.Current,
+		Size:    req.Size,
+		Total:   strconv.FormatInt(total, 10),
+		Data:    data,
+	}, nil
+}
