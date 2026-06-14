@@ -3,7 +3,7 @@ FROM golang:1.24.13-bookworm AS builder
 COPY . /src
 WORKDIR /src
 
-RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && GOPROXY=https://goproxy.cn  make build
+RUN GOPROXY=https://goproxy.cn  go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && GOPROXY=https://goproxy.cn  make build
 
 FROM debian:stable-slim
 
