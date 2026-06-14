@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends protobuf-compil
 
 RUN  GOPROXY=https://goproxy.cn make init \
     && GOPROXY=https://goproxy.cn  make api  \
+     && make wire \
     && GOPROXY=https://goproxy.cn  make build
 
 FROM debian:stable-slim
