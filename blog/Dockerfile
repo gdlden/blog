@@ -6,7 +6,8 @@ WORKDIR /src
 RUN apt-get update && apt-get install -y --no-install-recommends protobuf-compiler \
     && rm -rf /var/lib/apt/lists/
 
-RUN  GOPROXY=https://goproxy.cn  make api  \
+RUN  GOPROXY=https://goproxy.cn make init \
+    && GOPROXY=https://goproxy.cn  make api  \
     && GOPROXY=https://goproxy.cn  make build
 
 FROM debian:stable-slim
