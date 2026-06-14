@@ -3,8 +3,7 @@ FROM golang:1.24.13-bookworm AS builder
 COPY . /src
 WORKDIR /src
 
-RUN GOPROXY=https://goproxy.cn  go install google.golang.org/protobuf/cmd/protoc-gen-go@latest  \
-    && make init \
+RUN  GOPROXY=https://goproxy.cn make init \
     && GOPROXY=https://goproxy.cn  make api  \
     && GOPROXY=https://goproxy.cn  make build
 
