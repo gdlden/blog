@@ -26,11 +26,6 @@
 - Vue/TS：遵循 ESLint + Prettier（`eslint.config.ts`），使用 2 空格缩进，组件文件使用 PascalCase 命名（例如 `Article.vue`）。
 - API/proto 更新应保持带版本的路径（例如 `api/post/v1/post.proto`）。
 
-## 函数复用与索引维护（仅后端 `blog/`）
-- 新增函数前，必须先在后端代码与函数索引中检索可复用函数；若存在可复用实现，优先复用，避免重复实现。
-- 后端函数索引文件固定为 `blog/FUNCTION_INDEX.md`。
-- 以下变更必须同步更新 `blog/FUNCTION_INDEX.md`：新增函数、修改函数签名或行为、删除函数。
-- 提交 PR 时，需在描述中明确确认：`已检查复用并更新 blog/FUNCTION_INDEX.md`。
 
 
 ## 测试规范

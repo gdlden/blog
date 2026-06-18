@@ -13,38 +13,38 @@ import (
 	ark "github.com/sashabaranov/go-openai"
 )
 
-const defaultKimiOCRModel = "kimi-k2.6"
-const defaultKimiBaseURL = "https://api.moonshot.ai/v1"
+const defaultDeepSeekOCRModel = "deepseek-vl2"
+const defaultDeepSeekBaseURL = "https://api.deepseek.com"
 
 // VisionTextRecognizer is the interface for OCR text recognition.
-// Currently only implemented by KimiVisionTextRecognizer.
+// Currently implemented by DeepSeekVisionTextRecognizer.
 type VisionTextRecognizer interface {
 	RecognizeText(ctx context.Context, imageURL string, prompt string) (string, error)
 }
 
-// KimiVisionTextRecognizer uses the Kimi (Moonshot) API for vision-based text recognition.
-type KimiVisionTextRecognizer struct {
+// DeepSeekVisionTextRecognizer uses the DeepSeek API for vision-based text recognition.
+type DeepSeekVisionTextRecognizer struct {
 	client *ark.Client
 	model  string
 }
 
-// NewKimiVisionTextRecognizer creates a Kimi recognizer with the given API key.
-// The model can be overridden via the KIMI_OCR_MODEL environment variable.
-func NewKimiVisionTextRecognizer(apiKey string) *KimiVisionTextRecognizer {
+// NewDeepSeekVisionTextRecognizer creates a DeepSeek recognizer with the given API key.
+// The model can be overridden via the OCR_MODEL environment variable.
+func NewDeepSeekVisionTextRecognizer(apiKey string) *DeepSeekVisionTextRecognizer {
 	config := ark.DefaultConfig(strings.TrimSpace(apiKey))
-	config.BaseURL = defaultKimiBaseURL
-	model := strings.TrimSpace(os.Getenv("KIMI_OCR_MODEL"))
+	config.BaseURL = defaultDeepSeekBaseURL
+	model := strings.TrimSpace(os.Getenv("OCR_MODEL"))
 	if model == "" {
-		model = defaultKimiOCRModel
+		model = defaultDeepSeekOCRModel
 	}
-	return &KimiVisionTextRecognizer{
+	return &DeepSeekVisionTextRecognizer{
 		client: ark.NewClientWithConfig(config),
 		model:  model,
 	}
 }
 
-// RecognizeText sends an image URL and prompt to the Kimi API and returns the recognized text.
-func (r *KimiVisionTextRecognizer) RecognizeText(ctx context.Context, imageURL string, prompt string) (string, error) {
+// RecognizeText sends an image URL and prompt to the DeepSeek API and returns the recognized text.
+func (r *DeepSeekVisionTextRecognizer) RecognizeText(ctx context.Context, imageURL string, prompt string) (string, error) {
 	resp, err := r.client.CreateChatCompletion(
 		ctx,
 		ark.ChatCompletionRequest{
@@ -109,18 +109,21 @@ func (s *AiocrService) Ocr(ctx context.Context, req *pb.OcrRequest) (*pb.OcrRepl
 	return &pb.OcrReply{Res: res}, nil
 }
 
-// NewVisionTextRecognizerFromEnv reads KIMI_API_KEY (with MOONSHOT_API_KEY fallback)
-// and returns a KimiVisionTextRecognizer.
+// NewVisionTextRecognizerFromEnv reads OCR_API_KEY (with KIMI_API_KEY/MOONSHOT_API_KEY fallback)
+// and returns a DeepSeekVisionTextRecognizer.
 func NewVisionTextRecognizerFromEnv() VisionTextRecognizer {
-	apiKey := strings.TrimSpace(os.Getenv("KIMI_API_KEY"))
+	apiKey := strings.TrimSpace(os.Getenv("OCR_API_KEY"))
+	if apiKey == "" {
+		apiKey = strings.TrimSpace(os.Getenv("KIMI_API_KEY"))
+	}
 	if apiKey == "" {
 		apiKey = strings.TrimSpace(os.Getenv("MOONSHOT_API_KEY"))
 	}
-	return NewKimiVisionTextRecognizer(apiKey)
+	return NewDeepSeekVisionTextRecognizer(apiKey)
 }
 
-// NewDebtDetailOCRRecognizerFromEnv returns a Kimi recognizer for debt detail OCR.
-// Previously supported a fallback chain; now always returns Kimi.
+// NewDebtDetailOCRRecognizerFromEnv returns a DeepSeek recognizer for debt detail OCR.
+// Delegates to NewVisionTextRecognizerFromEnv.
 func NewDebtDetailOCRRecognizerFromEnv() VisionTextRecognizer {
 	return NewVisionTextRecognizerFromEnv()
 }

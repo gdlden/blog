@@ -58,22 +58,26 @@ func newDebtDetailOCRTestService(recognizer VisionTextRecognizer) *DebtDetailSer
 	return NewDebtDetailServiceWithRecognizer(biz.NewDeptUseCase(noopDebtDetailRepo{}, log.DefaultLogger), recognizer)
 }
 
-func TestNewDebtDetailOCRRecognizerFromEnv_ReturnsKimi(t *testing.T) {
-	t.Setenv("KIMI_API_KEY", "kimi-test-key")
+func TestNewDebtDetailOCRRecognizerFromEnv_ReturnsDeepSeek(t *testing.T) {
+	t.Setenv("OCR_API_KEY", "ds-test-key")
+	t.Setenv("KIMI_API_KEY", "")
+	t.Setenv("MOONSHOT_API_KEY", "")
 
 	recognizer := NewDebtDetailOCRRecognizerFromEnv()
 
-	_, ok := recognizer.(*KimiVisionTextRecognizer)
-	assert.True(t, ok, "NewDebtDetailOCRRecognizerFromEnv should return Kimi")
+	_, ok := recognizer.(*DeepSeekVisionTextRecognizer)
+	assert.True(t, ok, "NewDebtDetailOCRRecognizerFromEnv should return DeepSeek")
 }
 
-func TestNewDebtDetailOCRRecognizerFromEnv_ReturnsKimiEvenWithoutKey(t *testing.T) {
+func TestNewDebtDetailOCRRecognizerFromEnv_ReturnsDeepSeekEvenWithoutKey(t *testing.T) {
+	t.Setenv("OCR_API_KEY", "")
 	t.Setenv("KIMI_API_KEY", "")
+	t.Setenv("MOONSHOT_API_KEY", "")
 
 	recognizer := NewDebtDetailOCRRecognizerFromEnv()
 
-	_, ok := recognizer.(*KimiVisionTextRecognizer)
-	assert.True(t, ok, "NewDebtDetailOCRRecognizerFromEnv should return Kimi even without API key")
+	_, ok := recognizer.(*DeepSeekVisionTextRecognizer)
+	assert.True(t, ok, "NewDebtDetailOCRRecognizerFromEnv should return DeepSeek even without API key")
 }
 
 type memoryMultipartFile struct {
