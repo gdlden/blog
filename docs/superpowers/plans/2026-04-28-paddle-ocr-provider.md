@@ -39,9 +39,7 @@
 - Modify: `blog/internal/service/aiocr.go`
 - Modify: `blog/internal/service/debtdetail.go`
 - Test: existing service tests
-- Docs: `blog/FUNCTION_INDEX.md`
 
 - [ ] Replace direct `NewArkVisionTextRecognizer("")` defaults with `NewVisionTextRecognizerFromEnv()`.
 - [ ] Keep test constructors accepting injected recognizers unchanged.
-- [ ] Update `blog/FUNCTION_INDEX.md` for added backend functions.
 - [ ] Run `go test ./...`.
