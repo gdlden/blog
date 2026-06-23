@@ -3,19 +3,20 @@
 
 openapi: 3.0.3
 info:
-    title: Price API
+    title: App API
     version: 0.0.1
 paths:
-    /price/add/v1:
+    /app/version/create/v1:
         post:
             tags:
-                - Price
-            operationId: Price_CreatePrice
+                - App
+            description: CreateAppVersion creates a new app version record.
+            operationId: App_CreateAppVersion
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/price.v1.CreatePriceRequest'
+                            $ref: '#/components/schemas/api.app.v1.CreateAppVersionRequest'
                 required: true
             responses:
                 "200":
@@ -23,102 +24,18 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/price.v1.CreatePriceReply'
-    /price/list/v1:
-        get:
-            tags:
-                - Price
-            operationId: Price_PagePrice
-            parameters:
-                - name: current
-                  in: query
-                  schema:
-                    type: string
-                - name: size
-                  in: query
-                  schema:
-                    type: string
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/price.v1.PagePriceReply'
-    /price/page/v1:
-        get:
-            tags:
-                - Price
-            operationId: Price_ListPrice
-            parameters:
-                - name: current
-                  in: query
-                  schema:
-                    type: string
-                - name: size
-                  in: query
-                  schema:
-                    type: string
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/price.v1.ListPriceReply'
-    /price/{id}/delete/v1:
+                                $ref: '#/components/schemas/api.app.v1.CreateAppVersionReply'
+    /app/version/delete/v1:
         post:
             tags:
-                - Price
-            operationId: Price_DeletePrice
-            parameters:
-                - name: id
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/price.v1.DeletePriceReply'
-    /price/{id}/v1:
-        get:
-            tags:
-                - Price
-            operationId: Price_GetPrice
-            parameters:
-                - name: id
-                  in: path
-                  required: true
-                  schema:
-                    type: integer
-                    format: uint32
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/price.v1.GetPriceReply'
-        put:
-            tags:
-                - Price
-            operationId: Price_UpdatePrice
-            parameters:
-                - name: id
-                  in: path
-                  required: true
-                  schema:
-                    type: integer
-                    format: uint32
+                - App
+            description: DeleteAppVersion deletes an app version record by id.
+            operationId: App_DeleteAppVersion
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/price.v1.UpdatePriceRequest'
+                            $ref: '#/components/schemas/api.app.v1.DeleteAppVersionRequest'
                 required: true
             responses:
                 "200":
@@ -126,87 +43,179 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/price.v1.UpdatePriceReply'
+                                $ref: '#/components/schemas/api.app.v1.DeleteAppVersionReply'
+    /app/version/get/v1:
+        get:
+            tags:
+                - App
+            description: GetAppVersion retrieves a single app version record by id.
+            operationId: App_GetAppVersion
+            parameters:
+                - name: id
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.app.v1.AppVersionEntity'
+    /app/version/page/v1:
+        get:
+            tags:
+                - App
+            description: ListAppVersion paginated list of app versions.
+            operationId: App_ListAppVersion
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.app.v1.ListAppVersionReply'
+    /app/version/update/v1:
+        post:
+            tags:
+                - App
+            description: UpdateAppVersion updates an existing app version record.
+            operationId: App_UpdateAppVersion
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.app.v1.UpdateAppVersionRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.app.v1.UpdateAppVersionReply'
+    /app/version/v1:
+        get:
+            tags:
+                - App
+            description: GetVersion queries the latest app version for update prompts.
+            operationId: App_GetVersion
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.app.v1.GetVersionReply'
 components:
     schemas:
-        price.v1.CreatePriceReply:
+        api.app.v1.AppVersionEntity:
             type: object
             properties:
                 id:
                     type: string
-        price.v1.CreatePriceRequest:
-            type: object
-            properties:
-                productName:
+                version:
                     type: string
-                weight:
-                    type: string
-                unitPrice:
-                    type: string
-                priceDate:
-                    type: string
-        price.v1.DeletePriceReply:
-            type: object
-            properties: {}
-        price.v1.GetPriceReply:
-            type: object
-            properties:
                 info:
-                    $ref: '#/components/schemas/price.v1.PriceInfo'
-        price.v1.ListPriceReply:
-            type: object
-            properties:
-                list:
                     type: array
                     items:
-                        $ref: '#/components/schemas/price.v1.PriceInfo'
-        price.v1.PagePriceReply:
+                        type: string
+                iosUrl:
+                    type: string
+                androidUrl:
+                    type: string
+                isActive:
+                    type: boolean
+                createdAt:
+                    type: string
+                updatedAt:
+                    type: string
+        api.app.v1.CreateAppVersionReply:
             type: object
             properties:
-                current:
+                id:
                     type: string
-                size:
+        api.app.v1.CreateAppVersionRequest:
+            type: object
+            properties:
+                version:
+                    type: string
+                info:
+                    type: array
+                    items:
+                        type: string
+                iosUrl:
+                    type: string
+                androidUrl:
+                    type: string
+                isActive:
+                    type: boolean
+        api.app.v1.DeleteAppVersionReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+        api.app.v1.DeleteAppVersionRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+        api.app.v1.GetVersionReply:
+            type: object
+            properties:
+                version:
+                    type: string
+                info:
+                    type: array
+                    items:
+                        type: string
+                iosUrl:
+                    type: string
+                androidUrl:
+                    type: string
+        api.app.v1.ListAppVersionReply:
+            type: object
+            properties:
+                page:
+                    type: string
+                pageSize:
                     type: string
                 total:
                     type: string
-                data:
+                list:
                     type: array
                     items:
-                        $ref: '#/components/schemas/price.v1.PriceInfo'
-        price.v1.PriceInfo:
+                        $ref: '#/components/schemas/api.app.v1.AppVersionEntity'
+        api.app.v1.UpdateAppVersionReply:
             type: object
             properties:
                 id:
-                    type: integer
-                    format: uint32
-                productName:
                     type: string
-                weight:
-                    type: string
-                unitPrice:
-                    type: string
-                totalPrice:
-                    type: string
-                priceDate:
-                    type: string
-        price.v1.UpdatePriceReply:
+        api.app.v1.UpdateAppVersionRequest:
             type: object
             properties:
+                id:
+                    type: string
+                version:
+                    type: string
                 info:
-                    $ref: '#/components/schemas/price.v1.PriceInfo'
-        price.v1.UpdatePriceRequest:
-            type: object
-            properties:
-                id:
-                    type: integer
-                    format: uint32
-                productName:
+                    type: array
+                    items:
+                        type: string
+                iosUrl:
                     type: string
-                weight:
+                androidUrl:
                     type: string
-                unitPrice:
-                    type: string
-                priceDate:
-                    type: string
+                isActive:
+                    type: boolean
 tags:
-    - name: Price
+    - name: App

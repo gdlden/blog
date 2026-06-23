@@ -8,6 +8,32 @@ import "google/protobuf/duration.proto";
 message Bootstrap {
   Server server = 1;
   Data data = 2;
+  File file = 3;
+}
+
+message File {
+  string storage_type = 1;
+  Rustfs rustfs = 2;
+  Minio minio = 3;
+  Local local = 4;
+}
+
+message Rustfs {
+  string endpoint = 1;
+  string api_key = 2;
+  string bucket = 3;
+}
+
+message Minio {
+  string endpoint = 1;
+  string access_key = 2;
+  string secret_key = 3;
+  string bucket = 4;
+  bool use_ssl = 5;
+}
+
+message Local {
+  string upload_dir = 1;
 }
 
 message Server {

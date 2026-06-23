@@ -53,6 +53,12 @@ const router = createRouter({
           component: () => import('@/view/PriceList.vue'),
           meta: { requiresAuth: true },
         },
+        {
+          name: 'appVersion',
+          path: 'app-version',
+          component: () => import('@/view/AppVersionMgmt.vue'),
+          meta: { requiresAuth: true },
+        },
       ],
     },
   ],

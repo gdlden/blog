@@ -14,6 +14,7 @@ const navItems = [
   { name: 'debt', path: '/debt', label: '债务' },
   { name: 'fuel', path: '/fuel', label: '油耗' },
   { name: 'price', path: '/price', label: '价格' },
+  { name: 'appVersion', path: '/app-version', label: '版本' },
 ]
 
 const currentRouteName = computed(() => route.name as string)

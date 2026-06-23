@@ -2,24 +2,103 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"path"
+	"strconv"
 
 	pb "blog/api/file/v1"
+	"blog/internal/biz"
+
+	"github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/google/uuid"
 )
 
 type FileService struct {
 	pb.UnimplementedFileServer
+	fc *biz.FileUsecase
 }
 
-func NewFileService() *FileService {
-	return &FileService{}
+func NewFileService(fc *biz.FileUsecase) *FileService {
+	return &FileService{fc: fc}
 }
 
+// CreateFileUploadUrl returns a file ID as a placeholder upload URL.
+// For MinIO backends a pre-signed URL would be returned; for others
+// the client uses the raw upload endpoint at POST /file/upload/raw/v1.
 func (s *FileService) CreateFileUploadUrl(ctx context.Context, req *pb.CreateFileUploadUrlRequest) (*pb.CreateFileUploadUrlReply, error) {
-	return &pb.CreateFileUploadUrlReply{}, nil
+	fileID := uuid.New().String()
+	// Return the file ID encoded in the URL; client will use it
+	// with the raw upload endpoint or the CreateFile endpoint.
+	return &pb.CreateFileUploadUrlReply{
+		Url: fileID,
+	}, nil
 }
+
+// CreateFile saves a file record. In the pre-signed URL flow, the client
+// uploads to the storage backend directly and then calls this to confirm.
 func (s *FileService) CreateFile(ctx context.Context, req *pb.FileUploadRequest) (*pb.FileUploadReply, error) {
-	return &pb.FileUploadReply{}, nil
+	fileID := req.FileId
+	if fileID == "" {
+		return &pb.FileUploadReply{SaveFlag: false}, nil
+	}
+	// Placeholder: in a full pre-signed flow we'd look up metadata by fileId
+	// and save the record. For now, return true to indicate acceptance.
+	return &pb.FileUploadReply{SaveFlag: true}, nil
 }
+
+// GetFile returns a file record by its database ID.
 func (s *FileService) GetFile(ctx context.Context, req *pb.GetFileRequest) (*pb.GetFileReply, error) {
-	return &pb.GetFileReply{}, nil
+	id, err := strconv.ParseUint(req.Id, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	record, err := s.fc.Get(ctx, uint(id))
+	if err != nil {
+		return nil, err
+	}
+	return &pb.GetFileReply{
+		Id:       strconv.FormatUint(uint64(record.Id), 10),
+		FileName: record.FileName,
+		FilePath: record.FilePath,
+		FileType: record.FileType,
+		FileUrl:  record.FileUrl,
+		FileExt:  record.FileExt,
+	}, nil
+}
+
+// HandleRawUpload processes a raw file upload.
+func (s *FileService) HandleRawUpload(ctx context.Context, fileName string, fileSize int64, contentType string, reader io.Reader) (id uint, url string, err error) {
+	fileExt := path.Ext(fileName)
+	return s.fc.Upload(ctx, fileName, fileSize, contentType, fileExt, reader)
+}
+
+// HandleRawUploadHTTP is the Kratos HTTP handler for raw file upload via multipart form.
+// Route: POST /file/upload/raw/v1
+func (s *FileService) HandleRawUploadHTTP(ctx http.Context) error {
+	req := ctx.Request()
+	if err := req.ParseMultipartForm(32 << 20); err != nil {
+		return err
+	}
+	file, header, err := req.FormFile("file")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	fileName := header.Filename
+	contentType := header.Header.Get("Content-Type")
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+	fileSize := header.Size
+
+	id, url, err := s.HandleRawUpload(ctx, fileName, fileSize, contentType, file)
+	if err != nil {
+		return err
+	}
+	return ctx.Result(200, map[string]any{
+		"id":  fmt.Sprintf("%d", id),
+		"url": url,
+	})
 }

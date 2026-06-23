@@ -1,7 +1,9 @@
 package server
 
 import (
+	appV1 "blog/api/app/v1"
 	debtV1 "blog/api/debt/v1"
+	fileV1 "blog/api/file/v1"
 	fuelV1 "blog/api/fuel/v1"
 	v1 "blog/api/helloworld/v1"
 	ocrv1 "blog/api/ocr/v1"
@@ -31,6 +33,8 @@ func NewHTTPServer(c *conf.Server, greeter *service.GreeterService,
 	debtService *service.DebtService,
 	detailService *service.DebtDetailService,
 	fuelService *service.FuelService,
+	appService *service.AppService,
+	fileService *service.FileService,
 	logger log.Logger) *http.Server {
 	var opts = []http.ServerOption{
 		http.Middleware(
@@ -67,7 +71,10 @@ func NewHTTPServer(c *conf.Server, greeter *service.GreeterService,
 	debtV1.RegisterDebtHTTPServer(srv, debtService)
 	debtV1.RegisterDebtDetailHTTPServer(srv, detailService)
 	fuelV1.RegisterFuelHTTPServer(srv, fuelService)
+	appV1.RegisterAppHTTPServer(srv, appService)
+	fileV1.RegisterFileHTTPServer(srv, fileService)
 	srv.Route("/").POST("/debtDetail/ocr/v1", detailService.RecognizeDebtDetailOCRHTTP)
+	srv.Route("/").POST("/file/upload/raw/v1", fileService.HandleRawUploadHTTP)
 	return srv
 }
 func NewWhiteListMatcher() selector.MatchFunc {
@@ -79,6 +86,7 @@ func NewWhiteListMatcher() selector.MatchFunc {
 	whiteList["/shop.interface.v1.ShopInterface/Register"] = struct{}{}
 	whiteList["/user.v1.User/UserLogin"] = struct{}{}
 	whiteList["/ocr.v1.Aiocr/Ocr"] = struct{}{}
+	whiteList["/api.app.v1.App/GetVersion"] = struct{}{}
 	return func(ctx context.Context, operation string) bool {
 		if _, ok := whiteList[operation]; ok {
 			return false

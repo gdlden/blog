@@ -14,3 +14,17 @@ data:
     addr: 127.0.0.1:6379
     read_timeout: 0.2s
     write_timeout: 0.2s
+file:
+  storage_type: rustfs
+  rustfs:
+    endpoint: http://127.0.0.1:8080
+    api_key: ""
+    bucket: default
+  minio:
+    endpoint: 127.0.0.1:9000
+    access_key: minioadmin
+    secret_key: minioadmin
+    bucket: blog-files
+    use_ssl: false
+  local:
+    upload_dir: ./uploads

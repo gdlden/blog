@@ -1,0 +1,130 @@
+syntax = "proto3";
+
+package api.app.v1;
+
+option go_package = "blog/api/app/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.app.v1";
+
+import "google/api/annotations.proto";
+
+service App {
+  // GetVersion queries the latest app version for update prompts.
+  rpc GetVersion (GetVersionRequest) returns (GetVersionReply) {
+    option (google.api.http) = {
+      get: "/app/version/v1"
+    };
+  }
+
+  // ---- Admin Management ----
+
+  // CreateAppVersion creates a new app version record.
+  rpc CreateAppVersion (CreateAppVersionRequest) returns (CreateAppVersionReply) {
+    option (google.api.http) = {
+      post: "/app/version/create/v1"
+      body: "*"
+    };
+  }
+
+  // UpdateAppVersion updates an existing app version record.
+  rpc UpdateAppVersion (UpdateAppVersionRequest) returns (UpdateAppVersionReply) {
+    option (google.api.http) = {
+      post: "/app/version/update/v1"
+      body: "*"
+    };
+  }
+
+  // DeleteAppVersion deletes an app version record by id.
+  rpc DeleteAppVersion (DeleteAppVersionRequest) returns (DeleteAppVersionReply) {
+    option (google.api.http) = {
+      post: "/app/version/delete/v1"
+      body: "*"
+    };
+  }
+
+  // GetAppVersion retrieves a single app version record by id.
+  rpc GetAppVersion (GetAppVersionRequest) returns (AppVersionEntity) {
+    option (google.api.http) = {
+      get: "/app/version/get/v1"
+    };
+  }
+
+  // ListAppVersion paginated list of app versions.
+  rpc ListAppVersion (ListAppVersionRequest) returns (ListAppVersionReply) {
+    option (google.api.http) = {
+      get: "/app/version/page/v1"
+    };
+  }
+}
+
+message GetVersionRequest {
+}
+
+message GetVersionReply {
+  string version = 1;
+  repeated string info = 2;
+  string iosUrl = 3;
+  string androidUrl = 4;
+}
+
+// ---- Admin Management Messages ----
+
+message AppVersionEntity {
+  int64 id = 1;
+  string version = 2;
+  repeated string info = 3;
+  string iosUrl = 4;
+  string androidUrl = 5;
+  bool isActive = 6;
+  string createdAt = 7;
+  string updatedAt = 8;
+}
+
+message CreateAppVersionRequest {
+  string version = 1;
+  repeated string info = 2;
+  string iosUrl = 3;
+  string androidUrl = 4;
+  bool isActive = 5;
+}
+
+message CreateAppVersionReply {
+  int64 id = 1;
+}
+
+message UpdateAppVersionRequest {
+  int64 id = 1;
+  string version = 2;
+  repeated string info = 3;
+  string iosUrl = 4;
+  string androidUrl = 5;
+  bool isActive = 6;
+}
+
+message UpdateAppVersionReply {
+  int64 id = 1;
+}
+
+message DeleteAppVersionRequest {
+  int64 id = 1;
+}
+
+message DeleteAppVersionReply {
+  bool success = 1;
+}
+
+message GetAppVersionRequest {
+  int64 id = 1;
+}
+
+message ListAppVersionRequest {
+  int64 page = 1;
+  int64 pageSize = 2;
+}
+
+message ListAppVersionReply {
+  int64 page = 1;
+  int64 pageSize = 2;
+  int64 total = 3;
+  repeated AppVersionEntity list = 4;
+}
