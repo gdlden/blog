@@ -5,6 +5,7 @@ import {
   createAppVersion,
   updateAppVersion,
   deleteAppVersion,
+  uploadFile,
   type AppVersionEntity,
 } from '@/api/appVersion'
 
@@ -28,6 +29,8 @@ const visiblePages = computed<Array<number | '...'>>(() => {
 const showModal = ref(false)
 const isEditing = ref(false)
 const isSubmitting = ref(false)
+const uploadingIOS = ref(false)
+const uploadingAndroid = ref(false)
 const formData = ref({
   id: 0,
   version: '',
@@ -123,6 +126,38 @@ function changePage(page: number) {
 
 function closeModal() {
   showModal.value = false
+}
+
+async function handleUploadIOS(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  uploadingIOS.value = true
+  try {
+    const res = await uploadFile(file)
+    formData.value.iosUrl = res.url
+  } catch {
+    // handled by interceptor
+  } finally {
+    uploadingIOS.value = false
+    input.value = '' // allow re-upload same file
+  }
+}
+
+async function handleUploadAndroid(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  uploadingAndroid.value = true
+  try {
+    const res = await uploadFile(file)
+    formData.value.androidUrl = res.url
+  } catch {
+    // handled by interceptor
+  } finally {
+    uploadingAndroid.value = false
+    input.value = ''
+  }
 }
 </script>
 
@@ -306,21 +341,43 @@ function closeModal() {
               <!-- iOS URL -->
               <div>
                 <label class="block text-[13px] font-medium text-[#1d1d1f] mb-1">iOS 下载地址</label>
-                <input
-                  v-model="formData.iosUrl"
-                  placeholder="itms-apps://..."
-                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-[15px] text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
-                />
+                <div class="flex gap-2">
+                  <input
+                    v-model="formData.iosUrl"
+                    placeholder="itms-apps://..."
+                    class="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-[15px] text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                  />
+                  <label
+                    class="inline-flex items-center gap-1.5 px-3 py-2 bg-[#f5f5f7] text-[#1d1d1f] text-[13px] font-medium rounded-lg cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap"
+                    :class="{ 'opacity-50 pointer-events-none': uploadingIOS }"
+                  >
+                    <svg v-if="!uploadingIOS" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                    <svg v-else class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    {{ uploadingIOS ? '上传中...' : '上传 IPA' }}
+                    <input type="file" accept=".ipa,.dmg,.app" hidden @change="handleUploadIOS" />
+                  </label>
+                </div>
               </div>
 
               <!-- Android URL -->
               <div>
                 <label class="block text-[13px] font-medium text-[#1d1d1f] mb-1">Android 下载地址</label>
-                <input
-                  v-model="formData.androidUrl"
-                  placeholder="https://..."
-                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-[15px] text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
-                />
+                <div class="flex gap-2">
+                  <input
+                    v-model="formData.androidUrl"
+                    placeholder="https://..."
+                    class="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-[15px] text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:border-transparent"
+                  />
+                  <label
+                    class="inline-flex items-center gap-1.5 px-3 py-2 bg-[#f5f5f7] text-[#1d1d1f] text-[13px] font-medium rounded-lg cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap"
+                    :class="{ 'opacity-50 pointer-events-none': uploadingAndroid }"
+                  >
+                    <svg v-if="!uploadingAndroid" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                    <svg v-else class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    {{ uploadingAndroid ? '上传中...' : '上传 APK' }}
+                    <input type="file" accept=".apk,.aab" hidden @change="handleUploadAndroid" />
+                  </label>
+                </div>
               </div>
 
               <!-- Active toggle -->

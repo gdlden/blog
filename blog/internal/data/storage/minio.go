@@ -88,3 +88,15 @@ func (s *minioStorage) Delete(ctx context.Context, key string) error {
 	}
 	return nil
 }
+
+func (s *minioStorage) GetReader(ctx context.Context, key string) (io.ReadCloser, error) {
+	objectKey := key
+	if len(key) > len(s.bucket)+1 && key[:len(s.bucket)] == s.bucket {
+		objectKey = key[len(s.bucket)+1:]
+	}
+	obj, err := s.client.GetObject(ctx, s.bucket, objectKey, minio.GetObjectOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("minio: get reader: %w", err)
+	}
+	return obj, nil
+}

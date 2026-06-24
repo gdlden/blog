@@ -17,9 +17,11 @@ data:
 file:
   storage_type: rustfs
   rustfs:
-    endpoint: http://127.0.0.1:8080
-    api_key: ""
-    bucket: default
+    endpoint: https://file.hukss.cn
+    access_key: "${RS_ACCESS_KEY}"
+    secret_key: "${RS_SECRET_KEY}"
+    bucket: blog-files
+    region: default
   minio:
     endpoint: 127.0.0.1:9000
     access_key: minioadmin

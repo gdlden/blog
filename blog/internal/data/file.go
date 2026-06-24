@@ -111,6 +111,10 @@ func (a *storageAdapter) Delete(ctx context.Context, key string) error {
 	return a.s.Delete(ctx, key)
 }
 
+func (a *storageAdapter) GetReader(ctx context.Context, key string) (io.ReadCloser, error) {
+	return a.s.GetReader(ctx, key)
+}
+
 // noopStorage is a fallback that does nothing.
 type noopStorage struct{}
 
@@ -120,6 +124,10 @@ func (n *noopStorage) Upload(ctx context.Context, _ string, _ int64, _ string, _
 
 func (n *noopStorage) Delete(_ context.Context, _ string) error {
 	return nil
+}
+
+func (n *noopStorage) GetReader(_ context.Context, _ string) (io.ReadCloser, error) {
+	return nil, nil
 }
 
 // getFileExt returns the file extension from a filename.

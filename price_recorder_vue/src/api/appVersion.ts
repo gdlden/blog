@@ -47,3 +47,9 @@ export async function updateAppVersion(
 export async function deleteAppVersion(id: number): Promise<{ success: boolean }> {
   return await instance.post("/app/version/delete/v1", { id })
 }
+
+export async function uploadFile(file: File): Promise<{ id: string; url: string }> {
+  const formData = new FormData()
+  formData.append("file", file)
+  return await instance.post("/file/upload/raw/v1", formData)
+}

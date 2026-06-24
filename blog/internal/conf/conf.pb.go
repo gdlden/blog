@@ -153,8 +153,10 @@ func (x *File) GetLocal() *Local {
 type Rustfs struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Endpoint      string                 `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
-	ApiKey        string                 `protobuf:"bytes,2,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
-	Bucket        string                 `protobuf:"bytes,3,opt,name=bucket,proto3" json:"bucket,omitempty"`
+	AccessKey     string                 `protobuf:"bytes,2,opt,name=access_key,json=accessKey,proto3" json:"access_key,omitempty"`
+	SecretKey     string                 `protobuf:"bytes,3,opt,name=secret_key,json=secretKey,proto3" json:"secret_key,omitempty"`
+	Bucket        string                 `protobuf:"bytes,4,opt,name=bucket,proto3" json:"bucket,omitempty"`
+	Region        string                 `protobuf:"bytes,5,opt,name=region,proto3" json:"region,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -196,9 +198,16 @@ func (x *Rustfs) GetEndpoint() string {
 	return ""
 }
 
-func (x *Rustfs) GetApiKey() string {
+func (x *Rustfs) GetAccessKey() string {
 	if x != nil {
-		return x.ApiKey
+		return x.AccessKey
+	}
+	return ""
+}
+
+func (x *Rustfs) GetSecretKey() string {
+	if x != nil {
+		return x.SecretKey
 	}
 	return ""
 }
@@ -206,6 +215,13 @@ func (x *Rustfs) GetApiKey() string {
 func (x *Rustfs) GetBucket() string {
 	if x != nil {
 		return x.Bucket
+	}
+	return ""
+}
+
+func (x *Rustfs) GetRegion() string {
+	if x != nil {
+		return x.Region
 	}
 	return ""
 }
@@ -688,11 +704,15 @@ const file_conf_conf_proto_rawDesc = "" +
 	"\fstorage_type\x18\x01 \x01(\tR\vstorageType\x12*\n" +
 	"\x06rustfs\x18\x02 \x01(\v2\x12.kratos.api.RustfsR\x06rustfs\x12'\n" +
 	"\x05minio\x18\x03 \x01(\v2\x11.kratos.api.MinioR\x05minio\x12'\n" +
-	"\x05local\x18\x04 \x01(\v2\x11.kratos.api.LocalR\x05local\"U\n" +
+	"\x05local\x18\x04 \x01(\v2\x11.kratos.api.LocalR\x05local\"\x92\x01\n" +
 	"\x06Rustfs\x12\x1a\n" +
-	"\bendpoint\x18\x01 \x01(\tR\bendpoint\x12\x17\n" +
-	"\aapi_key\x18\x02 \x01(\tR\x06apiKey\x12\x16\n" +
-	"\x06bucket\x18\x03 \x01(\tR\x06bucket\"\x92\x01\n" +
+	"\bendpoint\x18\x01 \x01(\tR\bendpoint\x12\x1d\n" +
+	"\n" +
+	"access_key\x18\x02 \x01(\tR\taccessKey\x12\x1d\n" +
+	"\n" +
+	"secret_key\x18\x03 \x01(\tR\tsecretKey\x12\x16\n" +
+	"\x06bucket\x18\x04 \x01(\tR\x06bucket\x12\x16\n" +
+	"\x06region\x18\x05 \x01(\tR\x06region\"\x92\x01\n" +
 	"\x05Minio\x12\x1a\n" +
 	"\bendpoint\x18\x01 \x01(\tR\bendpoint\x12\x1d\n" +
 	"\n" +

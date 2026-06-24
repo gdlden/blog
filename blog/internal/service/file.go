@@ -93,12 +93,45 @@ func (s *FileService) HandleRawUploadHTTP(ctx http.Context) error {
 	}
 	fileSize := header.Size
 
-	id, url, err := s.HandleRawUpload(ctx, fileName, fileSize, contentType, file)
+	id, _, err := s.HandleRawUpload(ctx, fileName, fileSize, contentType, file)
 	if err != nil {
 		return err
 	}
 	return ctx.Result(200, map[string]any{
 		"id":  fmt.Sprintf("%d", id),
-		"url": url,
+		"url": fmt.Sprintf("/file/download/v1/%d", id),
 	})
+}
+
+// HandleDownloadHTTP streams a file from the storage backend to the client.
+// Route: GET /file/download/v1/{id}
+func (s *FileService) HandleDownloadHTTP(ctx http.Context) error {
+	http.SetOperation(ctx, "/file.v1.File/Download")
+	idValues := ctx.Vars()["id"]
+	if len(idValues) == 0 {
+		return fmt.Errorf("missing file id")
+	}
+	idStr := idValues[0]
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		return err
+	}
+	record, err := s.fc.Get(ctx, uint(id))
+	if err != nil {
+		return err
+	}
+	reader, err := s.fc.GetReader(ctx, record.FileUrl)
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+
+	w := ctx.Response()
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, record.FileName))
+	if record.FileType != "" {
+		w.Header().Set("Content-Type", record.FileType)
+	}
+	w.WriteHeader(200)
+	_, err = io.Copy(w, reader)
+	return err
 }

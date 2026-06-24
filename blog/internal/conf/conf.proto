@@ -20,8 +20,10 @@ message File {
 
 message Rustfs {
   string endpoint = 1;
-  string api_key = 2;
-  string bucket = 3;
+  string access_key = 2;
+  string secret_key = 3;
+  string bucket = 4;
+  string region = 5;
 }
 
 message Minio {

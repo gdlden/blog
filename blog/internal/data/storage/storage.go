@@ -15,6 +15,9 @@ type Storage interface {
 
 	// Delete removes a file by its key (file path or object name).
 	Delete(ctx context.Context, key string) error
+
+	// GetReader returns a reader for downloading a file by its key.
+	GetReader(ctx context.Context, key string) (io.ReadCloser, error)
 }
 
 // New creates a Storage backend based on config.

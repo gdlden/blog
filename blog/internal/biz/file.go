@@ -36,6 +36,7 @@ type FileUsecase struct {
 type FileStorage interface {
 	Upload(ctx context.Context, fileName string, fileSize int64, contentType string, reader io.Reader) (url string, err error)
 	Delete(ctx context.Context, key string) error
+	GetReader(ctx context.Context, key string) (io.ReadCloser, error)
 }
 
 func NewFileUsecase(repo FileRepo, store FileStorage, logger log.Logger) *FileUsecase {
@@ -73,4 +74,9 @@ func (uc *FileUsecase) Upload(ctx context.Context, fileName string, fileSize int
 // Get returns a file record by ID.
 func (uc *FileUsecase) Get(ctx context.Context, id uint) (*FileRecord, error) {
 	return uc.repo.GetById(ctx, id)
+}
+
+// GetReader returns a reader for downloading a file by the stored URL.
+func (uc *FileUsecase) GetReader(ctx context.Context, fileUrl string) (io.ReadCloser, error) {
+	return uc.store.GetReader(ctx, fileUrl)
 }

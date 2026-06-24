@@ -77,3 +77,16 @@ func (s *localStorage) Delete(ctx context.Context, key string) error {
 	}
 	return nil
 }
+
+func (s *localStorage) GetReader(ctx context.Context, key string) (io.ReadCloser, error) {
+	relPath := key
+	if len(key) > len(s.baseURL) && key[:len(s.baseURL)] == s.baseURL {
+		relPath = key[len(s.baseURL)+1:]
+	}
+	fullPath := filepath.Join(s.uploadDir, relPath)
+	file, err := os.Open(fullPath)
+	if err != nil {
+		return nil, fmt.Errorf("local: open file: %w", err)
+	}
+	return file, nil
+}

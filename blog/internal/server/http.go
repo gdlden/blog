@@ -75,6 +75,7 @@ func NewHTTPServer(c *conf.Server, greeter *service.GreeterService,
 	fileV1.RegisterFileHTTPServer(srv, fileService)
 	srv.Route("/").POST("/debtDetail/ocr/v1", detailService.RecognizeDebtDetailOCRHTTP)
 	srv.Route("/").POST("/file/upload/raw/v1", fileService.HandleRawUploadHTTP)
+	srv.Route("/").GET("/file/download/v1/{id}", fileService.HandleDownloadHTTP)
 	return srv
 }
 func NewWhiteListMatcher() selector.MatchFunc {
@@ -87,6 +88,7 @@ func NewWhiteListMatcher() selector.MatchFunc {
 	whiteList["/user.v1.User/UserLogin"] = struct{}{}
 	whiteList["/ocr.v1.Aiocr/Ocr"] = struct{}{}
 	whiteList["/api.app.v1.App/GetVersion"] = struct{}{}
+	whiteList["/file.v1.File/Download"] = struct{}{}
 	return func(ctx context.Context, operation string) bool {
 		if _, ok := whiteList[operation]; ok {
 			return false
