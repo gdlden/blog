@@ -9,6 +9,7 @@ message Bootstrap {
   Server server = 1;
   Data data = 2;
   File file = 3;
+  SMTP smtp = 4;
 }
 
 message File {
@@ -36,6 +37,14 @@ message Minio {
 
 message Local {
   string upload_dir = 1;
+}
+
+message SMTP {
+  string host = 1;
+  int32 port = 2;
+  string username = 3;
+  string password = 4;
+  string from = 5;
 }
 
 message Server {

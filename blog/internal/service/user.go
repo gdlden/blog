@@ -15,12 +15,14 @@ import (
 type UserService struct {
 	pb.UnimplementedUserServer
 	uc  *biz.UserUsecase
+	vuc *biz.VerificationUsecase
 	log *log.Helper
 }
 
-func NewUserService(uc *biz.UserUsecase, logger log.Logger) *UserService {
+func NewUserService(uc *biz.UserUsecase, vuc *biz.VerificationUsecase, logger log.Logger) *UserService {
 	return &UserService{
 		uc:  uc,
+		vuc: vuc,
 		log: log.NewHelper(logger),
 	}
 }
@@ -155,6 +157,63 @@ func (s *UserService) UserLogin(ctx context.Context, req *pb.UserLoginRequest) (
 			Password:    "",
 			PhoneNumber: user.PhoneNumber,
 			Email:       user.Email,
+		},
+	}, nil
+}
+
+func (s *UserService) SendEmailCode(ctx context.Context, req *pb.SendEmailCodeRequest) (*pb.SendEmailCodeReply, error) {
+	if req.Email == "" {
+		return &pb.SendEmailCodeReply{Flag: false, Message: "邮箱不能为空"}, nil
+	}
+
+	if err := s.vuc.SendCode(ctx, req.Email); err != nil {
+		return &pb.SendEmailCodeReply{Flag: false, Message: err.Error()}, nil
+	}
+
+	return &pb.SendEmailCodeReply{Flag: true, Message: "验证码已发送"}, nil
+}
+
+func (s *UserService) RegisterWithEmail(ctx context.Context, req *pb.RegisterWithEmailRequest) (*pb.LoginReply, error) {
+	if req.Email == "" || req.Code == "" || req.Username == "" || req.Password == "" {
+		return nil, errors.New("邮箱、验证码、用户名和密码不能为空")
+	}
+
+	// 验证邮箱验证码
+	if err := s.vuc.VerifyCode(ctx, req.Email, req.Code); err != nil {
+		return nil, err
+	}
+
+	// 创建用户
+	user := &biz.User{
+		ID:       uuid.New().String(),
+		Username: req.Username,
+		Password: req.Password,
+		Email:    req.Email,
+	}
+	if err := s.uc.Create(ctx, user); err != nil {
+		return nil, err
+	}
+
+	// 签发 JWT token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"username": user.Username,
+		"userId":   user.ID,
+	})
+	secretKey := []byte("dfsdsjikldsfkdfjdkls")
+	tokenStr, err := token.SignedString(secretKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.LoginReply{
+		Code:  "200",
+		Msg:   "注册成功",
+		Token: tokenStr,
+		User: &pb.UserCommom{
+			UserId:   user.ID,
+			Username: user.Username,
+			Password: "",
+			Email:    user.Email,
 		},
 	}, nil
 }

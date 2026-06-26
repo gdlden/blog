@@ -89,6 +89,8 @@ func NewWhiteListMatcher() selector.MatchFunc {
 	whiteList["/ocr.v1.Aiocr/Ocr"] = struct{}{}
 	whiteList["/api.app.v1.App/GetVersion"] = struct{}{}
 	whiteList["/file.v1.File/Download"] = struct{}{}
+	whiteList["/user.v1.User/SendEmailCode"] = struct{}{}
+	whiteList["/user.v1.User/RegisterWithEmail"] = struct{}{}
 	return func(ctx context.Context, operation string) bool {
 		if _, ok := whiteList[operation]; ok {
 			return false

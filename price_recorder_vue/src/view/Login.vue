@@ -95,6 +95,11 @@ const cancel = () => {
             {{ isLoading ? '登录中...' : '登录' }}
           </button>
         </div>
+
+        <div class="text-center pt-3">
+          <span style="font-size: 14px; color: #999;">还没有账号？</span>
+          <router-link to="/register" style="font-size: 14px; color: #0071e3; text-decoration: underline;">去注册</router-link>
+        </div>
       </div>
     </div>
   </div>

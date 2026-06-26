@@ -44,6 +44,18 @@ service User {
 			body: "*"
 		};
 	};
+	rpc SendEmailCode(SendEmailCodeRequest) returns(SendEmailCodeReply) {
+		option (google.api.http) = {
+			post: "/user/send-email-code/v1"
+			body: "*"
+		};
+	};
+	rpc RegisterWithEmail(RegisterWithEmailRequest) returns(LoginReply) {
+		option (google.api.http) = {
+			post: "/user/register/v1"
+			body: "*"
+		};
+	};
 }
 
 message UserCommom {
@@ -124,4 +136,20 @@ message UserLoginRequest {
 	string password = 2;
 	string phoneNumber = 3;
 	string emal = 4;
+}
+
+message SendEmailCodeRequest {
+	string email = 1;
+}
+
+message SendEmailCodeReply {
+	bool flag = 1;
+	string message = 2;
+}
+
+message RegisterWithEmailRequest {
+	string email = 1;
+	string code = 2;
+	string username = 3;
+	string password = 4;
 }
