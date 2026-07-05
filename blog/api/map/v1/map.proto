@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+package map.v1;
+
+import "google/api/annotations.proto";
+
+option go_package = "blog/api/map/v1;v1";
+option java_multiple_files = true;
+option java_package = "dev.kratos.api.map.v1";
+option java_outer_classname = "MapProtoV1";
+
+service Map {
+  rpc CreateSpot (CreateSpotRequest) returns (CreateSpotReply) {
+    option (google.api.http) = {
+      post: "/map/save/v1"
+      body: "*"
+    };
+  }
+  rpc ListSpots (ListSpotsRequest) returns (ListSpotsReply) {
+    option (google.api.http) = {
+      get: "/map/list/v1"
+    };
+  }
+  rpc UpdateSpot (UpdateSpotRequest) returns (UpdateSpotReply) {
+    option (google.api.http) = {
+      post: "/map/update/v1"
+      body: "*"
+    };
+  }
+  rpc DeleteSpot (DeleteSpotRequest) returns (DeleteSpotReply) {
+    option (google.api.http) = {
+      post: "/map/delete/v1"
+      body: "*"
+    };
+  }
+  rpc GetSpot (GetSpotRequest) returns (GetSpotReply) {
+    option (google.api.http) = {
+      get: "/map/get/{id}"
+    };
+  }
+  rpc ReverseGeocode (ReverseGeocodeRequest) returns (ReverseGeocodeReply) {
+    option (google.api.http) = {
+      post: "/map/reverse-geocode/v1"
+      body: "*"
+    };
+  }
+}
+
+message SpotEntity {
+  string id = 1;
+  string name = 2;
+  double latitude = 3;
+  double longitude = 4;
+  string notes = 5;
+  string tags = 6;
+  repeated string photos = 7;
+  string address = 8;
+  string created_at = 9;
+  string updated_at = 10;
+}
+
+message CreateSpotRequest {
+  string name = 1;
+  double latitude = 2;
+  double longitude = 3;
+  string notes = 4;
+  string tags = 5;
+  repeated string photos = 6;
+  string address = 7;
+}
+message CreateSpotReply {
+  SpotEntity spot = 1;
+}
+
+message ListSpotsRequest {}
+message ListSpotsReply {
+  repeated SpotEntity spots = 1;
+}
+
+message UpdateSpotRequest {
+  string id = 1;
+  string name = 2;
+  double latitude = 3;
+  double longitude = 4;
+  string notes = 5;
+  string tags = 6;
+  repeated string photos = 7;
+  string address = 8;
+}
+message UpdateSpotReply {
+  SpotEntity spot = 1;
+}
+
+message DeleteSpotRequest {
+  string id = 1;
+}
+message DeleteSpotReply {
+  bool success = 1;
+}
+
+message GetSpotRequest {
+  string id = 1;
+}
+message GetSpotReply {
+  SpotEntity spot = 1;
+}
+
+message ReverseGeocodeRequest {
+  double latitude = 1;
+  double longitude = 2;
+}
+message ReverseGeocodeReply {
+  string address = 1;
+}
