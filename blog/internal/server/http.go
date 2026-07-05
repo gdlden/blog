@@ -6,6 +6,7 @@ import (
 	fileV1 "blog/api/file/v1"
 	fuelV1 "blog/api/fuel/v1"
 	v1 "blog/api/helloworld/v1"
+	mapV1 "blog/api/map/v1"
 	ocrv1 "blog/api/ocr/v1"
 	postV1 "blog/api/post/v1"
 	priceV1 "blog/api/price/v1"
@@ -35,6 +36,7 @@ func NewHTTPServer(c *conf.Server, greeter *service.GreeterService,
 	fuelService *service.FuelService,
 	appService *service.AppService,
 	fileService *service.FileService,
+	mapService *service.MapService,
 	logger log.Logger) *http.Server {
 	var opts = []http.ServerOption{
 		http.Middleware(
@@ -73,6 +75,7 @@ func NewHTTPServer(c *conf.Server, greeter *service.GreeterService,
 	fuelV1.RegisterFuelHTTPServer(srv, fuelService)
 	appV1.RegisterAppHTTPServer(srv, appService)
 	fileV1.RegisterFileHTTPServer(srv, fileService)
+	mapV1.RegisterMapHTTPServer(srv, mapService)
 	srv.Route("/").POST("/debtDetail/ocr/v1", detailService.RecognizeDebtDetailOCRHTTP)
 	srv.Route("/").POST("/file/upload/raw/v1", fileService.HandleRawUploadHTTP)
 	srv.Route("/").GET("/file/download/v1/{id}", fileService.HandleDownloadHTTP)
