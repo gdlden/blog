@@ -106,6 +106,13 @@ Plans:
 
 **Requirements:** MAP-01, MAP-02, MAP-03
 
+**Plans:** 3 plans
+
+Plans:
+- [x] 13-01-PLAN.md — Map proto contract + GORM data layer + MapUsecase with Gaode regeo (shipped)
+- [x] 13-02-PLAN.md — MapService proto handler + Wire DI + JWT-protected HTTP routes (shipped)
+- [ ] 13-03-PLAN.md — Frontend resumption: Gaode map view + capture bottom-sheet + spot CRUD UI + nav deep-link + Vitest coverage (closes 4 VERIFICATION gaps + registers MAP reqs)
+
 **Success Criteria:**
 
 1. User can capture and save current GPS coordinates with a name/note
