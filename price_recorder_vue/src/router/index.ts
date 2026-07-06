@@ -66,6 +66,12 @@ const router = createRouter({
           component: () => import('@/view/AppVersionMgmt.vue'),
           meta: { requiresAuth: true },
         },
+        {
+          name: 'map',
+          path: 'map',
+          component: () => import('@/view/Map.vue'),
+          meta: { requiresAuth: true },
+        },
       ],
     },
   ],

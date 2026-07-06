@@ -15,6 +15,7 @@ const navItems = [
   { name: 'fuel', path: '/fuel', label: '油耗' },
   { name: 'price', path: '/price', label: '价格' },
   { name: 'appVersion', path: '/app-version', label: '版本' },
+  { name: 'map', path: '/map', label: '地图' },
 ]
 
 const currentRouteName = computed(() => route.name as string)
