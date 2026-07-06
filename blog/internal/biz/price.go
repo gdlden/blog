@@ -10,13 +10,13 @@ import (
 
 // Price is a price model for grocery receipts.
 type Price struct {
-	ID           uint
-	ProductName  string
-	Weight       decimal.Decimal
-	UnitPrice    decimal.Decimal
-	TotalPrice   decimal.Decimal
-	PriceDate    string
-	UserId       string
+	ID          uint
+	ProductName string
+	Weight      decimal.Decimal
+	UnitPrice   decimal.Decimal
+	TotalPrice  decimal.Decimal
+	PriceDate   string
+	UserId      string
 }
 
 type PricePageRequest struct {
