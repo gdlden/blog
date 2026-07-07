@@ -13,7 +13,7 @@
 | 9 | Frontend Automated Tests | Add Vitest coverage for critical auth, navigation, blog CRUD, and debt CRUD flows | TEST-01, TEST-02, TEST-03, TEST-04 |
 | 10 | Contributor Documentation | Document the generated-code workflow and verification commands so contributors can set up and test reliably | DOC-01, DOC-02, DOC-03, DOC-04 |
 | 11 | OCR Debt Detail Recognition | Allow users to upload a screenshot of debt installment details and automatically extract period, principal, interest, and posting date to pre-fill the debt detail form | OCR-01, OCR-02, OCR-03, OCR-04 |
-| 13 | 2/2 | Complete   | 2026-07-05 |
+| 13 | Fishing Spot Map | Save and manage GPS-tagged favorite locations — capture current position, name spots, and find them later | MAP-01, MAP-02, MAP-03 |
 
 ## Phase Details
 
@@ -106,12 +106,13 @@ Plans:
 
 **Requirements:** MAP-01, MAP-02, MAP-03
 
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
+
 - [x] 13-01-PLAN.md — Map proto contract + GORM data layer + MapUsecase with Gaode regeo (shipped)
 - [x] 13-02-PLAN.md — MapService proto handler + Wire DI + JWT-protected HTTP routes (shipped)
-- [ ] 13-03-PLAN.md — Frontend resumption: Gaode map view + capture bottom-sheet + spot CRUD UI + nav deep-link + Vitest coverage (closes 4 VERIFICATION gaps + registers MAP reqs)
+- [x] 13-03-PLAN.md — Frontend resumption: Gaode map view + capture bottom-sheet + spot CRUD UI + nav deep-link + Vitest coverage (closes 4 VERIFICATION gaps + registers MAP reqs)
 
 **Success Criteria:**
 
@@ -127,3 +128,4 @@ Plans:
 *Roadmap created: 2026-03-26*
 *Updated: 2026-04-26 - Added phase 11 OCR Debt Detail Recognition*
 *Updated: 2026-07-05 - Added phase 13 Fishing Spot Map*
+*Updated: 2026-07-07 - Phase 13 plan 13-03 complete; 3/3 plans shipped*

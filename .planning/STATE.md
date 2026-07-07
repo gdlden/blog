@@ -4,14 +4,14 @@ milestone: v1.1
 milestone_name: Polish & Standardization
 current_phase: 13
 status: Executing v1.1
-stopped_at: Phase 13 plan 13-03 ready for execution
-last_updated: "2026-07-06T16:40:15.908Z"
+stopped_at: Completed phase 13 plan 13-03 (frontend Gaode map UI)
+last_updated: "2026-07-07T00:30:00.000Z"
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 7
-  completed_plans: 5
-  percent: 33
+  completed_plans: 6
+  percent: 43
 ---
 
 # Project State
@@ -77,6 +77,11 @@ Phase 8 complete. Phase 9 (Frontend Automated Tests) ready to plan, Phase 11 (OC
 - Implemented 2-column grid layout in debt modal for better form organization on desktop
 - Toast notifications configured with 3000ms timeout, top-right position per D-17 through D-19
 - Chinese toast messages used consistently across blog and debt stores
+- Phase 13 plan 13-03 CR-1: `map.ts getSpot` uses path-template `/map/get/{id}` not the fuel.ts query form (map_http.pb.go registers a path-template route)
+- Phase 13 plan 13-03 CR-2: frontend pre-converts WGS-84→GCJ-02 via `AMap.convertFrom` BEFORE calling reverseGeocode — backend biz/map.go has no conversion (PINNED)
+- Phase 13 plan 13-03 CR-3: `deleteSpot` reply cast as `{success}` (CR-3, not fuel's `{flag}`); saveSpot/updateSpot typed as `Promise<{spot: SpotEntity}>`
+- Phase 13 plan 13-03 CR-4: vitest.config.ts keeps jsdom (D-21 intent was "don't introduce a second env", which jsdom already satisfies)
+- Phase 13 plan 13-03: MarkerClusterer plugin loaded but clustering instantiation deferred to follow-up phase; 6 D-22 live-UAT behaviors re-routed to 13-VALIDATION Manual-Only
 
 ## Performance Metrics
 
@@ -90,6 +95,7 @@ Phase 8 complete. Phase 9 (Frontend Automated Tests) ready to plan, Phase 11 (OC
 | 07-backend-unit-tests | 01 | 10 min | 1 | 1 | 2026-04-05 |
 | 07-backend-unit-tests | 02 | 5 min | 2 | 2 | 2026-04-05 |
 | 07-backend-unit-tests | 03 | 12 min | 2 | 3 | 2026-04-05 |
+| 13-fishing-spot-map | 03 | 30 min | 6 | 10 | 2026-07-07 |
 
 ### Quick Tasks Completed
 
@@ -112,6 +118,6 @@ Phase 8 complete. Phase 9 (Frontend Automated Tests) ready to plan, Phase 11 (OC
 
 ## Session
 
-**Last session:** 2026-07-06T16:40:15.896Z
-**Stopped at:** Phase 13 plan 13-03 ready for execution
-**Resume file:** .planning/phases/13-fishing-spot-map/13-03-PLAN.md
+**Last session:** 2026-07-07T00:30:00.000Z
+**Stopped at:** Completed phase 13 plan 13-03 (frontend Gaode map UI) — 6 commits ship frontend, 49 vitest tests green
+**Resume file:** .planning/phases/13-fishing-spot-map/13-03-SUMMARY.md
