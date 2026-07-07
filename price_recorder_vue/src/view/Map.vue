@@ -261,7 +261,9 @@ function openCaptureSheet(spot: SpotEntity | null): void {
     notes.value = ''
     tags.value = ''
     photoPreviews.value = []
-    capturedAddress.value = ''
+    // do NOT reset capturedAddress here — the caller (handleCaptureFab)
+    // sets it just before opening the sheet; resetting would wipe the
+    // freshly reverse-geocoded address chip.
     showExpandedForm.value = false
   }
   captureOpen.value = true
