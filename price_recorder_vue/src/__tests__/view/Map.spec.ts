@@ -44,11 +44,14 @@ vi.mock('vue-toastification', () => ({
   }),
 }))
 
+const stubSpots = reactive<SpotEntity[]>([])
 const stubState = reactive({ selectedSpot: null as SpotEntity | null })
 
 vi.mock('@/stores/mapStore', () => ({
   useMapStore: () => ({
-    spots: [] as SpotEntity[],
+    get spots() {
+      return stubSpots
+    },
     get selectedSpot() {
       return stubState.selectedSpot
     },
@@ -58,7 +61,9 @@ vi.mock('@/stores/mapStore', () => ({
     searchQuery: '',
     spotCount: 0,
     allTags: [] as string[],
-    filteredSpots: [] as SpotEntity[],
+    get filteredSpots() {
+      return stubSpots
+    },
     fetchSpots: fetchSpotsMock,
     saveSpot: saveSpotMock,
     updateSpot: vi.fn(),
@@ -86,6 +91,10 @@ function stubAmapGlobals(): void {
     destroy = vi.fn()
     setFitView = vi.fn()
     setCenter = vi.fn()
+    on = vi.fn((_event: string, handler: Function) => {
+      ;(window as any).__lastMapEventHandler = handler
+    })
+    setZoom = vi.fn()
     constructor(_id: string, _opts: any) {}
   }
   class StubMarker {
@@ -133,6 +142,7 @@ describe('Map.vue', () => {
     reverseGeocodeMock.mockClear().mockResolvedValue('测试地址')
     uploadSpotPhotoMock.mockClear().mockResolvedValue({ url: 'https://cdn/x.png', name: 'p.png' })
     stubState.selectedSpot = null
+    stubSpots.splice(0)
     geoMock = vi.fn((success: any) =>
       success({ coords: { longitude: 113.265, latitude: 23.129, accuracy: 10 } }),
     )
@@ -152,6 +162,7 @@ describe('Map.vue', () => {
     delete (window as any).AMapLoader
     delete (window as any).AMap
     delete (window as any)._AMapSecurityConfig
+    delete (window as any).__lastMapEventHandler
   })
 
   it('calls navigator.geolocation.getCurrentPosition when the capture FAB is tapped', async () => {
@@ -198,6 +209,106 @@ describe('Map.vue', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.text()).toContain('测试地址')
+    wrapper.unmount()
+  })
+
+  it('opens the capture sheet with converted WGS-84 coords when a right-click fires on the map', async () => {
+    const { default: MapComponent } = await import('@/view/Map.vue')
+    const wrapper = mount(MapComponent, { global: { plugins: [createPinia()] } })
+    await flushPromises()
+
+    const handler = (window as any).__lastMapEventHandler
+    expect(handler).toBeDefined()
+    expect(typeof handler).toBe('function')
+
+    // Simulate AMap rightclick event (GCJ-02 coords: beijing area ~ 116.4, 39.9)
+    handler({ lnglat: { lng: 116.4, lat: 39.9 } })
+    await flushPromises()
+    await wrapper.vm.$nextTick()
+
+    // Capture sheet must be open (name input visible)
+    expect(wrapper.find('[data-testid="capture-name-input"]').exists()).toBe(true)
+    // Reverse geocode called with the GCJ-02 coords (CR-2: pass-through)
+    expect(reverseGeocodeMock).toHaveBeenCalledWith(
+      expect.objectContaining({ latitude: 39.9, longitude: 116.4 }),
+    )
+    wrapper.unmount()
+  })
+
+  it('shows the list toggle button when spots exist and clicking it reveals the list panel', async () => {
+    stubSpots.push({
+      id: '1',
+      name: 'Test Spot',
+      latitude: 23.1,
+      longitude: 113.2,
+      notes: '',
+      tags: 'river',
+      photos: [],
+      address: '广东省XX',
+      createdAt: '',
+      updatedAt: '',
+    })
+    const { default: MapComponent } = await import('@/view/Map.vue')
+    const wrapper = mount(MapComponent, { global: { plugins: [createPinia()] } })
+    await flushPromises()
+    await wrapper.vm.$nextTick()
+
+    // Toggle button visible
+    const toggleBtn = wrapper.find('[data-testid="list-toggle-btn"]')
+    expect(toggleBtn.exists()).toBe(true)
+    await toggleBtn.trigger('click')
+    await wrapper.vm.$nextTick()
+
+    // List item rendered
+    expect(wrapper.find('[data-testid="spot-list-item"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Test Spot')
+    expect(wrapper.text()).toContain('广东省XX')
+    expect(wrapper.text()).toContain('river')
+    wrapper.unmount()
+  })
+
+  it('clicking a spot in the list centers the map and opens the detail sheet', async () => {
+    stubSpots.push({
+      id: '2',
+      name: 'Center Me',
+      latitude: 23.5,
+      longitude: 113.5,
+      notes: '',
+      tags: '',
+      photos: [],
+      address: '',
+      createdAt: '',
+      updatedAt: '',
+    })
+    const { default: MapComponent } = await import('@/view/Map.vue')
+    const wrapper = mount(MapComponent, { global: { plugins: [createPinia()] } })
+    await flushPromises()
+    await wrapper.vm.$nextTick()
+
+    // Open list
+    await wrapper.find('[data-testid="list-toggle-btn"]').trigger('click')
+    await wrapper.vm.$nextTick()
+
+    // Click the list item
+    await wrapper.find('[data-testid="spot-list-item"]').trigger('click')
+    await wrapper.vm.$nextTick()
+
+    // Detail sheet must appear (edit btn visible)
+    expect(wrapper.find('[data-testid="spot-edit-btn"]').exists()).toBe(true)
+    // setSelectedSpot must have been called
+    expect(setSelectedSpotMock).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Center Me' }),
+    )
+    wrapper.unmount()
+  })
+
+  it('hides the list toggle button when there are no spots', async () => {
+    const { default: MapComponent } = await import('@/view/Map.vue')
+    const wrapper = mount(MapComponent, { global: { plugins: [createPinia()] } })
+    await flushPromises()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-testid="list-toggle-btn"]').exists()).toBe(false)
     wrapper.unmount()
   })
 

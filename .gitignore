@@ -46,3 +46,6 @@ blog/blog
 .planning
 images
 .reasonix
+price_recorder_vue/.env
+.omo
+.codegraph

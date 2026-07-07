@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useMapStore } from '@/stores/mapStore'
 import { useToast } from 'vue-toastification'
 import type { CreateSpotRequest, SpotEntity, UpdateSpotRequest } from '@/api/map'
+import { gcj02ToWgs84, wgs84ToGcj02 } from '@/utils/coord'
 
 // PATTERNS risk-flag #5: window._AMapSecurityConfig MUST be set BEFORE
 // AMapLoader.load. Set at the top of module scope (NOT inside onMounted)
@@ -29,6 +30,7 @@ const capturedAddress = ref('')
 const capturedWgs84 = ref<{ lng: number; lat: number } | null>(null)
 const capturedGcj02 = ref<{ lng: number; lat: number } | null>(null)
 const showEmptyTip = ref(true)
+const showList = ref(false)
 
 const name = ref('')
 const notes = ref('')
@@ -180,6 +182,23 @@ onMounted(async () => {
   mapInstance.value = new AMapNS.Map(mapContainerId, {
     zoom: 13,
     center,
+  })
+  // Right-click on the map to instantly start the capture flow at the
+  // clicked location. AMap rightclick event provides GCJ-02 coords
+  // (never WGS-84 in China); we convert to WGS-84 for persistence.
+  mapInstance.value.on('rightclick', (e: any) => {
+    const gcjLng = e.lnglat?.lng ?? e.lnglat?.getLng?.() ?? 0
+    const gcjLat = e.lnglat?.lat ?? e.lnglat?.getLat?.() ?? 0
+    if (!gcjLng || !gcjLat) return
+    const wgs84 = gcj02ToWgs84([gcjLng, gcjLat])
+    capturedWgs84.value = wgs84
+    capturedGcj02.value = { lng: gcjLng, lat: gcjLat }
+    mapStore
+      .reverseGeocode({ latitude: gcjLat, longitude: gcjLng })
+      .then((addr) => { capturedAddress.value = addr || '' })
+      .catch(() => { capturedAddress.value = '' })
+    showEmptyTip.value = false
+    captureOpen.value = true
   })
   await mapStore.fetchSpots()
   for (const spot of mapStore.spots) {
@@ -411,11 +430,44 @@ function toggleFilter(): void {
   filterOpen.value = !filterOpen.value
   if (filterOpen.value) showEmptyTip.value = false
 }
+
+function toggleList(): void {
+  showList.value = !showList.value
+}
+
+function selectSpotFromList(spot: SpotEntity): void {
+  const [gcjLng, gcjLat] = wgs84ToGcj02(spot.longitude, spot.latitude)
+  mapInstance.value?.setCenter?.([gcjLng, gcjLat])
+  mapStore.setSelectedSpot(spot)
+}
 </script>
 
 <template>
   <div class="relative w-full" style="height: calc(100vh - 56px)">
     <div :id="mapContainerId" class="absolute inset-0 w-full h-full" />
+
+    <!-- List toggle FAB (top-left) -->
+    <button
+      v-if="mapStore.spots.length > 0"
+      data-testid="list-toggle-btn"
+      class="absolute top-4 left-4 z-30 w-11 h-11 rounded-full shadow-lg text-sm font-medium flex items-center justify-center"
+      :class="
+        showList
+          ? 'bg-blue-500 text-white'
+          : 'bg-white/90 hover:bg-white text-gray-700'
+      "
+      @click="toggleList"
+      aria-label="列表"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 6h16M4 12h16M4 18h16"
+        />
+      </svg>
+    </button>
 
     <!-- Filter FAB (top-right) — D-18 -->
     <button
@@ -518,6 +570,51 @@ function toggleFilter(): void {
             @click="fitView"
           >
             适配视图
+          </button>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- Bottom spot list panel -->
+    <Transition
+      enter-active-class="transition duration-250 ease-out"
+      enter-from-class="translate-y-full"
+      enter-to-class="translate-y-0"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="translate-y-0"
+      leave-to-class="translate-y-full"
+    >
+      <div
+        v-if="showList && mapStore.spots.length > 0"
+        class="absolute bottom-[4.5rem] left-2 right-2 z-20 bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col"
+        style="max-height: 45vh"
+      >
+        <!-- Handle bar -->
+        <div class="flex justify-center pt-2 pb-1 cursor-pointer" @click="toggleList">
+          <div class="w-8 h-1 rounded-full bg-gray-300" />
+        </div>
+        <!-- Scrollable list -->
+        <div class="overflow-y-auto px-3 pb-3 space-y-0.5">
+          <button
+            v-for="spot in mapStore.filteredSpots"
+            :key="spot.id"
+            data-testid="spot-list-item"
+            class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
+            @click="selectSpotFromList(spot)"
+          >
+            <div class="text-sm font-medium text-gray-900 truncate">{{ spot.name }}</div>
+            <div v-if="spot.address" class="text-[11px] text-gray-500 truncate mt-0.5">
+              {{ spot.address }}
+            </div>
+            <div v-if="spot.tags" class="flex flex-wrap gap-1 mt-1">
+              <span
+                v-for="tag in spot.tags.split(',').map((t) => t.trim()).filter(Boolean)"
+                :key="tag"
+                class="px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 text-[10px]"
+              >
+                {{ tag }}
+              </span>
+            </div>
           </button>
         </div>
       </div>
