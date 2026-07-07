@@ -13,7 +13,7 @@
 | 9 | Frontend Automated Tests | Add Vitest coverage for critical auth, navigation, blog CRUD, and debt CRUD flows | TEST-01, TEST-02, TEST-03, TEST-04 |
 | 10 | Contributor Documentation | Document the generated-code workflow and verification commands so contributors can set up and test reliably | DOC-01, DOC-02, DOC-03, DOC-04 |
 | 11 | OCR Debt Detail Recognition | Allow users to upload a screenshot of debt installment details and automatically extract period, principal, interest, and posting date to pre-fill the debt detail form | OCR-01, OCR-02, OCR-03, OCR-04 |
-| 13 | Fishing Spot Map | Save and manage GPS-tagged favorite locations — capture current position, name spots, and find them later | MAP-01, MAP-02, MAP-03 |
+| 13 | 3/3 | Complete   | 2026-07-07 |
 
 ## Phase Details
 
