@@ -54,7 +54,11 @@ run:
 .PHONY: build
 # build
 build:
-	mkdir -p bin/ && go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/ ./...
+ifeq ($(GOHOSTOS), windows)
+	if not exist bin mkdir bin && set CGO_ENABLED=0&& set GOOS=linux&& set GOARCH=amd64&& go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/ ./cmd/blog/
+else
+	mkdir -p bin/ && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/ ./cmd/blog/
+endif
 
 .PHONY: generate
 # generate
