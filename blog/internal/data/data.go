@@ -31,6 +31,7 @@ func NewDb(c *conf.Data) *gorm.DB {
 		&DebtDetail{},
 		&FuelVehicle{},
 		&RefuelRecord{},
+		&FuelAttachment{},
 		&Post{},
 		&Price{},
 		&model.User{},

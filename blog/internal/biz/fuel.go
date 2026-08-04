@@ -4,7 +4,9 @@ import (
 	"blog/internal/utils"
 	"context"
 	"errors"
+	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/shopspring/decimal"
@@ -34,7 +36,18 @@ type RefuelRecord struct {
 	Remark              string
 	IntervalConsumption decimal.Decimal
 	UserId              string
-	StatsAnchor         bool // 仅作时间范围统计的区间锚点，不参与统计
+	StatsAnchor         bool              // 仅作时间范围统计的区间锚点，不参与统计
+	Attachments         []*FuelAttachment // 请求：提交的附件引用；响应：含 url/fileName
+}
+
+// FuelAttachment 加油记录附件。FileUrl/FileName 仅在查询响应时填充。
+type FuelAttachment struct {
+	Id         int64
+	FileId     uint
+	AttachType string
+	Sort       int32
+	FileUrl    string
+	FileName   string
 }
 
 type FuelTrendPoint struct {
@@ -64,6 +77,41 @@ type FuelVehicleListQuery struct {
 	PlateNo  string
 }
 
+const (
+	maxFuelAttachments    = 6
+	maxFuelAttachmentSize = 10 * 1024 * 1024 // 10MB
+)
+
+// fuelAttachmentTypes 附件类型枚举。
+var fuelAttachmentTypes = map[string]bool{
+	"receipt":     true,
+	"environment": true,
+	"other":       true,
+}
+
+// fuelImageExts 允许的图片扩展名。
+var fuelImageExts = map[string]bool{
+	".jpg":  true,
+	".jpeg": true,
+	".png":  true,
+	".webp": true,
+	".heic": true,
+	".heif": true,
+	".gif":  true,
+	".bmp":  true,
+}
+
+// isFuelImageFile 通过 MIME 类型或扩展名判断文件是否为图片。
+func isFuelImageFile(file *FileRecord) bool {
+	if file == nil {
+		return false
+	}
+	if strings.HasPrefix(strings.ToLower(file.FileType), "image/") {
+		return true
+	}
+	return fuelImageExts[strings.ToLower(file.FileExt)]
+}
+
 type RefuelRecordListQuery struct {
 	Page     int64
 	PageSize int64
@@ -90,13 +138,15 @@ type RefuelRecordRepo interface {
 type FuelUsecase struct {
 	vehicleRepo FuelVehicleRepo
 	recordRepo  RefuelRecordRepo
+	fileRepo    FileRepo
 	log         *log.Helper
 }
 
-func NewFuelUsecase(vehicleRepo FuelVehicleRepo, recordRepo RefuelRecordRepo, logger log.Logger) *FuelUsecase {
+func NewFuelUsecase(vehicleRepo FuelVehicleRepo, recordRepo RefuelRecordRepo, fileRepo FileRepo, logger log.Logger) *FuelUsecase {
 	return &FuelUsecase{
 		vehicleRepo: vehicleRepo,
 		recordRepo:  recordRepo,
+		fileRepo:    fileRepo,
 		log:         log.NewHelper(logger),
 	}
 }
@@ -169,6 +219,9 @@ func (uc *FuelUsecase) CreateRefuelRecord(ctx context.Context, record *RefuelRec
 	if _, err := uc.vehicleRepo.FindByUserIdAndVehicleId(ctx, userId, uint(record.VehicleId)); err != nil {
 		return 0, err
 	}
+	if err := uc.validateFuelAttachments(ctx, userId, record.Attachments); err != nil {
+		return 0, err
+	}
 	record.UserId = userId
 	return uc.recordRepo.Save(ctx, record)
 }
@@ -185,12 +238,43 @@ func (uc *FuelUsecase) UpdateRefuelRecord(ctx context.Context, record *RefuelRec
 	if _, err := uc.vehicleRepo.FindByUserIdAndVehicleId(ctx, userId, uint(record.VehicleId)); err != nil {
 		return 0, err
 	}
+	if record.Attachments != nil {
+		// 显式提交了附件列表才校验并整组替换；未传则保持现有附件不变
+		if err := uc.validateFuelAttachments(ctx, userId, record.Attachments); err != nil {
+			return 0, err
+		}
+	}
 	record.Id = dbRecord.Id
 	record.UserId = userId
 	if err := uc.recordRepo.Update(ctx, record); err != nil {
 		return 0, err
 	}
 	return uint(dbRecord.Id), nil
+}
+
+// validateFuelAttachments 校验附件：数量≤6、类型枚举合法、fileId 归属当前用户、必须是图片且≤10MB。
+// 校验通过后按提交顺序回填 sort。
+func (uc *FuelUsecase) validateFuelAttachments(ctx context.Context, userId string, attachments []*FuelAttachment) error {
+	if len(attachments) > maxFuelAttachments {
+		return errors.New("附件数量不能超过 6 张")
+	}
+	for i, att := range attachments {
+		if !fuelAttachmentTypes[att.AttachType] {
+			return fmt.Errorf("附件类型不合法: %s", att.AttachType)
+		}
+		file, err := uc.fileRepo.GetByIdAndUserId(ctx, att.FileId, userId)
+		if err != nil {
+			return fmt.Errorf("附件文件不存在或无权访问: %d", att.FileId)
+		}
+		if !isFuelImageFile(file) {
+			return fmt.Errorf("附件必须是图片: %s", file.FileName)
+		}
+		if file.FileSize > maxFuelAttachmentSize {
+			return fmt.Errorf("附件大小不能超过 10MB: %s", file.FileName)
+		}
+		att.Sort = int32(i)
+	}
+	return nil
 }
 
 func (uc *FuelUsecase) DeleteRefuelRecord(ctx context.Context, recordId uint) error {

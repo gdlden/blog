@@ -11,6 +11,7 @@ type FileRecord struct {
 	FileUrl     string `gorm:"column:file_url;type:text;comment:访问URL"`
 	FileSize    int64  `gorm:"column:file_size;default:0;comment:文件大小(字节)"`
 	StorageType string `gorm:"column:storage_type;type:varchar(32);comment:存储后端类型"`
+	UserId      string `gorm:"column:user_id;type:varchar(64);index;comment:上传用户ID"`
 }
 
 func (FileRecord) TableName() string {

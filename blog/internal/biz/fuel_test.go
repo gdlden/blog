@@ -63,9 +63,13 @@ func (m *mockFuelVehicleRepo) CountRefuelRecordByVehicleId(ctx context.Context, 
 
 type mockRefuelRecordRepo struct {
 	listAllFunc func(context.Context, string, uint) ([]*RefuelRecord, error)
+	saveFunc    func(context.Context, *RefuelRecord) (uint, error)
 }
 
 func (m *mockRefuelRecordRepo) Save(ctx context.Context, record *RefuelRecord) (uint, error) {
+	if m.saveFunc != nil {
+		return m.saveFunc(ctx, record)
+	}
 	return 0, nil
 }
 
@@ -92,6 +96,25 @@ func (m *mockRefuelRecordRepo) ListAllByUserIdAndVehicleId(ctx context.Context, 
 	return nil, nil
 }
 
+type mockFileRepo struct {
+	getByIdAndUserFunc func(context.Context, uint, string) (*FileRecord, error)
+}
+
+func (m *mockFileRepo) Save(ctx context.Context, record *FileRecord) (uint, error) {
+	return 0, nil
+}
+
+func (m *mockFileRepo) GetById(ctx context.Context, id uint) (*FileRecord, error) {
+	return nil, nil
+}
+
+func (m *mockFileRepo) GetByIdAndUserId(ctx context.Context, id uint, userId string) (*FileRecord, error) {
+	if m.getByIdAndUserFunc != nil {
+		return m.getByIdAndUserFunc(ctx, id, userId)
+	}
+	return nil, errors.New("file not found")
+}
+
 func TestFuelUsecase_DeleteVehicleBlocksWhenRecordsExist(t *testing.T) {
 	uc := NewFuelUsecase(&mockFuelVehicleRepo{
 		findByUserFunc: func(ctx context.Context, userId string, id uint) (*FuelVehicle, error) {
@@ -102,7 +125,7 @@ func TestFuelUsecase_DeleteVehicleBlocksWhenRecordsExist(t *testing.T) {
 			assert.Equal(t, uint(1), vehicleId)
 			return 2, nil
 		},
-	}, &mockRefuelRecordRepo{}, log.DefaultLogger)
+	}, &mockRefuelRecordRepo{}, &mockFileRepo{}, log.DefaultLogger)
 
 	err := uc.DeleteVehicle(withUser(context.Background(), "user-123"), 1)
 
@@ -156,7 +179,7 @@ func TestFuelUsecase_GetStatsCalculatesFullTankIntervals(t *testing.T) {
 				},
 			}, nil
 		},
-	}, log.DefaultLogger)
+	}, &mockFileRepo{}, log.DefaultLogger)
 
 	stats, err := uc.GetFuelStats(withUser(context.Background(), "user-123"), 1, "", "")
 
@@ -188,7 +211,7 @@ func TestFuelUsecase_GetStatsFiltersByTimeRangeWithAnchor(t *testing.T) {
 		listAllFunc: func(ctx context.Context, userId string, vehicleId uint) ([]*RefuelRecord, error) {
 			return records, nil
 		},
-	}, log.DefaultLogger)
+	}, &mockFileRepo{}, log.DefaultLogger)
 
 	// 范围从 2026-01-15 开始：锚点为记录1（01-01 加满），记录2（01-10）保留以保证区间油量完整
 	stats, err := uc.GetFuelStats(withUser(context.Background(), "user-123"), 1, "2026-01-15", "2026-01-31")
@@ -228,7 +251,7 @@ func TestFuelUsecase_GetStatsUsesNearestAnchorBeforeRange(t *testing.T) {
 		listAllFunc: func(ctx context.Context, userId string, vehicleId uint) ([]*RefuelRecord, error) {
 			return records, nil
 		},
-	}, log.DefaultLogger)
+	}, &mockFileRepo{}, log.DefaultLogger)
 
 	// 起点前有两条加满记录：锚点必须取最近的 01-05（记录2），更早的 01-01（记录1）完整区间不得计入
 	stats, err := uc.GetFuelStats(withUser(context.Background(), "user-123"), 1, "2026-01-10", "")
@@ -257,7 +280,7 @@ func TestFuelUsecase_GetStatsRangeWithNoRecordsInside(t *testing.T) {
 		listAllFunc: func(ctx context.Context, userId string, vehicleId uint) ([]*RefuelRecord, error) {
 			return records, nil
 		},
-	}, log.DefaultLogger)
+	}, &mockFileRepo{}, log.DefaultLogger)
 
 	// 范围内无记录：锚点纳入后无完整区间，统计全零
 	stats, err := uc.GetFuelStats(withUser(context.Background(), "user-123"), 1, "2026-02-01", "2026-02-28")
@@ -279,4 +302,95 @@ func TestFilterFuelRecordsByTime_RejectsReversedRange(t *testing.T) {
 
 	assert.Nil(t, filtered)
 	assert.Nil(t, anchor)
+}
+
+func TestFuelUsecase_CreateRefuelRecord_ValidatesAttachments(t *testing.T) {
+	vehicleRepo := &mockFuelVehicleRepo{
+		findByUserFunc: func(ctx context.Context, userId string, id uint) (*FuelVehicle, error) {
+			return &FuelVehicle{Id: int64(id), UserId: userId}, nil
+		},
+	}
+	fileRepo := &mockFileRepo{
+		getByIdAndUserFunc: func(ctx context.Context, id uint, userId string) (*FileRecord, error) {
+			switch id {
+			case 1:
+				return &FileRecord{Id: 1, FileName: "receipt.jpg", FileType: "image/jpeg", FileSize: 1024}, nil
+			case 2:
+				return &FileRecord{Id: 2, FileName: "scene.png", FileType: "image/png", FileSize: 2048}, nil
+			case 3:
+				return &FileRecord{Id: 3, FileName: "doc.pdf", FileType: "application/pdf", FileSize: 1024}, nil
+			case 4:
+				return &FileRecord{Id: 4, FileName: "big.jpg", FileType: "image/jpeg", FileSize: 10*1024*1024 + 1}, nil
+			default:
+				return nil, errors.New("file not found or not owned")
+			}
+		},
+	}
+	base := &RefuelRecord{
+		VehicleId:  1,
+		RefuelTime: "2026-05-01 08:00:00",
+		Odometer:   decimal.NewFromInt(1000),
+		Volume:     decimal.NewFromInt(30),
+		UnitPrice:  decimal.NewFromInt(7),
+	}
+
+	// 数量超过 6 张
+	atts := make([]*FuelAttachment, 0, 7)
+	for i := 0; i < 7; i++ {
+		atts = append(atts, &FuelAttachment{FileId: 1, AttachType: "receipt"})
+	}
+	uc := NewFuelUsecase(vehicleRepo, &mockRefuelRecordRepo{}, fileRepo, log.DefaultLogger)
+	rec := *base
+	rec.Attachments = atts
+	_, err := uc.CreateRefuelRecord(withUser(context.Background(), "user-123"), &rec)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "不能超过 6 张")
+
+	// 附件类型不合法
+	rec = *base
+	rec.Attachments = []*FuelAttachment{{FileId: 1, AttachType: "scan"}}
+	_, err = uc.CreateRefuelRecord(withUser(context.Background(), "user-123"), &rec)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "附件类型不合法")
+
+	// 文件不存在或不属于当前用户
+	rec = *base
+	rec.Attachments = []*FuelAttachment{{FileId: 999, AttachType: "receipt"}}
+	_, err = uc.CreateRefuelRecord(withUser(context.Background(), "user-123"), &rec)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "不存在或无权访问")
+
+	// 非图片文件
+	rec = *base
+	rec.Attachments = []*FuelAttachment{{FileId: 3, AttachType: "receipt"}}
+	_, err = uc.CreateRefuelRecord(withUser(context.Background(), "user-123"), &rec)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "必须是图片")
+
+	// 超过 10MB
+	rec = *base
+	rec.Attachments = []*FuelAttachment{{FileId: 4, AttachType: "receipt"}}
+	_, err = uc.CreateRefuelRecord(withUser(context.Background(), "user-123"), &rec)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "不能超过 10MB")
+
+	// 合法附件：校验通过且按提交顺序回填 sort
+	var saved *RefuelRecord
+	recordRepo := &mockRefuelRecordRepo{
+		saveFunc: func(ctx context.Context, r *RefuelRecord) (uint, error) {
+			saved = r
+			return 1, nil
+		},
+	}
+	uc = NewFuelUsecase(vehicleRepo, recordRepo, fileRepo, log.DefaultLogger)
+	rec = *base
+	rec.Attachments = []*FuelAttachment{
+		{FileId: 1, AttachType: "receipt"},
+		{FileId: 2, AttachType: "environment"},
+	}
+	_, err = uc.CreateRefuelRecord(withUser(context.Background(), "user-123"), &rec)
+	assert.NoError(t, err)
+	assert.NotNil(t, saved)
+	assert.Equal(t, int32(0), saved.Attachments[0].Sort)
+	assert.Equal(t, int32(1), saved.Attachments[1].Sort)
 }

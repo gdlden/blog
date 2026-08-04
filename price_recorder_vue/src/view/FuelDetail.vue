@@ -3,7 +3,8 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useFuelStore } from '@/stores/fuelStore'
-import type { RefuelRecord } from '@/api/fuel'
+import { uploadImage } from '@/api/file'
+import type { FuelAttachType, RefuelRecord } from '@/api/fuel'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,6 +17,29 @@ const isEditing = ref(false)
 const isSubmitting = ref(false)
 const startDate = ref('')
 const endDate = ref('')
+
+// 弹窗内的附件工作列表：选图即传，保存时提交 fileId 引用
+interface AttachmentDraft {
+  fileId: string
+  attachType: FuelAttachType
+  url: string
+  fileName: string
+  uploading?: boolean
+}
+const attachmentList = ref<AttachmentDraft[]>([])
+const attachTypeOptions: Array<{ value: FuelAttachType; label: string }> = [
+  { value: 'receipt', label: '小票' },
+  { value: 'environment', label: '环境' },
+  { value: 'other', label: '其他' },
+]
+const maxAttachments = 6
+const maxAttachmentSize = 10 * 1024 * 1024
+
+// 后端返回相对路径（/file/download/v1/{id}），需加 /api 前缀经 Vite 代理
+function resolveFileUrl(url?: string) {
+  if (!url) return ''
+  return url.startsWith('/api') ? url : `/api${url}`
+}
 
 // 新建记录时：里程小于该车最新记录（records 按时间倒序）则提示回拨
 const isOdometerRollback = computed(() => {
@@ -88,6 +112,7 @@ function openCreateModal() {
     remark: '',
     intervalConsumption: '',
   }
+  attachmentList.value = []
   showModal.value = true
 }
 
@@ -98,7 +123,57 @@ function openEditModal(record: RefuelRecord) {
     ...record,
     refuelTime: record.refuelTime ? record.refuelTime.slice(0, 10) : '',
   }
+  attachmentList.value = (record.attachmentInfos || []).map((info) => ({
+    fileId: info.fileId,
+    attachType: (info.attachType as FuelAttachType) || 'receipt',
+    url: info.url,
+    fileName: info.fileName,
+  }))
   showModal.value = true
+}
+
+async function handleFileChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  const files = Array.from(input.files || [])
+  input.value = ''
+  const remaining = maxAttachments - attachmentList.value.length
+  if (files.length > remaining) {
+    alert(`最多还能上传 ${remaining} 张附件`)
+    return
+  }
+  for (const file of files) {
+    if (!file.type.startsWith('image/')) {
+      alert(`仅支持图片文件：${file.name}`)
+      continue
+    }
+    if (file.size > maxAttachmentSize) {
+      alert(`图片不能超过 10MB：${file.name}`)
+      continue
+    }
+    attachmentList.value.push({
+      fileId: '',
+      attachType: 'receipt',
+      url: '',
+      fileName: file.name,
+      uploading: true,
+    })
+    const index = attachmentList.value.length - 1
+    try {
+      const reply = await uploadImage(file)
+      attachmentList.value[index].fileId = reply.id
+      attachmentList.value[index].url = reply.url
+    } catch (err) {
+      attachmentList.value.splice(index, 1)
+      const message = err instanceof Error ? err.message : '未知错误'
+      alert(`上传失败：${file.name}（${message}）`)
+    } finally {
+      attachmentList.value[index].uploading = false
+    }
+  }
+}
+
+function removeAttachment(index: number) {
+  attachmentList.value.splice(index, 1)
 }
 
 async function handleSubmit() {
@@ -112,6 +187,11 @@ async function handleSubmit() {
       ? formData.value.refuelTime
       : `${formData.value.refuelTime} 00:00:00`,
     amount,
+    attachments: attachmentList.value.map((att, index) => ({
+      fileId: att.fileId,
+      attachType: att.attachType,
+      sort: index,
+    })),
   }
   try {
     if (isEditing.value) {
@@ -342,6 +422,11 @@ function formatNumber(value?: string, suffix = '') {
               加满
             </th>
             <th
+              class="px-5 py-3.5 text-xs font-medium text-[#86868b] uppercase tracking-wide"
+            >
+              附件
+            </th>
+            <th
               class="px-5 py-3.5 text-xs font-medium text-[#86868b] uppercase tracking-wide text-right"
             >
               操作
@@ -370,6 +455,23 @@ function formatNumber(value?: string, suffix = '') {
                 "
                 >{{ record.isFull ? '是' : '否' }}</span
               >
+            </td>
+            <td class="px-5 py-4">
+              <div v-if="record.attachmentInfos?.length" class="record-thumbs flex gap-1">
+                <a
+                  v-for="att in record.attachmentInfos"
+                  :key="att.id || att.fileId"
+                  :href="resolveFileUrl(att.url)"
+                  target="_blank"
+                >
+                  <img
+                    :src="resolveFileUrl(att.url)"
+                    class="w-10 h-10 rounded-lg object-cover border border-[#f0f0f0] hover:opacity-80 transition-opacity"
+                    :title="att.fileName"
+                  />
+                </a>
+              </div>
+              <span v-else class="text-xs text-[#c7c7cc]">-</span>
             </td>
             <td class="px-5 py-4 text-right">
               <div class="inline-flex gap-1">
@@ -524,6 +626,72 @@ function formatNumber(value?: string, suffix = '') {
               class="md:col-span-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-700"
             >
               里程（{{ formData.odometer }} km）小于该车最近一次记录（{{ records[0]?.odometer }} km），可能是里程回拨或填写错误，将影响油耗统计。
+            </div>
+            <div class="md:col-span-2 attachment-picker">
+              <label class="block mb-1.5 text-sm font-medium text-[#1d1d1f]">附件照片</label>
+              <div class="flex flex-wrap gap-3">
+                <div
+                  v-for="(att, index) in attachmentList"
+                  :key="att.fileId || 'tmp-' + index"
+                  class="relative w-24 h-24 rounded-xl overflow-hidden border border-[#e8e8ed] bg-[#fafafc]"
+                >
+                  <a
+                    v-if="att.url"
+                    :href="resolveFileUrl(att.url)"
+                    target="_blank"
+                    class="block w-full h-full"
+                  >
+                    <img
+                      :src="resolveFileUrl(att.url)"
+                      class="w-full h-full object-cover hover:opacity-80 transition-opacity"
+                      :title="att.fileName"
+                    />
+                  </a>
+                  <div
+                    v-else
+                    class="w-full h-full flex items-center justify-center text-xs text-[#86868b] px-1 text-center"
+                  >
+                    {{ att.uploading ? '上传中...' : att.fileName }}
+                  </div>
+                  <select
+                    v-model="att.attachType"
+                    class="absolute bottom-0 inset-x-0 w-full text-[11px] bg-black/60 text-white border-0 outline-none px-1 py-0.5"
+                  >
+                    <option v-for="opt in attachTypeOptions" :key="opt.value" :value="opt.value">
+                      {{ opt.label }}
+                    </option>
+                  </select>
+                  <button
+                    @click="removeAttachment(index)"
+                    class="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full bg-black/50 text-white text-xs hover:bg-[#ff3b30] transition-colors"
+                    title="移除"
+                  >
+                    ×
+                  </button>
+                </div>
+                <label
+                  v-if="attachmentList.length < maxAttachments"
+                  class="w-24 h-24 rounded-xl border-2 border-dashed border-[#d2d2d7] flex flex-col items-center justify-center gap-1 cursor-pointer text-[#86868b] hover:text-[#0071e3] hover:border-[#0071e3] transition-colors"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                  <span class="text-[11px]">上传图片</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    class="hidden"
+                    @change="handleFileChange"
+                  />
+                </label>
+              </div>
+              <p class="mt-1.5 text-xs text-[#86868b]">小票 / 环境照片，最多 6 张，每张不超过 10MB</p>
             </div>
             <div class="md:col-span-2">
               <label class="block mb-1.5 text-sm font-medium text-[#1d1d1f]">备注</label

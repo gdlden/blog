@@ -22,6 +22,7 @@ type fileRecord struct {
 	FileUrl     string `gorm:"column:file_url;type:text;comment:访问URL"`
 	FileSize    int64  `gorm:"column:file_size;default:0;comment:文件大小(字节)"`
 	StorageType string `gorm:"column:storage_type;type:varchar(32);comment:存储后端类型"`
+	UserId      string `gorm:"column:user_id;type:varchar(64);index;comment:上传用户ID"`
 }
 
 func (fileRecord) TableName() string {
@@ -42,6 +43,7 @@ func NewFileRepo(data *Data, logger log.Logger) biz.FileRepo {
 
 func (r *fileRepo) Save(ctx context.Context, record *biz.FileRecord) (uint, error) {
 	entity := fileRecord{
+		UserId:      record.UserId,
 		FileName:    record.FileName,
 		FilePath:    record.FilePath,
 		FileType:    record.FileType,
@@ -66,12 +68,22 @@ func (r *fileRepo) GetById(ctx context.Context, id uint) (*biz.FileRecord, error
 	return mapFileRecordToBiz(&entity), nil
 }
 
+func (r *fileRepo) GetByIdAndUserId(ctx context.Context, id uint, userId string) (*biz.FileRecord, error) {
+	var entity fileRecord
+	tx := r.data.db.WithContext(ctx).Where("id = ? AND user_id = ?", id, userId).First(&entity)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	return mapFileRecordToBiz(&entity), nil
+}
+
 func mapFileRecordToBiz(entity *fileRecord) *biz.FileRecord {
 	if entity == nil {
 		return nil
 	}
 	return &biz.FileRecord{
 		Id:          entity.ID,
+		UserId:      entity.UserId,
 		FileName:    entity.FileName,
 		FilePath:    entity.FilePath,
 		FileType:    entity.FileType,

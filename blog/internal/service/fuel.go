@@ -278,18 +278,47 @@ func refuelRecordFromRequest(req *pb.RefuelRecord, strictAmount bool) (*biz.Refu
 	} else {
 		amount = expectedAmount
 	}
+	attachments, err := fuelAttachmentsFromRequest(req.Attachments)
+	if err != nil {
+		return nil, err
+	}
 	return &biz.RefuelRecord{
-		Id:         req.Id,
-		VehicleId:  req.VehicleId,
-		RefuelTime: req.RefuelTime,
-		Odometer:   odometer,
-		Volume:     volume,
-		UnitPrice:  unitPrice,
-		Amount:     amount,
-		Station:    req.Station,
-		IsFull:     req.IsFull,
-		Remark:     req.Remark,
+		Id:          req.Id,
+		VehicleId:   req.VehicleId,
+		RefuelTime:  req.RefuelTime,
+		Odometer:    odometer,
+		Volume:      volume,
+		UnitPrice:   unitPrice,
+		Amount:      amount,
+		Station:     req.Station,
+		IsFull:      req.IsFull,
+		Remark:      req.Remark,
+		Attachments: attachments,
 	}, nil
+}
+
+// fuelAttachmentsFromRequest 转换附件引用列表。
+// 保持 nil（未传）与空 slice（传了空数组）的语义差异，供更新时区分"保持不变"与"清空附件"。
+func fuelAttachmentsFromRequest(atts []*pb.FuelAttachment) ([]*biz.FuelAttachment, error) {
+	if atts == nil {
+		return nil, nil
+	}
+	result := make([]*biz.FuelAttachment, 0, len(atts))
+	for _, att := range atts {
+		if att == nil || att.FileId == "" {
+			return nil, errors.New("附件文件 ID 不能为空")
+		}
+		fileId, err := strconv.ParseUint(att.FileId, 10, 64)
+		if err != nil || fileId == 0 {
+			return nil, errors.New("附件文件 ID 不合法")
+		}
+		result = append(result, &biz.FuelAttachment{
+			FileId:     uint(fileId),
+			AttachType: att.AttachType,
+			Sort:       att.Sort,
+		})
+	}
+	return result, nil
 }
 
 func fuelVehicleToReply(vehicle *biz.FuelVehicle) *pb.FuelVehicle {
@@ -311,7 +340,7 @@ func refuelRecordToReply(record *biz.RefuelRecord) *pb.RefuelRecord {
 	if record == nil {
 		return &pb.RefuelRecord{}
 	}
-	return &pb.RefuelRecord{
+	reply := &pb.RefuelRecord{
 		Id:                  record.Id,
 		VehicleId:           record.VehicleId,
 		RefuelTime:          record.RefuelTime,
@@ -323,7 +352,19 @@ func refuelRecordToReply(record *biz.RefuelRecord) *pb.RefuelRecord {
 		IsFull:              record.IsFull,
 		Remark:              record.Remark,
 		IntervalConsumption: record.IntervalConsumption.String(),
+		AttachmentInfos:     make([]*pb.FuelAttachmentInfo, 0, len(record.Attachments)),
 	}
+	for _, att := range record.Attachments {
+		reply.AttachmentInfos = append(reply.AttachmentInfos, &pb.FuelAttachmentInfo{
+			Id:         strconv.FormatInt(att.Id, 10),
+			FileId:     strconv.FormatUint(uint64(att.FileId), 10),
+			Url:        att.FileUrl,
+			FileName:   att.FileName,
+			AttachType: att.AttachType,
+			Sort:       att.Sort,
+		})
+	}
+	return reply
 }
 
 func fuelStatsToReply(stats *biz.FuelStats) *pb.FuelStats {

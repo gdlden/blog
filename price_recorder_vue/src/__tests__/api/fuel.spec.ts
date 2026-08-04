@@ -66,6 +66,42 @@ describe('fuel api', () => {
     })
   })
 
+  it('serializes attachments as-is when posting refuel records', async () => {
+    const { createRefuelRecord } = await import('@/api/fuel')
+
+    await createRefuelRecord({
+      vehicleId: '1',
+      refuelTime: '2026-05-03 00:00:00',
+      odometer: '1000',
+      volume: '30',
+      unitPrice: '7.5',
+      amount: '225',
+      station: '',
+      isFull: true,
+      remark: '',
+      attachments: [
+        { fileId: '9', attachType: 'receipt', sort: 0 },
+        { fileId: '10', attachType: 'environment', sort: 1 },
+      ],
+    })
+
+    expect(postMock).toHaveBeenCalledWith('/fuel/refuel/save/v1', {
+      vehicleId: '1',
+      refuelTime: '2026-05-03 00:00:00',
+      odometer: '1000',
+      volume: '30',
+      unitPrice: '7.5',
+      amount: '225',
+      station: '',
+      isFull: true,
+      remark: '',
+      attachments: [
+        { fileId: '9', attachType: 'receipt', sort: 0 },
+        { fileId: '10', attachType: 'environment', sort: 1 },
+      ],
+    })
+  })
+
   it('passes keyword as name and plateNo to vehicle list', async () => {
     const { getVehicles } = await import('@/api/fuel')
 

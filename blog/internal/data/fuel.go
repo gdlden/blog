@@ -4,6 +4,7 @@ import (
 	"blog/internal/biz"
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -34,6 +35,15 @@ type RefuelRecord struct {
 	IsFull     bool            `gorm:"comment:is full tank"`
 	Remark     string          `gorm:"comment:remark"`
 	UserId     string          `gorm:"comment:user id;index"`
+}
+
+// FuelAttachment 加油记录附件关联：指向 file_records 中的文件元数据。
+type FuelAttachment struct {
+	gorm.Model
+	RecordId   uint   `gorm:"column:record_id;index;comment:加油记录ID"`
+	FileId     uint   `gorm:"column:file_id;comment:文件记录ID"`
+	AttachType string `gorm:"column:attach_type;type:varchar(32);comment:附件类型"`
+	Sort       int32  `gorm:"column:sort;default:0;comment:排序"`
 }
 
 type FuelVehicleRepo struct {
@@ -171,23 +181,30 @@ func (r *RefuelRecordRepo) Save(ctx context.Context, record *biz.RefuelRecord) (
 	if err != nil {
 		return 0, err
 	}
-	dbRecord := RefuelRecord{
-		VehicleId:  uint(record.VehicleId),
-		RefuelTime: refuelTime,
-		Odometer:   record.Odometer,
-		Volume:     record.Volume,
-		UnitPrice:  record.UnitPrice,
-		Amount:     record.Amount,
-		Station:    record.Station,
-		IsFull:     record.IsFull,
-		Remark:     record.Remark,
-		UserId:     record.UserId,
+	var recordID uint
+	err = r.data.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		dbRecord := RefuelRecord{
+			VehicleId:  uint(record.VehicleId),
+			RefuelTime: refuelTime,
+			Odometer:   record.Odometer,
+			Volume:     record.Volume,
+			UnitPrice:  record.UnitPrice,
+			Amount:     record.Amount,
+			Station:    record.Station,
+			IsFull:     record.IsFull,
+			Remark:     record.Remark,
+			UserId:     record.UserId,
+		}
+		if err := tx.Create(&dbRecord).Error; err != nil {
+			return err
+		}
+		recordID = dbRecord.ID
+		return saveFuelAttachments(tx, dbRecord.ID, record.Attachments)
+	})
+	if err != nil {
+		return 0, err
 	}
-	tx := r.data.db.WithContext(ctx).Create(&dbRecord)
-	if tx.Error != nil {
-		return 0, tx.Error
-	}
-	return dbRecord.ID, nil
+	return recordID, nil
 }
 
 func (r *RefuelRecordRepo) Update(ctx context.Context, record *biz.RefuelRecord) error {
@@ -206,28 +223,40 @@ func (r *RefuelRecordRepo) Update(ctx context.Context, record *biz.RefuelRecord)
 		"is_full":     record.IsFull,
 		"remark":      record.Remark,
 	}
-	tx := r.data.db.WithContext(ctx).
-		Model(&RefuelRecord{}).
-		Where("id = ? AND user_id = ?", record.Id, record.UserId).
-		Updates(updates)
-	if tx.Error != nil {
-		return tx.Error
-	}
-	if tx.RowsAffected == 0 {
-		return errors.New("no updatable refuel record found for current user")
-	}
-	return nil
+	return r.data.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		res := tx.Model(&RefuelRecord{}).
+			Where("id = ? AND user_id = ?", record.Id, record.UserId).
+			Updates(updates)
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return errors.New("no updatable refuel record found for current user")
+		}
+		if record.Attachments == nil {
+			// 未传 attachments 视为保持现有附件不变
+			return nil
+		}
+		// 整组替换：删除旧关联（软删），file_records 与存储对象保留
+		if err := tx.Where("record_id = ?", record.Id).Delete(&FuelAttachment{}).Error; err != nil {
+			return err
+		}
+		return saveFuelAttachments(tx, uint(record.Id), record.Attachments)
+	})
 }
 
 func (r *RefuelRecordRepo) DeleteByUserIdAndRecordId(ctx context.Context, userId string, id uint) error {
-	tx := r.data.db.WithContext(ctx).Where("user_id = ? AND id = ?", userId, id).Delete(&RefuelRecord{})
-	if tx.Error != nil {
-		return tx.Error
-	}
-	if tx.RowsAffected == 0 {
-		return errors.New("no deletable refuel record found or permission denied")
-	}
-	return nil
+	return r.data.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		res := tx.Where("user_id = ? AND id = ?", userId, id).Delete(&RefuelRecord{})
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return errors.New("no deletable refuel record found or permission denied")
+		}
+		// 级联清理附件关联；file_records 与存储对象保留
+		return tx.Where("record_id = ?", id).Delete(&FuelAttachment{}).Error
+	})
 }
 
 func (r *RefuelRecordRepo) FindByUserIdAndRecordId(ctx context.Context, userId string, id uint) (*biz.RefuelRecord, error) {
@@ -236,7 +265,13 @@ func (r *RefuelRecordRepo) FindByUserIdAndRecordId(ctx context.Context, userId s
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
-	return mapRefuelRecordToBiz(&record), nil
+	bizRecord := mapRefuelRecordToBiz(&record)
+	attMap, err := r.loadAttachments(ctx, []uint{record.ID})
+	if err != nil {
+		return nil, err
+	}
+	bizRecord.Attachments = attMap[record.ID]
+	return bizRecord, nil
 }
 
 func (r *RefuelRecordRepo) ListByUserIdAndVehicleId(ctx context.Context, userId string, vehicleId uint, query *biz.RefuelRecordListQuery) ([]*biz.RefuelRecord, int64, error) {
@@ -259,6 +294,19 @@ func (r *RefuelRecordRepo) ListByUserIdAndVehicleId(ctx context.Context, userId 
 	items := make([]*biz.RefuelRecord, 0, len(records))
 	for i := range records {
 		items = append(items, mapRefuelRecordToBiz(&records[i]))
+	}
+	if len(records) > 0 {
+		recordIds := make([]uint, 0, len(records))
+		for i := range records {
+			recordIds = append(recordIds, records[i].ID)
+		}
+		attMap, err := r.loadAttachments(ctx, recordIds)
+		if err != nil {
+			return nil, 0, err
+		}
+		for i := range items {
+			items[i].Attachments = attMap[records[i].ID]
+		}
 	}
 	return items, total, nil
 }
@@ -345,4 +393,66 @@ func mapRefuelRecordToBiz(record *RefuelRecord) *biz.RefuelRecord {
 		Remark:     record.Remark,
 		UserId:     record.UserId,
 	}
+}
+
+// saveFuelAttachments 批量写入附件关联（按提交顺序赋予 sort）。
+func saveFuelAttachments(tx *gorm.DB, recordId uint, attachments []*biz.FuelAttachment) error {
+	if len(attachments) == 0 {
+		return nil
+	}
+	entities := make([]FuelAttachment, 0, len(attachments))
+	for _, att := range attachments {
+		entities = append(entities, FuelAttachment{
+			RecordId:   recordId,
+			FileId:     att.FileId,
+			AttachType: att.AttachType,
+			Sort:       att.Sort,
+		})
+	}
+	return tx.Create(&entities).Error
+}
+
+// loadAttachments 批量查询记录的附件，join file_records 填充访问 URL 与文件名。
+func (r *RefuelRecordRepo) loadAttachments(ctx context.Context, recordIds []uint) (map[uint][]*biz.FuelAttachment, error) {
+	result := make(map[uint][]*biz.FuelAttachment)
+	if len(recordIds) == 0 {
+		return result, nil
+	}
+	var atts []FuelAttachment
+	if err := r.data.db.WithContext(ctx).
+		Where("record_id IN ?", recordIds).
+		Order("sort ASC, id ASC").
+		Find(&atts).Error; err != nil {
+		return nil, err
+	}
+	if len(atts) == 0 {
+		return result, nil
+	}
+	fileIds := make([]uint, 0, len(atts))
+	for i := range atts {
+		fileIds = append(fileIds, atts[i].FileId)
+	}
+	var files []fileRecord
+	if err := r.data.db.WithContext(ctx).Where("id IN ?", fileIds).Find(&files).Error; err != nil {
+		return nil, err
+	}
+	fileMap := make(map[uint]fileRecord, len(files))
+	for i := range files {
+		fileMap[files[i].ID] = files[i]
+	}
+	for i := range atts {
+		att := &biz.FuelAttachment{
+			Id:         int64(atts[i].ID),
+			FileId:     atts[i].FileId,
+			AttachType: atts[i].AttachType,
+			Sort:       atts[i].Sort,
+		}
+		if f, ok := fileMap[atts[i].FileId]; ok {
+			att.FileName = f.FileName
+		}
+		// 统一返回经鉴权网关的下载路径，避免暴露 local(/files/...) 或 rustfs 公网直链、minio 过期预签名 URL
+		att.FileUrl = fmt.Sprintf("/file/download/v1/%d", atts[i].FileId)
+		result[atts[i].RecordId] = append(result[atts[i].RecordId], att)
+	}
+	return result, nil
 }

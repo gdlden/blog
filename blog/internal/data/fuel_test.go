@@ -17,7 +17,7 @@ func setupFuelTestDB(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Fatalf("failed to open test database: %v", err)
 	}
-	if err := db.AutoMigrate(&FuelVehicle{}, &RefuelRecord{}); err != nil {
+	if err := db.AutoMigrate(&FuelVehicle{}, &RefuelRecord{}, &FuelAttachment{}); err != nil {
 		t.Fatalf("failed to migrate test database: %v", err)
 	}
 	return db
@@ -115,4 +115,97 @@ func TestRefuelRecordRepo_ListByUserIdAndVehicleIdOrdersByRefuelTimeDesc(t *test
 	assert.Equal(t, int64(2), total)
 	assert.Len(t, items, 2)
 	assert.Equal(t, "2026-02-01 00:00:00", items[0].RefuelTime)
+}
+
+func TestRefuelRecordRepo_SaveListAndReplaceAttachments(t *testing.T) {
+	db := setupFuelTestDB(t)
+	if err := db.AutoMigrate(&fileRecord{}); err != nil {
+		t.Fatalf("failed to migrate file_records: %v", err)
+	}
+	vehicleRepo := &FuelVehicleRepo{data: &Data{db: db}, log: log.NewHelper(log.DefaultLogger)}
+	recordRepo := &RefuelRecordRepo{data: &Data{db: db}, log: log.NewHelper(log.DefaultLogger)}
+	fileRepo := &fileRepo{data: &Data{db: db}, log: log.NewHelper(log.DefaultLogger)}
+	ctx := context.Background()
+
+	vehicleId, err := vehicleRepo.Save(ctx, &biz.FuelVehicle{Name: "Car", UserId: "user-123"})
+	assert.NoError(t, err)
+	fileId1, err := fileRepo.Save(ctx, &biz.FileRecord{UserId: "user-123", FileName: "receipt.jpg", FileType: "image/jpeg", FileExt: ".jpg", FileUrl: "/files/2026/01/01/receipt.jpg", FileSize: 1024})
+	assert.NoError(t, err)
+	fileId2, err := fileRepo.Save(ctx, &biz.FileRecord{UserId: "user-123", FileName: "scene.png", FileType: "image/png", FileExt: ".png", FileUrl: "/files/2026/01/01/scene.png", FileSize: 2048})
+	assert.NoError(t, err)
+
+	// 保存记录并带两张附件
+	recordId, err := recordRepo.Save(ctx, &biz.RefuelRecord{
+		VehicleId:  int64(vehicleId),
+		RefuelTime: "2026-03-01 00:00:00",
+		Odometer:   decimal.NewFromInt(2000),
+		Volume:     decimal.NewFromInt(40),
+		Amount:     decimal.NewFromInt(280),
+		UserId:     "user-123",
+		Attachments: []*biz.FuelAttachment{
+			{FileId: fileId1, AttachType: "receipt", Sort: 0},
+			{FileId: fileId2, AttachType: "environment", Sort: 1},
+		},
+	})
+	assert.NoError(t, err)
+
+	item, err := recordRepo.FindByUserIdAndRecordId(ctx, "user-123", recordId)
+	assert.NoError(t, err)
+	assert.Len(t, item.Attachments, 2)
+	assert.Equal(t, "receipt.jpg", item.Attachments[0].FileName)
+	assert.Equal(t, "/file/download/v1/1", item.Attachments[0].FileUrl)
+	assert.Equal(t, "receipt", item.Attachments[0].AttachType)
+	assert.Equal(t, int32(0), item.Attachments[0].Sort)
+	assert.Equal(t, "scene.png", item.Attachments[1].FileName)
+	assert.Equal(t, int32(1), item.Attachments[1].Sort)
+
+	// 列表同样带附件信息
+	list, total, err := recordRepo.ListByUserIdAndVehicleId(ctx, "user-123", vehicleId, &biz.RefuelRecordListQuery{Page: 1, PageSize: 10})
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), total)
+	assert.Len(t, list, 1)
+	assert.Len(t, list[0].Attachments, 2)
+
+	// 整组替换：只保留第二张
+	err = recordRepo.Update(ctx, &biz.RefuelRecord{
+		Id:          int64(recordId),
+		VehicleId:   int64(vehicleId),
+		RefuelTime:  "2026-03-01 00:00:00",
+		Odometer:    decimal.NewFromInt(2000),
+		Volume:      decimal.NewFromInt(40),
+		Amount:      decimal.NewFromInt(280),
+		UserId:      "user-123",
+		Attachments: []*biz.FuelAttachment{{FileId: fileId2, AttachType: "other", Sort: 0}},
+	})
+	assert.NoError(t, err)
+	item, err = recordRepo.FindByUserIdAndRecordId(ctx, "user-123", recordId)
+	assert.NoError(t, err)
+	assert.Len(t, item.Attachments, 1)
+	assert.Equal(t, "other", item.Attachments[0].AttachType)
+	assert.Equal(t, "scene.png", item.Attachments[0].FileName)
+
+	// Update 不传 attachments 时保持现有附件不变
+	err = recordRepo.Update(ctx, &biz.RefuelRecord{
+		Id:         int64(recordId),
+		VehicleId:  int64(vehicleId),
+		RefuelTime: "2026-03-02 00:00:00",
+		Odometer:   decimal.NewFromInt(2050),
+		Volume:     decimal.NewFromInt(40),
+		Amount:     decimal.NewFromInt(280),
+		UserId:     "user-123",
+	})
+	assert.NoError(t, err)
+	item, err = recordRepo.FindByUserIdAndRecordId(ctx, "user-123", recordId)
+	assert.NoError(t, err)
+	assert.Len(t, item.Attachments, 1)
+
+	// 删除记录：附件关联一并清理，file_records 保留
+	err = recordRepo.DeleteByUserIdAndRecordId(ctx, "user-123", recordId)
+	assert.NoError(t, err)
+	var attCount int64
+	db.Model(&FuelAttachment{}).Where("record_id = ?", recordId).Count(&attCount)
+	assert.Equal(t, int64(0), attCount)
+	var fileCount int64
+	db.Model(&fileRecord{}).Count(&fileCount)
+	assert.Equal(t, int64(2), fileCount)
 }

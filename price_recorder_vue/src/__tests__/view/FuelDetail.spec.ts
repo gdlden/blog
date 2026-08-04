@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import * as fuelApi from '@/api/fuel'
+import { uploadImage } from '@/api/file'
 
 vi.mock('vue-router', async () => {
   const actual = await vi.importActual<typeof import('vue-router')>('vue-router')
@@ -21,6 +22,10 @@ vi.mock('vue-toastification', () => ({
     success: vi.fn(),
     error: vi.fn(),
   }),
+}))
+
+vi.mock('@/api/file', () => ({
+  uploadImage: vi.fn(),
 }))
 
 function mockDashboard(records: Array<Partial<fuelApi.RefuelRecord>>) {
@@ -124,5 +129,79 @@ describe('FuelDetail.vue', () => {
     await flushPromises()
 
     expect(statsSpy).toHaveBeenCalledWith('1', '2026-01-01', undefined)
+  })
+
+  it('shows existing attachments when editing a record with attachments', async () => {
+    mockDashboard([
+      {
+        id: '2',
+        odometer: '1500',
+        isFull: false,
+        attachmentInfos: [
+          {
+            id: '5',
+            fileId: '9',
+            url: '/file/download/v1/9',
+            fileName: 'receipt.jpg',
+            attachType: 'receipt',
+            sort: 0,
+          },
+        ],
+      },
+    ])
+    const { default: FuelDetail } = await import('@/view/FuelDetail.vue')
+    const wrapper = mount(FuelDetail)
+    await flushPromises()
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.attributes('title') === '编辑')!
+      .trigger('click')
+    await flushPromises()
+
+    const thumb = wrapper.find('.attachment-picker img')
+    expect(thumb.exists()).toBe(true)
+    expect(thumb.attributes('src')).toBe('/api/file/download/v1/9')
+  })
+
+  it('uploads images and submits attachment references on save', async () => {
+    vi.mocked(uploadImage).mockResolvedValue({ id: '9', url: '/file/download/v1/9' })
+    mockDashboard([])
+    const createSpy = vi.spyOn(fuelApi, 'createRefuelRecord')
+    const { default: FuelDetail } = await import('@/view/FuelDetail.vue')
+    const wrapper = mount(FuelDetail)
+    await flushPromises()
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('新增加油'))!
+      .trigger('click')
+    await flushPromises()
+
+    const fileInput = wrapper.find('.attachment-picker input[type="file"]')
+    const file = new File(['fake-image'], 'receipt.jpg', { type: 'image/jpeg' })
+    Object.defineProperty(fileInput.element, 'files', { value: [file] })
+    await fileInput.trigger('change')
+    await flushPromises()
+
+    expect(uploadImage).toHaveBeenCalledWith(file)
+    expect(wrapper.find('.attachment-picker img').attributes('src')).toBe(
+      '/api/file/download/v1/9',
+    )
+
+    const modalDate = wrapper.findAll('input[type="date"]').at(-1)!
+    await modalDate.setValue('2026-05-03')
+    await flushPromises()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('保存'))!
+      .trigger('click')
+    await flushPromises()
+
+    expect(createSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        attachments: [{ fileId: '9', attachType: 'receipt', sort: 0 }],
+      }),
+    )
   })
 })

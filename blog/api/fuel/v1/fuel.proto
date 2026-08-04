@@ -124,6 +124,23 @@ message RefuelRecord {
 	bool isFull = 9;
 	string remark = 10;
 	string intervalConsumption = 11;
+	repeated FuelAttachment attachments = 12;
+	repeated FuelAttachmentInfo attachmentInfos = 13;
+}
+
+message FuelAttachment {
+	string fileId = 1;
+	string attachType = 2;
+	int32 sort = 3;
+}
+
+message FuelAttachmentInfo {
+	string id = 1;
+	string fileId = 2;
+	string url = 3;
+	string fileName = 4;
+	string attachType = 5;
+	int32 sort = 6;
 }
 
 message DeleteRefuelRecordRequest {

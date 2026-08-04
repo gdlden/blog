@@ -4,11 +4,14 @@ import (
 	"context"
 	"io"
 
+	"blog/internal/utils"
+
 	"github.com/go-kratos/kratos/v2/log"
 )
 
 type FileRecord struct {
 	Id          uint
+	UserId      string
 	FileName    string
 	FilePath    string
 	FileType    string
@@ -23,6 +26,7 @@ type FileRecord struct {
 type FileRepo interface {
 	Save(ctx context.Context, record *FileRecord) (uint, error)
 	GetById(ctx context.Context, id uint) (*FileRecord, error)
+	GetByIdAndUserId(ctx context.Context, id uint, userId string) (*FileRecord, error)
 }
 
 type FileUsecase struct {
@@ -50,12 +54,17 @@ func NewFileUsecase(repo FileRepo, store FileStorage, logger log.Logger) *FileUs
 // Upload uploads a file to the configured storage backend and saves a record to DB.
 // Returns the file record ID and the accessible URL.
 func (uc *FileUsecase) Upload(ctx context.Context, fileName string, fileSize int64, contentType string, fileExt string, reader io.Reader) (id uint, url string, err error) {
+	userId, err := utils.CurrentUserId(ctx)
+	if err != nil {
+		return 0, "", err
+	}
 	url, err = uc.store.Upload(ctx, fileName, fileSize, contentType, reader)
 	if err != nil {
 		return 0, "", err
 	}
 
 	record := &FileRecord{
+		UserId:   userId,
 		FileName: fileName,
 		FilePath: url,
 		FileType: contentType,

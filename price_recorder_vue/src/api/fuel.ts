@@ -10,6 +10,24 @@ export interface FuelVehicle {
   remark: string
 }
 
+export type FuelAttachType = 'receipt' | 'environment' | 'other'
+
+export interface FuelAttachment {
+  /** 文件记录 id（先经 /file/upload/raw/v1 上传获得） */
+  fileId: string
+  attachType: FuelAttachType
+  sort: number
+}
+
+export interface FuelAttachmentInfo {
+  id: string
+  fileId: string
+  url: string
+  fileName: string
+  attachType: string
+  sort: number
+}
+
 export interface RefuelRecord {
   id: string
   vehicleId: string
@@ -22,6 +40,10 @@ export interface RefuelRecord {
   isFull: boolean
   remark: string
   intervalConsumption: string
+  /** 保存请求携带的附件引用列表 */
+  attachments?: FuelAttachment[]
+  /** 响应返回的附件详情（含 url） */
+  attachmentInfos?: FuelAttachmentInfo[]
 }
 
 export interface FuelTrendPoint {
@@ -59,7 +81,7 @@ type FuelVehicleRequest = Omit<FuelVehicle, 'id'> & {
   tankCapacity: string | number
 }
 
-type RefuelRecordRequest = Omit<RefuelRecord, 'id' | 'intervalConsumption'> & {
+type RefuelRecordRequest = Omit<RefuelRecord, 'id' | 'intervalConsumption' | 'attachmentInfos'> & {
   odometer: string | number
   volume: string | number
   unitPrice: string | number
