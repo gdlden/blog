@@ -24,13 +24,20 @@ export const useFuelStore = defineStore('fuel', () => {
   const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
   const recordTotalPages = computed(() => Math.ceil(recordTotal.value / recordPageSize.value))
 
-  async function fetchVehicles(page?: number, size?: number): Promise<void> {
+  const searchKeyword = ref('')
+
+  async function fetchVehicles(page?: number, size?: number, keyword?: string): Promise<void> {
     loading.value = true
     error.value = null
     try {
       const pageNum = page ?? currentPage.value
       const pageSizeNum = size ?? pageSize.value
-      const response = await fuelApi.getVehicles(String(pageNum), String(pageSizeNum))
+      if (keyword !== undefined) searchKeyword.value = keyword
+      const response = await fuelApi.getVehicles(
+        String(pageNum),
+        String(pageSizeNum),
+        searchKeyword.value,
+      )
       vehicles.value = response.list || []
       total.value = parseInt(response.total || '0', 10)
       currentPage.value = pageNum
@@ -126,12 +133,16 @@ export const useFuelStore = defineStore('fuel', () => {
     }
   }
 
-  async function fetchStats(vehicleId: string): Promise<void> {
-    stats.value = await fuelApi.getFuelStats(vehicleId)
+  async function fetchStats(vehicleId: string, startTime?: string, endTime?: string): Promise<void> {
+    stats.value = await fuelApi.getFuelStats(vehicleId, startTime, endTime)
   }
 
-  async function fetchVehicleDashboard(vehicleId: string): Promise<void> {
-    await Promise.all([fetchStats(vehicleId), fetchRecords(vehicleId, 1)])
+  async function fetchVehicleDashboard(
+    vehicleId: string,
+    startTime?: string,
+    endTime?: string,
+  ): Promise<void> {
+    await Promise.all([fetchStats(vehicleId, startTime, endTime), fetchRecords(vehicleId, 1)])
   }
 
   async function createRefuelRecord(
@@ -195,6 +206,7 @@ export const useFuelStore = defineStore('fuel', () => {
     vehicleCount,
     totalPages,
     recordTotalPages,
+    searchKeyword,
     fetchVehicles,
     fetchVehicleById,
     createVehicle,

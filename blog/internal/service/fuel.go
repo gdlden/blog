@@ -92,7 +92,7 @@ func (s *FuelService) ListVehicles(ctx context.Context, req *pb.ListFuelVehicles
 }
 
 func (s *FuelService) CreateRefuelRecord(ctx context.Context, req *pb.RefuelRecord) (*pb.SaveFuelReply, error) {
-	record, err := refuelRecordFromRequest(req)
+	record, err := refuelRecordFromRequest(req, true)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (s *FuelService) CreateRefuelRecord(ctx context.Context, req *pb.RefuelReco
 }
 
 func (s *FuelService) UpdateRefuelRecord(ctx context.Context, req *pb.RefuelRecord) (*pb.SaveFuelReply, error) {
-	record, err := refuelRecordFromRequest(req)
+	record, err := refuelRecordFromRequest(req, false)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func (s *FuelService) GetFuelStats(ctx context.Context, req *pb.GetFuelStatsRequ
 	if err != nil {
 		return nil, err
 	}
-	stats, err := s.uc.GetFuelStats(ctx, uint(vehicleId))
+	stats, err := s.uc.GetFuelStats(ctx, uint(vehicleId), req.StartTime, req.EndTime)
 	if err != nil {
 		return nil, err
 	}
@@ -211,9 +211,15 @@ func fuelVehicleFromRequest(req *pb.FuelVehicle) (*biz.FuelVehicle, error) {
 	if req == nil {
 		return nil, errors.New("request is nil")
 	}
+	if req.Name == "" {
+		return nil, errors.New("车辆名称不能为空")
+	}
 	tankCapacity, err := parseDecimalOrZero(req.TankCapacity)
 	if err != nil {
 		return nil, err
+	}
+	if tankCapacity.IsNegative() {
+		return nil, errors.New("油箱容量不能为负数")
 	}
 	return &biz.FuelVehicle{
 		Id:           req.Id,
@@ -226,25 +232,51 @@ func fuelVehicleFromRequest(req *pb.FuelVehicle) (*biz.FuelVehicle, error) {
 	}, nil
 }
 
-func refuelRecordFromRequest(req *pb.RefuelRecord) (*biz.RefuelRecord, error) {
+// refuelRecordFromRequest 校验并转换加油记录请求。
+// strictAmount=true（新建）：amount 非空时必须与油量×单价一致，否则拒绝；
+// strictAmount=false（编辑）：amount 自动以油量×单价重算，避免存量手输金额记录编辑报错。
+func refuelRecordFromRequest(req *pb.RefuelRecord, strictAmount bool) (*biz.RefuelRecord, error) {
 	if req == nil {
 		return nil, errors.New("request is nil")
+	}
+	if req.RefuelTime == "" {
+		return nil, errors.New("加油时间不能为空")
 	}
 	odometer, err := parseDecimalOrZero(req.Odometer)
 	if err != nil {
 		return nil, err
 	}
+	if odometer.IsNegative() {
+		return nil, errors.New("总里程不能为负数")
+	}
 	volume, err := parseDecimalOrZero(req.Volume)
 	if err != nil {
 		return nil, err
+	}
+	if volume.LessThanOrEqual(decimal.Zero) {
+		return nil, errors.New("油量必须大于 0")
 	}
 	unitPrice, err := parseDecimalOrZero(req.UnitPrice)
 	if err != nil {
 		return nil, err
 	}
+	if unitPrice.IsNegative() {
+		return nil, errors.New("单价不能为负数")
+	}
 	amount, err := parseDecimalOrZero(req.Amount)
 	if err != nil {
 		return nil, err
+	}
+	expectedAmount := volume.Mul(unitPrice).Round(2)
+	if strictAmount {
+		if req.Amount == "" {
+			// 未传金额时按油量×单价自动计算
+			amount = expectedAmount
+		} else if !amount.Equal(expectedAmount) {
+			return nil, errors.New("金额与油量×单价不一致")
+		}
+	} else {
+		amount = expectedAmount
 	}
 	return &biz.RefuelRecord{
 		Id:         req.Id,

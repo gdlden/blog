@@ -91,10 +91,15 @@ function serializeRefuelRecord(data: RefuelRecord | RefuelRecordRequest) {
 export async function getVehicles(
   page?: string,
   pageSize?: string,
+  keyword?: string,
 ): Promise<FuelPageResponse<FuelVehicle>> {
   const params: Record<string, string> = {}
   if (page) params.page = page
   if (pageSize) params.pageSize = pageSize
+  if (keyword) {
+    params.name = keyword
+    params.plateNo = keyword
+  }
   return await instance.get('/fuel/vehicle/page/v1', { params })
 }
 
@@ -143,6 +148,13 @@ export async function deleteRefuelRecord(id: string): Promise<boolean> {
   return response.flag
 }
 
-export async function getFuelStats(vehicleId: string): Promise<FuelStats> {
-  return await instance.get('/fuel/stats/v1', { params: { vehicleId } })
+export async function getFuelStats(
+  vehicleId: string,
+  startTime?: string,
+  endTime?: string,
+): Promise<FuelStats> {
+  const params: Record<string, string> = { vehicleId }
+  if (startTime) params.startTime = startTime
+  if (endTime) params.endTime = endTime
+  return await instance.get('/fuel/stats/v1', { params })
 }

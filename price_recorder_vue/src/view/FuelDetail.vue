@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useFuelStore } from '@/stores/fuelStore'
@@ -14,6 +14,17 @@ const { currentVehicle, records, stats, recordLoading } = storeToRefs(fuelStore)
 const showModal = ref(false)
 const isEditing = ref(false)
 const isSubmitting = ref(false)
+const startDate = ref('')
+const endDate = ref('')
+
+// 新建记录时：里程小于该车最新记录（records 按时间倒序）则提示回拨
+const isOdometerRollback = computed(() => {
+  if (isEditing.value) return false
+  const latest = records.value[0]?.odometer
+  const current = formData.value.odometer
+  if (!latest || !current) return false
+  return Number(current) < Number(latest)
+})
 const formData = ref<RefuelRecord>({
   id: '',
   vehicleId,
@@ -49,6 +60,15 @@ onMounted(() => {
   fuelStore.fetchVehicleDashboard(vehicleId)
 })
 
+watch([startDate, endDate], () => {
+  fuelStore.fetchStats(vehicleId, startDate.value || undefined, endDate.value || undefined)
+})
+
+function clearDateRange() {
+  startDate.value = ''
+  endDate.value = ''
+}
+
 function goBack() {
   router.push({ name: 'fuel' })
 }
@@ -72,6 +92,7 @@ function openCreateModal() {
 }
 
 function openEditModal(record: RefuelRecord) {
+  if (record.isFull && !confirm('修改加满记录将重新计算后续油耗统计，确定继续吗？')) return
   isEditing.value = true
   formData.value = {
     ...record,
@@ -100,6 +121,8 @@ async function handleSubmit() {
       await fuelStore.createRefuelRecord(rest)
     }
     showModal.value = false
+    // store 内刷新为全量 stats，这里按当前时间范围覆盖
+    await fuelStore.fetchStats(vehicleId, startDate.value || undefined, endDate.value || undefined)
   } catch (err: any) {
     alert(err.message || '操作失败')
   } finally {
@@ -107,10 +130,14 @@ async function handleSubmit() {
   }
 }
 
-async function handleDelete(id: string) {
-  if (!confirm('确定要删除这条加油记录吗？')) return
+async function handleDelete(record: RefuelRecord) {
+  const tip = record.isFull
+    ? '删除加满记录将重新计算后续油耗统计，确定删除吗？'
+    : '确定要删除这条加油记录吗？'
+  if (!confirm(tip)) return
   try {
-    await fuelStore.deleteRefuelRecord(id, vehicleId)
+    await fuelStore.deleteRefuelRecord(record.id, vehicleId)
+    await fuelStore.fetchStats(vehicleId, startDate.value || undefined, endDate.value || undefined)
   } catch (err: any) {
     alert(err.message || '删除失败')
   }
@@ -155,6 +182,28 @@ function formatNumber(value?: string, suffix = '') {
           {{ currentVehicle?.plateNo || currentVehicle?.model || '' }}
         </p>
       </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3 mb-6">
+      <input
+        v-model="startDate"
+        type="date"
+        class="px-4 py-2 bg-white border border-[#e8e8ed] rounded-xl text-[14px] text-[#1d1d1f] outline-none transition-all focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/10"
+      />
+      <span class="text-sm text-[#86868b]">至</span>
+      <input
+        v-model="endDate"
+        type="date"
+        class="px-4 py-2 bg-white border border-[#e8e8ed] rounded-xl text-[14px] text-[#1d1d1f] outline-none transition-all focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/10"
+      />
+      <button
+        v-if="startDate || endDate"
+        @click="clearDateRange"
+        class="px-3 py-2 text-sm font-medium text-[#0071e3] bg-[#0071e3]/5 rounded-xl hover:bg-[#0071e3]/10 transition-colors"
+      >
+        清除范围
+      </button>
+      <span class="text-sm text-[#86868b]">仅统计时间范围内的油耗</span>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -295,11 +344,6 @@ function formatNumber(value?: string, suffix = '') {
             <th
               class="px-5 py-3.5 text-xs font-medium text-[#86868b] uppercase tracking-wide text-right"
             >
-              区间油耗
-            </th>
-            <th
-              class="px-5 py-3.5 text-xs font-medium text-[#86868b] uppercase tracking-wide text-right"
-            >
               操作
             </th>
           </tr>
@@ -327,9 +371,6 @@ function formatNumber(value?: string, suffix = '') {
                 >{{ record.isFull ? '是' : '否' }}</span
               >
             </td>
-            <td class="px-5 py-4 text-sm text-[#1d1d1f] text-right">
-              {{ record.intervalConsumption || '-' }}
-            </td>
             <td class="px-5 py-4 text-right">
               <div class="inline-flex gap-1">
                 <button
@@ -347,7 +388,7 @@ function formatNumber(value?: string, suffix = '') {
                   </svg>
                 </button>
                 <button
-                  @click="handleDelete(record.id)"
+                  @click="handleDelete(record)"
                   class="p-1.5 rounded-lg text-[#ff3b30] hover:bg-[#ff3b30]/10 transition-colors"
                   title="删除"
                 >
@@ -457,7 +498,7 @@ function formatNumber(value?: string, suffix = '') {
                 v-model="formData.amount"
                 type="number"
                 step="0.01"
-                placeholder="留空则按油量和单价计算"
+                placeholder="留空自动计算，手输须与油量×单价一致"
                 class="w-full px-4 py-2.5 bg-[#fafafc] border border-[#e8e8ed] rounded-xl text-[15px] text-[#1d1d1f] outline-none transition-all placeholder:text-[#c7c7cc] focus:border-[#0071e3] focus:bg-white focus:ring-2 focus:ring-[#0071e3]/10"
               />
             </div>
@@ -478,6 +519,12 @@ function formatNumber(value?: string, suffix = '') {
               />
               本次已加满
             </label>
+            <div
+              v-if="isOdometerRollback"
+              class="md:col-span-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-700"
+            >
+              里程（{{ formData.odometer }} km）小于该车最近一次记录（{{ records[0]?.odometer }} km），可能是里程回拨或填写错误，将影响油耗统计。
+            </div>
             <div class="md:col-span-2">
               <label class="block mb-1.5 text-sm font-medium text-[#1d1d1f]">备注</label
               ><textarea

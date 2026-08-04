@@ -45,6 +45,28 @@ func TestFuelVehicleRepo_ListByUserIdScopesAndPaginates(t *testing.T) {
 	assert.NotEqual(t, "Other Car", items[0].Name)
 }
 
+func TestFuelVehicleRepo_ListByUserIdSearchesNameOrPlate(t *testing.T) {
+	db := setupFuelTestDB(t)
+	repo := &FuelVehicleRepo{data: &Data{db: db}, log: log.NewHelper(log.DefaultLogger)}
+	ctx := context.Background()
+
+	for _, vehicle := range []*biz.FuelVehicle{
+		{Name: "家用车", PlateNo: "沪A12345", UserId: "user-123"},
+		{Name: "商务车", PlateNo: "京B67890", UserId: "user-123"},
+	} {
+		_, err := repo.Save(ctx, vehicle)
+		assert.NoError(t, err)
+	}
+
+	// 按车牌搜索（名称不含关键字），应命中 OR 匹配
+	items, total, err := repo.ListByUserId(ctx, "user-123", &biz.FuelVehicleListQuery{Page: 1, PageSize: 10, PlateNo: "京B"})
+
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), total)
+	assert.Len(t, items, 1)
+	assert.Equal(t, "商务车", items[0].Name)
+}
+
 func TestFuelVehicleRepo_CountRefuelRecordByVehicleId(t *testing.T) {
 	db := setupFuelTestDB(t)
 	vehicleRepo := &FuelVehicleRepo{data: &Data{db: db}, log: log.NewHelper(log.DefaultLogger)}

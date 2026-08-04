@@ -158,16 +158,125 @@ func TestFuelUsecase_GetStatsCalculatesFullTankIntervals(t *testing.T) {
 		},
 	}, log.DefaultLogger)
 
-	stats, err := uc.GetFuelStats(withUser(context.Background(), "user-123"), 1)
+	stats, err := uc.GetFuelStats(withUser(context.Background(), "user-123"), 1, "", "")
 
 	assert.NoError(t, err)
 	assert.True(t, stats.TotalDistance.Equal(decimal.NewFromInt(600)))
-	assert.True(t, stats.TotalVolume.Equal(decimal.NewFromInt(85)))
-	assert.True(t, stats.TotalAmount.Equal(decimal.NewFromInt(595)))
+	// 新口径：总油量/总金额只累计加满区间内实际消耗的部分（记录2+记录3：20+25L、140+175元）
+	assert.True(t, stats.TotalVolume.Equal(decimal.NewFromInt(45)))
+	assert.True(t, stats.TotalAmount.Equal(decimal.NewFromInt(315)))
 	assert.True(t, stats.AverageConsumption.Equal(decimal.RequireFromString("7.50")))
 	assert.True(t, stats.LatestConsumption.Equal(decimal.RequireFromString("7.50")))
-	assert.True(t, stats.CostPerKm.Equal(decimal.RequireFromString("0.99")))
+	assert.True(t, stats.CostPerKm.Equal(decimal.RequireFromString("0.53")))
 	assert.Len(t, stats.Trend, 1)
 	assert.True(t, stats.Trend[0].Consumption.Equal(decimal.RequireFromString("7.50")))
 	assert.Equal(t, "2026-01-20 08:00:00", stats.Trend[0].RefuelTime)
+}
+
+func TestFuelUsecase_GetStatsFiltersByTimeRangeWithAnchor(t *testing.T) {
+	records := []*RefuelRecord{
+		{Id: 1, RefuelTime: "2026-01-01 08:00:00", Odometer: decimal.NewFromInt(1000), Volume: decimal.NewFromInt(30), Amount: decimal.NewFromInt(210), IsFull: true},
+		{Id: 2, RefuelTime: "2026-01-10 08:00:00", Odometer: decimal.NewFromInt(1300), Volume: decimal.NewFromInt(20), Amount: decimal.NewFromInt(140), IsFull: false},
+		{Id: 3, RefuelTime: "2026-01-20 08:00:00", Odometer: decimal.NewFromInt(1600), Volume: decimal.NewFromInt(25), Amount: decimal.NewFromInt(175), IsFull: true},
+		{Id: 4, RefuelTime: "2026-02-01 08:00:00", Odometer: decimal.NewFromInt(2100), Volume: decimal.NewFromInt(40), Amount: decimal.NewFromInt(280), IsFull: true},
+	}
+	uc := NewFuelUsecase(&mockFuelVehicleRepo{
+		findByUserFunc: func(ctx context.Context, userId string, id uint) (*FuelVehicle, error) {
+			return &FuelVehicle{Id: int64(id), UserId: userId, Name: "Car"}, nil
+		},
+	}, &mockRefuelRecordRepo{
+		listAllFunc: func(ctx context.Context, userId string, vehicleId uint) ([]*RefuelRecord, error) {
+			return records, nil
+		},
+	}, log.DefaultLogger)
+
+	// 范围从 2026-01-15 开始：锚点为记录1（01-01 加满），记录2（01-10）保留以保证区间油量完整
+	stats, err := uc.GetFuelStats(withUser(context.Background(), "user-123"), 1, "2026-01-15", "2026-01-31")
+
+	assert.NoError(t, err)
+	assert.Len(t, stats.Trend, 1)
+	assert.Equal(t, "2026-01-20 08:00:00", stats.Trend[0].RefuelTime)
+	// 区间 [记录1, 记录3]：distance=600，油量=记录2+记录3=45L，金额=140+175=315
+	assert.True(t, stats.Trend[0].Distance.Equal(decimal.NewFromInt(600)))
+	assert.True(t, stats.Trend[0].Volume.Equal(decimal.NewFromInt(45)))
+	assert.True(t, stats.Trend[0].Consumption.Equal(decimal.RequireFromString("7.50")))
+	assert.True(t, stats.TotalDistance.Equal(decimal.NewFromInt(600)))
+	assert.True(t, stats.TotalVolume.Equal(decimal.NewFromInt(45)))
+	assert.True(t, stats.TotalAmount.Equal(decimal.NewFromInt(315)))
+	// 范围外的记录4 不参与统计
+	assert.Equal(t, 1, len(stats.Trend))
+
+	// 范围起点之前没有加满锚点时，范围内首个加满记录无前锚点，不产生区间
+	stats2, err := uc.GetFuelStats(withUser(context.Background(), "user-123"), 1, "2026-01-05", "2026-01-10")
+	assert.NoError(t, err)
+	assert.Len(t, stats2.Trend, 0)
+	assert.True(t, stats2.TotalDistance.Equal(decimal.Zero))
+}
+
+func TestFuelUsecase_GetStatsUsesNearestAnchorBeforeRange(t *testing.T) {
+	records := []*RefuelRecord{
+		{Id: 1, RefuelTime: "2026-01-01 08:00:00", Odometer: decimal.NewFromInt(1000), Volume: decimal.NewFromInt(30), Amount: decimal.NewFromInt(210), IsFull: true},
+		{Id: 2, RefuelTime: "2026-01-05 08:00:00", Odometer: decimal.NewFromInt(1300), Volume: decimal.NewFromInt(20), Amount: decimal.NewFromInt(140), IsFull: true},
+		{Id: 3, RefuelTime: "2026-01-08 08:00:00", Odometer: decimal.NewFromInt(1450), Volume: decimal.NewFromInt(10), Amount: decimal.NewFromInt(70), IsFull: false},
+		{Id: 4, RefuelTime: "2026-01-20 08:00:00", Odometer: decimal.NewFromInt(1750), Volume: decimal.NewFromInt(25), Amount: decimal.NewFromInt(175), IsFull: true},
+	}
+	uc := NewFuelUsecase(&mockFuelVehicleRepo{
+		findByUserFunc: func(ctx context.Context, userId string, id uint) (*FuelVehicle, error) {
+			return &FuelVehicle{Id: int64(id), UserId: userId, Name: "Car"}, nil
+		},
+	}, &mockRefuelRecordRepo{
+		listAllFunc: func(ctx context.Context, userId string, vehicleId uint) ([]*RefuelRecord, error) {
+			return records, nil
+		},
+	}, log.DefaultLogger)
+
+	// 起点前有两条加满记录：锚点必须取最近的 01-05（记录2），更早的 01-01（记录1）完整区间不得计入
+	stats, err := uc.GetFuelStats(withUser(context.Background(), "user-123"), 1, "2026-01-10", "")
+
+	assert.NoError(t, err)
+	assert.Len(t, stats.Trend, 1)
+	assert.Equal(t, "2026-01-20 08:00:00", stats.Trend[0].RefuelTime)
+	// 区间 [记录2(1300km), 记录4(1750km)]：distance=450，油量=记录3+记录4=35L，金额=70+175=245
+	assert.True(t, stats.TotalDistance.Equal(decimal.NewFromInt(450)))
+	assert.True(t, stats.TotalVolume.Equal(decimal.NewFromInt(35)))
+	assert.True(t, stats.TotalAmount.Equal(decimal.NewFromInt(245)))
+	assert.True(t, stats.Trend[0].Consumption.Equal(decimal.RequireFromString("7.78")))
+	assert.True(t, stats.AverageConsumption.Equal(decimal.RequireFromString("7.78")))
+}
+
+func TestFuelUsecase_GetStatsRangeWithNoRecordsInside(t *testing.T) {
+	records := []*RefuelRecord{
+		{Id: 1, RefuelTime: "2026-01-01 08:00:00", Odometer: decimal.NewFromInt(1000), Volume: decimal.NewFromInt(30), Amount: decimal.NewFromInt(210), IsFull: true},
+		{Id: 2, RefuelTime: "2026-01-20 08:00:00", Odometer: decimal.NewFromInt(1600), Volume: decimal.NewFromInt(25), Amount: decimal.NewFromInt(175), IsFull: true},
+	}
+	uc := NewFuelUsecase(&mockFuelVehicleRepo{
+		findByUserFunc: func(ctx context.Context, userId string, id uint) (*FuelVehicle, error) {
+			return &FuelVehicle{Id: int64(id), UserId: userId, Name: "Car"}, nil
+		},
+	}, &mockRefuelRecordRepo{
+		listAllFunc: func(ctx context.Context, userId string, vehicleId uint) ([]*RefuelRecord, error) {
+			return records, nil
+		},
+	}, log.DefaultLogger)
+
+	// 范围内无记录：锚点纳入后无完整区间，统计全零
+	stats, err := uc.GetFuelStats(withUser(context.Background(), "user-123"), 1, "2026-02-01", "2026-02-28")
+
+	assert.NoError(t, err)
+	assert.Len(t, stats.Trend, 0)
+	assert.True(t, stats.TotalDistance.Equal(decimal.Zero))
+	assert.True(t, stats.TotalVolume.Equal(decimal.Zero))
+	assert.True(t, stats.TotalAmount.Equal(decimal.Zero))
+}
+
+func TestFilterFuelRecordsByTime_RejectsReversedRange(t *testing.T) {
+	records := []*RefuelRecord{
+		{Id: 1, RefuelTime: "2026-01-01 08:00:00", IsFull: true},
+		{Id: 2, RefuelTime: "2026-01-20 08:00:00", IsFull: true},
+	}
+
+	filtered, anchor := filterFuelRecordsByTime(records, "2026-02-01", "2026-01-01")
+
+	assert.Nil(t, filtered)
+	assert.Nil(t, anchor)
 }

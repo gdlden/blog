@@ -42,10 +42,15 @@ blog/cmd/blog/wire_gen.go
 # Local environment secrets
 blog/.env
 blog/blog
-.claude/worktrees
-.planning
 images
-.reasonix
 price_recorder_vue/.env
-.omo
+.claude
 .codegraph
+.cursor
+.omo
+.planning
+.playwright-mcp
+.reasonix
+AGENTS.md
+CLAUDE.md
+reasonix.toml

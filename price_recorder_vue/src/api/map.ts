@@ -90,6 +90,8 @@ export async function uploadSpotPhoto(
 ): Promise<{ id: string; url: string }> {
   const formData = new FormData()
   formData.append('file', file)
-  const config = onUploadProgress ? { onUploadProgress } : undefined
-  return await instance.post('/file/upload/raw/v1', formData, config)
+  if (onUploadProgress) {
+    return await instance.post('/file/upload/raw/v1', formData, { onUploadProgress })
+  }
+  return await instance.post('/file/upload/raw/v1', formData)
 }

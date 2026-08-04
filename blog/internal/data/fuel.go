@@ -122,11 +122,16 @@ func (r *FuelVehicleRepo) FindByUserIdAndVehicleId(ctx context.Context, userId s
 func (r *FuelVehicleRepo) ListByUserId(ctx context.Context, userId string, query *biz.FuelVehicleListQuery) ([]*biz.FuelVehicle, int64, error) {
 	db := r.data.db.WithContext(ctx).Model(&FuelVehicle{}).Where("user_id = ?", userId)
 	if query != nil {
-		if query.Name != "" {
-			db = db.Where("name LIKE ?", "%"+query.Name+"%")
-		}
-		if query.PlateNo != "" {
-			db = db.Where("plate_no LIKE ?", "%"+query.PlateNo+"%")
+		if query.Name != "" || query.PlateNo != "" {
+			// 名称与车牌任一匹配（前端以同一关键字同时搜索两个字段）
+			name, plate := query.Name, query.PlateNo
+			if name == "" {
+				name = plate
+			}
+			if plate == "" {
+				plate = query.Name
+			}
+			db = db.Where("(name LIKE ? OR plate_no LIKE ?)", "%"+name+"%", "%"+plate+"%")
 		}
 	}
 

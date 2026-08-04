@@ -65,4 +65,42 @@ describe('fuel api', () => {
       remark: '',
     })
   })
+
+  it('passes keyword as name and plateNo to vehicle list', async () => {
+    const { getVehicles } = await import('@/api/fuel')
+
+    await getVehicles('1', '12', '沪A')
+
+    expect(getMock).toHaveBeenCalledWith('/fuel/vehicle/page/v1', {
+      params: { page: '1', pageSize: '12', name: '沪A', plateNo: '沪A' },
+    })
+  })
+
+  it('omits empty keyword from vehicle list params', async () => {
+    const { getVehicles } = await import('@/api/fuel')
+
+    await getVehicles('1', '12')
+
+    expect(getMock).toHaveBeenCalledWith('/fuel/vehicle/page/v1', {
+      params: { page: '1', pageSize: '12' },
+    })
+  })
+
+  it('passes time range to stats params', async () => {
+    const { getFuelStats } = await import('@/api/fuel')
+
+    await getFuelStats('1', '2026-01-01', '2026-01-31')
+
+    expect(getMock).toHaveBeenCalledWith('/fuel/stats/v1', {
+      params: { vehicleId: '1', startTime: '2026-01-01', endTime: '2026-01-31' },
+    })
+  })
+
+  it('omits empty time range from stats params', async () => {
+    const { getFuelStats } = await import('@/api/fuel')
+
+    await getFuelStats('1')
+
+    expect(getMock).toHaveBeenCalledWith('/fuel/stats/v1', { params: { vehicleId: '1' } })
+  })
 })

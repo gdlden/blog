@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useFuelStore } from '@/stores/fuelStore'
@@ -7,7 +7,8 @@ import type { FuelVehicle } from '@/api/fuel'
 
 const router = useRouter()
 const fuelStore = useFuelStore()
-const { vehicles, loading, totalPages, currentPage, vehicleCount } = storeToRefs(fuelStore)
+const { vehicles, loading, totalPages, currentPage, vehicleCount, searchKeyword } =
+  storeToRefs(fuelStore)
 
 const showModal = ref(false)
 const isEditing = ref(false)
@@ -23,6 +24,16 @@ const formData = ref<FuelVehicle>({
 })
 
 onMounted(() => fuelStore.fetchVehicles())
+
+let searchTimer: ReturnType<typeof setTimeout> | undefined
+function handleSearch() {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    fuelStore.fetchVehicles(1, undefined, searchKeyword.value.trim())
+  }, 300)
+}
+
+onUnmounted(() => clearTimeout(searchTimer))
 
 function openCreateModal() {
   isEditing.value = false
@@ -91,21 +102,30 @@ function closeModal() {
         <h1 class="text-[32px] font-semibold tracking-tight text-[#1d1d1f]">油耗</h1>
         <p class="mt-1 text-sm text-[#86868b]">维护车辆并记录每次加油</p>
       </div>
-      <button
-        @click="openCreateModal"
-        class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-white text-[15px] font-medium rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm"
-        style="background: linear-gradient(135deg, #0071e3, #0063c7)"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 4v16m8-8H4"
-          />
-        </svg>
-        新建车辆
-      </button>
+      <div class="flex items-center gap-3">
+        <input
+          v-model="searchKeyword"
+          @input="handleSearch"
+          type="text"
+          placeholder="搜索名称或车牌"
+          class="w-56 px-4 py-2.5 bg-[#fafafc] border border-[#e8e8ed] rounded-xl text-[15px] text-[#1d1d1f] outline-none transition-all placeholder:text-[#c7c7cc] focus:border-[#0071e3] focus:bg-white focus:ring-2 focus:ring-[#0071e3]/10"
+        />
+        <button
+          @click="openCreateModal"
+          class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-white text-[15px] font-medium rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm"
+          style="background: linear-gradient(135deg, #0071e3, #0063c7)"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          新建车辆
+        </button>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">

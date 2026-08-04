@@ -46,7 +46,7 @@ describe('fuelStore', () => {
     expect(store.vehicles).toHaveLength(1)
     expect(store.total).toBe(1)
     expect(store.loading).toBe(false)
-    expect(fuelApi.getVehicles).toHaveBeenCalledWith('1', '12')
+    expect(fuelApi.getVehicles).toHaveBeenCalledWith('1', '12', '')
   })
 
   it('creates vehicle then refreshes list', async () => {
@@ -85,5 +85,43 @@ describe('fuelStore', () => {
 
     expect(store.stats?.averageConsumption).toBe('7.50')
     expect(store.records).toEqual([])
+  })
+
+  it('passes search keyword to vehicle list', async () => {
+    vi.mocked(fuelApi.getVehicles).mockResolvedValue({ page: '1', total: '0', list: [] })
+
+    const store = useFuelStore()
+    await store.fetchVehicles(1, 12, '沪A')
+
+    expect(fuelApi.getVehicles).toHaveBeenCalledWith('1', '12', '沪A')
+  })
+
+  it('passes time range to stats', async () => {
+    vi.mocked(fuelApi.getFuelStats).mockResolvedValue({
+      vehicleId: '1',
+      totalDistance: '600',
+      totalVolume: '45',
+      totalAmount: '315',
+      averageConsumption: '7.50',
+      latestConsumption: '7.50',
+      costPerKm: '0.53',
+      trend: [],
+    })
+
+    const store = useFuelStore()
+    await store.fetchStats('1', '2026-01-01', '2026-01-31')
+
+    expect(fuelApi.getFuelStats).toHaveBeenCalledWith('1', '2026-01-01', '2026-01-31')
+  })
+
+  it('keeps last search keyword when paginating', async () => {
+    vi.mocked(fuelApi.getVehicles).mockResolvedValue({ page: '1', total: '0', list: [] })
+
+    const store = useFuelStore()
+    await store.fetchVehicles(1, 12, '本田')
+    await store.fetchVehicles(2)
+
+    // 第二次不带 keyword，应沿用上次搜索词
+    expect(fuelApi.getVehicles).toHaveBeenLastCalledWith('2', '12', '本田')
   })
 })

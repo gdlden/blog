@@ -148,6 +148,8 @@ message ListRefuelRecordsReply {
 
 message GetFuelStatsRequest {
 	string vehicleId = 1;
+	string startTime = 2;
+	string endTime = 3;
 }
 
 message FuelStats {

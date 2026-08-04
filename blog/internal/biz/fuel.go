@@ -34,6 +34,7 @@ type RefuelRecord struct {
 	Remark              string
 	IntervalConsumption decimal.Decimal
 	UserId              string
+	StatsAnchor         bool // 仅作时间范围统计的区间锚点，不参与统计
 }
 
 type FuelTrendPoint struct {
@@ -222,7 +223,7 @@ func (uc *FuelUsecase) ListRefuelRecords(ctx context.Context, vehicleId uint, qu
 	return uc.recordRepo.ListByUserIdAndVehicleId(ctx, userId, vehicleId, query)
 }
 
-func (uc *FuelUsecase) GetFuelStats(ctx context.Context, vehicleId uint) (*FuelStats, error) {
+func (uc *FuelUsecase) GetFuelStats(ctx context.Context, vehicleId uint, startTime, endTime string) (*FuelStats, error) {
 	userId, err := utils.CurrentUserId(ctx)
 	if err != nil {
 		return nil, err
@@ -234,7 +235,69 @@ func (uc *FuelUsecase) GetFuelStats(ctx context.Context, vehicleId uint) (*FuelS
 	if err != nil {
 		return nil, err
 	}
-	return CalculateFuelStats(int64(vehicleId), records), nil
+	filtered, anchor := filterFuelRecordsByTime(records, startTime, endTime)
+	if anchor != nil {
+		// 范围内无记录：锚点已标记 StatsAnchor，仅提供区间起点不参与统计
+		filtered = append([]*RefuelRecord{anchor}, filtered...)
+	}
+	return CalculateFuelStats(int64(vehicleId), filtered), nil
+}
+
+// filterFuelRecordsByTime 按时间范围过滤记录，并返回范围起点前最近的一条加满记录作为锚点。
+// 锚点（标记 StatsAnchor）及其之后（范围内第一条记录之前）的部分加油记录一并并入，以保证跨边界区间的油量数据完整。
+func filterFuelRecordsByTime(records []*RefuelRecord, startTime, endTime string) ([]*RefuelRecord, *RefuelRecord) {
+	if startTime == "" && endTime == "" {
+		return records, nil
+	}
+	startTime, endTime = normalizeFuelTimeRange(startTime, endTime)
+	if startTime != "" && endTime != "" && startTime > endTime {
+		return nil, nil
+	}
+
+	var anchor *RefuelRecord
+	var pending []*RefuelRecord
+	filtered := make([]*RefuelRecord, 0, len(records))
+	for _, record := range records {
+		if endTime != "" && record.RefuelTime > endTime {
+			continue
+		}
+		if startTime != "" && record.RefuelTime < startTime {
+			if record.IsFull {
+				// 持续更新为最近一条加满记录，之前暂存的部分加油记录作废
+				anchor = record
+				pending = pending[:0]
+			} else if anchor != nil {
+				// 锚点之后的部分加油记录：随锚点一并并入，保证区间油量完整
+				pending = append(pending, record)
+			}
+			continue
+		}
+		// 遇到第一条 >= startTime 的记录：并入锚点与其后的部分加油记录
+		if anchor != nil {
+			anchor.StatsAnchor = true
+			filtered = append(filtered, anchor)
+			filtered = append(filtered, pending...)
+			anchor = nil
+			pending = nil
+		}
+		filtered = append(filtered, record)
+	}
+	if anchor != nil {
+		// 范围内无记录：锚点仍返回，由调用方纳入（仅作区间起点，统计结果为空）
+		anchor.StatsAnchor = true
+	}
+	return filtered, anchor
+}
+
+// normalizeFuelTimeRange 将日期归一化为 "2006-01-02 15:04:05" 格式以便字符串比较。
+func normalizeFuelTimeRange(startTime, endTime string) (string, string) {
+	if len(startTime) == 10 {
+		startTime += " 00:00:00"
+	}
+	if len(endTime) == 10 {
+		endTime += " 23:59:59"
+	}
+	return startTime, endTime
 }
 
 func CalculateFuelStats(vehicleId int64, records []*RefuelRecord) *FuelStats {
@@ -254,27 +317,16 @@ func CalculateFuelStats(vehicleId int64, records []*RefuelRecord) *FuelStats {
 		return sortedRecords[i].RefuelTime < sortedRecords[j].RefuelTime
 	})
 
-	minOdometer := sortedRecords[0].Odometer
-	maxOdometer := sortedRecords[0].Odometer
-	for _, record := range sortedRecords {
-		stats.TotalVolume = stats.TotalVolume.Add(record.Volume)
-		stats.TotalAmount = stats.TotalAmount.Add(record.Amount)
-		if record.Odometer.LessThan(minOdometer) {
-			minOdometer = record.Odometer
-		}
-		if record.Odometer.GreaterThan(maxOdometer) {
-			maxOdometer = record.Odometer
-		}
-	}
-	if maxOdometer.GreaterThan(minOdometer) {
-		stats.TotalDistance = maxOdometer.Sub(minOdometer)
-		stats.CostPerKm = stats.TotalAmount.Div(stats.TotalDistance).Round(2)
-	}
-
 	var lastFullIndex = -1
 	validDistance := decimal.Zero
 	validVolume := decimal.Zero
+	validAmount := decimal.Zero
 	for i, record := range sortedRecords {
+		if record.StatsAnchor {
+			// 锚点仅提供区间起点，不参与任何统计
+			lastFullIndex = i
+			continue
+		}
 		if !record.IsFull {
 			continue
 		}
@@ -282,8 +334,10 @@ func CalculateFuelStats(vehicleId int64, records []*RefuelRecord) *FuelStats {
 			distance := record.Odometer.Sub(sortedRecords[lastFullIndex].Odometer)
 			if distance.GreaterThan(decimal.Zero) {
 				intervalVolume := decimal.Zero
+				intervalAmount := decimal.Zero
 				for j := lastFullIndex + 1; j <= i; j++ {
 					intervalVolume = intervalVolume.Add(sortedRecords[j].Volume)
+					intervalAmount = intervalAmount.Add(sortedRecords[j].Amount)
 				}
 				consumption := intervalVolume.Div(distance).Mul(decimal.NewFromInt(100)).Round(2)
 				stats.Trend = append(stats.Trend, &FuelTrendPoint{
@@ -297,14 +351,20 @@ func CalculateFuelStats(vehicleId int64, records []*RefuelRecord) *FuelStats {
 				record.IntervalConsumption = consumption
 				validDistance = validDistance.Add(distance)
 				validVolume = validVolume.Add(intervalVolume)
+				validAmount = validAmount.Add(intervalAmount)
 				stats.LatestConsumption = consumption
 			}
 		}
 		lastFullIndex = i
 	}
 
+	// 统一口径：总里程/总油量/总油费只累计加满锚点区间内实际消耗的部分
+	stats.TotalDistance = validDistance
+	stats.TotalVolume = validVolume
+	stats.TotalAmount = validAmount
 	if validDistance.GreaterThan(decimal.Zero) {
 		stats.AverageConsumption = validVolume.Div(validDistance).Mul(decimal.NewFromInt(100)).Round(2)
+		stats.CostPerKm = validAmount.Div(validDistance).Round(2)
 	}
 	return stats
 }
