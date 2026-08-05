@@ -75,32 +75,42 @@ func (s *FileService) HandleRawUpload(ctx context.Context, fileName string, file
 
 // HandleRawUploadHTTP is the Kratos HTTP handler for raw file upload via multipart form.
 // Route: POST /file/upload/raw/v1
+// 手动注册的路由不会自动套用 service middleware，这里显式设置 operation 并走
+// ctx.Middleware 链（selector+jwt），确保 JWT 解析后 claims 注入 context 供上传归属使用。
 func (s *FileService) HandleRawUploadHTTP(ctx http.Context) error {
+	http.SetOperation(ctx, "/file.v1.File/UploadRaw")
 	req := ctx.Request()
-	if err := req.ParseMultipartForm(32 << 20); err != nil {
-		return err
-	}
-	file, header, err := req.FormFile("file")
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+	h := ctx.Middleware(func(ctx context.Context, _ interface{}) (interface{}, error) {
+		if err := req.ParseMultipartForm(32 << 20); err != nil {
+			return nil, err
+		}
+		file, header, err := req.FormFile("file")
+		if err != nil {
+			return nil, err
+		}
+		defer file.Close()
 
-	fileName := header.Filename
-	contentType := header.Header.Get("Content-Type")
-	if contentType == "" {
-		contentType = "application/octet-stream"
-	}
-	fileSize := header.Size
+		fileName := header.Filename
+		contentType := header.Header.Get("Content-Type")
+		if contentType == "" {
+			contentType = "application/octet-stream"
+		}
+		fileSize := header.Size
 
-	id, _, err := s.HandleRawUpload(ctx, fileName, fileSize, contentType, file)
-	if err != nil {
-		return err
-	}
-	return ctx.Result(200, map[string]any{
-		"id":  fmt.Sprintf("%d", id),
-		"url": fmt.Sprintf("/file/download/v1/%d", id),
+		id, _, err := s.HandleRawUpload(ctx, fileName, fileSize, contentType, file)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]any{
+			"id":  fmt.Sprintf("%d", id),
+			"url": fmt.Sprintf("/file/download/v1/%d", id),
+		}, nil
 	})
+	out, err := h(ctx, nil)
+	if err != nil {
+		return err
+	}
+	return ctx.Result(200, out)
 }
 
 // HandleDownloadHTTP streams a file from the storage backend to the client.
