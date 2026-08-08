@@ -4,6 +4,7 @@ import { useMapStore } from '@/stores/mapStore'
 import { useToast } from 'vue-toastification'
 import type { CreateSpotRequest, SpotEntity, UpdateSpotRequest } from '@/api/map'
 import { gcj02ToWgs84, wgs84ToGcj02 } from '@/utils/coord'
+import { resolveFileUrl } from '@/utils/fileUrl'
 
 // PATTERNS risk-flag #5: window._AMapSecurityConfig MUST be set BEFORE
 // AMapLoader.load. Set at the top of module scope (NOT inside onMounted)
@@ -683,7 +684,7 @@ function selectSpotFromList(spot: SpotEntity): void {
               <img
                 v-for="(url, idx) in selectedSpot.photos"
                 :key="idx"
-                :src="url"
+                :src="resolveFileUrl(url)"
                 :alt="`photo-${idx}`"
                 class="w-16 h-16 object-cover rounded-lg flex-shrink-0"
               />
@@ -818,7 +819,7 @@ function selectSpotFromList(spot: SpotEntity): void {
                   >
                     <img
                       v-if="p.url"
-                      :src="p.url"
+                      :src="resolveFileUrl(p.url)"
                       :alt="p.name"
                       class="w-16 h-16 object-cover rounded-lg"
                     />

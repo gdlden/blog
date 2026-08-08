@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useFuelStore } from '@/stores/fuelStore'
 import { uploadImage } from '@/api/file'
+import { resolveFileUrl } from '@/utils/fileUrl'
 import type { FuelAttachType, RefuelRecord } from '@/api/fuel'
 
 const route = useRoute()
@@ -35,12 +36,7 @@ const attachTypeOptions: Array<{ value: FuelAttachType; label: string }> = [
 const maxAttachments = 6
 const maxAttachmentSize = 10 * 1024 * 1024
 
-// 后端返回相对路径（/file/download/v1/{id}），需加 /api 前缀经 Vite 代理
-function resolveFileUrl(url?: string) {
-  if (!url) return ''
-  return url.startsWith('/api') ? url : `/api${url}`
-}
-
+// 后端返回相对路径（/file/download/v1/{id}），统一经 resolveFileUrl 加 /api 前缀
 // 新建记录时：里程小于该车最新记录（records 按时间倒序）则提示回拨
 const isOdometerRollback = computed(() => {
   if (isEditing.value) return false

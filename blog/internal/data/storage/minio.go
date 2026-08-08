@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/url"
 	"path"
+	"strings"
 	"time"
 
 	"blog/internal/conf"
@@ -75,26 +77,36 @@ func (s *minioStorage) Upload(ctx context.Context, fileName string, fileSize int
 }
 
 func (s *minioStorage) Delete(ctx context.Context, key string) error {
-	// The key may be a full pre-signed URL; extract object key from it,
-	// or it may be a direct "bucket/key" or "key" path.
-	objectKey := key
-	// Try to parse as URL path segment after bucket
-	if len(key) > len(s.bucket)+1 && key[:len(s.bucket)] == s.bucket {
-		objectKey = key[len(s.bucket)+1:]
-	}
-	err := s.client.RemoveObject(ctx, s.bucket, objectKey, minio.RemoveObjectOptions{})
+	err := s.client.RemoveObject(ctx, s.bucket, s.objectKey(key), minio.RemoveObjectOptions{})
 	if err != nil {
 		return fmt.Errorf("minio: delete: %w", err)
 	}
 	return nil
 }
 
-func (s *minioStorage) GetReader(ctx context.Context, key string) (io.ReadCloser, error) {
-	objectKey := key
-	if len(key) > len(s.bucket)+1 && key[:len(s.bucket)] == s.bucket {
-		objectKey = key[len(s.bucket)+1:]
+// objectKey 从存储层返回的 URL/路径中提取 object key。
+// Upload 可能返回预签名 URL（path-style 或 virtual-host 风格）或 "bucket/key"，
+// 直接拿完整 URL 当 key 会取不到对象。
+func (s *minioStorage) objectKey(key string) string {
+	if strings.HasPrefix(key, "http://") || strings.HasPrefix(key, "https://") {
+		if u, err := url.Parse(key); err == nil && u.Path != "" {
+			p := strings.TrimPrefix(u.Path, "/")
+			if strings.HasPrefix(p, s.bucket+"/") {
+				p = strings.TrimPrefix(p, s.bucket+"/")
+			}
+			if p != "" {
+				return p
+			}
+		}
 	}
-	obj, err := s.client.GetObject(ctx, s.bucket, objectKey, minio.GetObjectOptions{})
+	if len(key) > len(s.bucket)+1 && key[:len(s.bucket)] == s.bucket {
+		return key[len(s.bucket)+1:]
+	}
+	return key
+}
+
+func (s *minioStorage) GetReader(ctx context.Context, key string) (io.ReadCloser, error) {
+	obj, err := s.client.GetObject(ctx, s.bucket, s.objectKey(key), minio.GetObjectOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("minio: get reader: %w", err)
 	}
