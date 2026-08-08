@@ -32,7 +32,7 @@ const isSubmitting = ref(false)
 const uploadingIOS = ref(false)
 const uploadingAndroid = ref(false)
 const formData = ref({
-  id: 0,
+  id: '',
   version: '',
   info: [''],
   iosUrl: '',
@@ -58,7 +58,7 @@ async function fetchVersions(page?: number) {
 
 function openCreateModal() {
   isEditing.value = false
-  formData.value = { id: 0, version: '', info: [''], iosUrl: '', androidUrl: '', isActive: false }
+  formData.value = { id: '', version: '', info: [''], iosUrl: '', androidUrl: '', isActive: false }
   showModal.value = true
 }
 
@@ -110,7 +110,7 @@ async function handleSubmit() {
   }
 }
 
-async function handleDelete(id: number) {
+async function handleDelete(id: string) {
   if (!confirm('确定要删除这个版本记录吗？')) return
   try {
     await deleteAppVersion(id)

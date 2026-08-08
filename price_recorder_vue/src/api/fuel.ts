@@ -138,7 +138,11 @@ export async function updateVehicle(data: FuelVehicle): Promise<SaveFuelReply> {
 }
 
 export async function deleteVehicle(id: string): Promise<boolean> {
-  const response = (await instance.post('/fuel/vehicle/delete/v1', { id })) as { flag: boolean }
+  // 后端列表接口返回的 id 为 JSON 数字（如 2），而删除接口的 id 是 string 字段，
+  // protojson 拒绝数字，这里统一转字符串
+  const response = (await instance.post('/fuel/vehicle/delete/v1', { id: String(id) })) as {
+    flag: boolean
+  }
   return response.flag
 }
 
@@ -166,7 +170,10 @@ export async function updateRefuelRecord(data: RefuelRecord): Promise<SaveFuelRe
 }
 
 export async function deleteRefuelRecord(id: string): Promise<boolean> {
-  const response = (await instance.post('/fuel/refuel/delete/v1', { id })) as { flag: boolean }
+  // 同 deleteVehicle：后端返回的 id 是数字，删除接口的 id 是 string 字段，统一转字符串
+  const response = (await instance.post('/fuel/refuel/delete/v1', { id: String(id) })) as {
+    flag: boolean
+  }
   return response.flag
 }
 

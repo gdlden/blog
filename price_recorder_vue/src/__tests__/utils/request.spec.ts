@@ -52,4 +52,46 @@ describe('request interceptor', () => {
 
     expect(result.headers.Authorization).toBeUndefined()
   })
+
+  it('normalizes numeric id fields in response data to strings', async () => {
+    vi.resetModules()
+    const { default: instance } = await import('@/utils/request')
+    const handler = instance.interceptors.response.handlers[0]
+
+    const res = {
+      data: {
+        code: 200,
+        message: 'success',
+        data: {
+          page: 1,
+          total: 2,
+          list: [
+            { id: 2, name: 'a', vehicleId: 5, sort: 1, isActive: true },
+            { id: '3', name: 'b' },
+          ],
+          refuelRecordId: 7,
+        },
+      },
+    }
+    const result = handler.fulfilled(res as any)
+
+    expect(result).toEqual({
+      page: 1,
+      total: 2,
+      list: [
+        { id: '2', name: 'a', vehicleId: '5', sort: 1, isActive: true },
+        { id: '3', name: 'b' },
+      ],
+      refuelRecordId: '7',
+    })
+  })
+
+  it('rejects with the business error message when code is not 200', async () => {
+    vi.resetModules()
+    const { default: instance } = await import('@/utils/request')
+    const handler = instance.interceptors.response.handlers[0]
+
+    const res = { data: { code: 1001, message: 'boom' } }
+    await expect(handler.fulfilled(res as any)).rejects.toThrow('boom')
+  })
 })

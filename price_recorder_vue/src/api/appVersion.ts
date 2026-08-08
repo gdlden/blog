@@ -1,7 +1,7 @@
 import instance from "@/utils/request"
 
 export interface AppVersionEntity {
-  id: number
+  id: string
   version: string
   info: string[]
   iosUrl: string
@@ -28,23 +28,23 @@ export async function getAppVersions(
   return await instance.get("/app/version/page/v1", { params })
 }
 
-export async function getAppVersionById(id: number): Promise<AppVersionEntity> {
+export async function getAppVersionById(id: string): Promise<AppVersionEntity> {
   return await instance.get("/app/version/get/v1", { params: { id } })
 }
 
 export async function createAppVersion(
   data: Omit<AppVersionEntity, "id" | "createdAt" | "updatedAt">
-): Promise<{ id: number }> {
+): Promise<{ id: string }> {
   return await instance.post("/app/version/create/v1", data)
 }
 
 export async function updateAppVersion(
   data: Omit<AppVersionEntity, "createdAt" | "updatedAt">
-): Promise<{ id: number }> {
+): Promise<{ id: string }> {
   return await instance.post("/app/version/update/v1", data)
 }
 
-export async function deleteAppVersion(id: number): Promise<{ success: boolean }> {
+export async function deleteAppVersion(id: string): Promise<{ success: boolean }> {
   return await instance.post("/app/version/delete/v1", { id })
 }
 
