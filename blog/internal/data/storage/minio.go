@@ -112,3 +112,12 @@ func (s *minioStorage) GetReader(ctx context.Context, key string) (io.ReadCloser
 	}
 	return obj, nil
 }
+
+// PresignedGetURL 生成短期有效的签名下载 URL（每次请求新签名）。
+func (s *minioStorage) PresignedGetURL(ctx context.Context, key string, expires time.Duration) (string, error) {
+	u, err := s.client.PresignedGetObject(ctx, s.bucket, s.objectKey(key), expires, nil)
+	if err != nil {
+		return "", fmt.Errorf("minio: presign get: %w", err)
+	}
+	return u.String(), nil
+}

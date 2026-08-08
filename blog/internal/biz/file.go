@@ -3,6 +3,7 @@ package biz
 import (
 	"context"
 	"io"
+	"time"
 
 	"blog/internal/utils"
 
@@ -41,6 +42,7 @@ type FileStorage interface {
 	Upload(ctx context.Context, fileName string, fileSize int64, contentType string, reader io.Reader) (url string, err error)
 	Delete(ctx context.Context, key string) error
 	GetReader(ctx context.Context, key string) (io.ReadCloser, error)
+	PresignedGetURL(ctx context.Context, key string, expires time.Duration) (string, error)
 }
 
 func NewFileUsecase(repo FileRepo, store FileStorage, logger log.Logger) *FileUsecase {
@@ -88,4 +90,16 @@ func (uc *FileUsecase) Get(ctx context.Context, id uint) (*FileRecord, error) {
 // GetReader returns a reader for downloading a file by the stored URL.
 func (uc *FileUsecase) GetReader(ctx context.Context, fileUrl string) (io.ReadCloser, error) {
 	return uc.store.GetReader(ctx, fileUrl)
+}
+
+// presignedURLTTL 预签名下载 URL 的有效期。每次下载请求都会重新生成，无需持久化。
+const presignedURLTTL = 5 * time.Minute
+
+// GetPresignedURL 返回文件下载的临时预签名 URL；存储不支持签名（如本地存储）时返回错误。
+func (uc *FileUsecase) GetPresignedURL(ctx context.Context, id uint) (string, error) {
+	record, err := uc.repo.GetById(ctx, id)
+	if err != nil {
+		return "", err
+	}
+	return uc.store.PresignedGetURL(ctx, record.FileUrl, presignedURLTTL)
 }

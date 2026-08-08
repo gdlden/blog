@@ -6,6 +6,7 @@ import (
 	"io"
 	"path"
 	"strings"
+	"time"
 
 	"blog/internal/conf"
 
@@ -132,4 +133,18 @@ func (s *rustfsStorage) GetReader(ctx context.Context, key string) (io.ReadClose
 		return nil, fmt.Errorf("rustfs: get reader: %w", err)
 	}
 	return output.Body, nil
+}
+
+// PresignedGetURL 生成短期有效的签名下载 URL（每次请求新签名，不暴露永久直链）。
+func (s *rustfsStorage) PresignedGetURL(ctx context.Context, key string, expires time.Duration) (string, error) {
+	req, err := s3.NewPresignClient(s.client).PresignGetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(s.objectKey(key)),
+	}, func(opts *s3.PresignOptions) {
+		opts.Expires = expires
+	})
+	if err != nil {
+		return "", fmt.Errorf("rustfs: presign get: %w", err)
+	}
+	return req.URL, nil
 }

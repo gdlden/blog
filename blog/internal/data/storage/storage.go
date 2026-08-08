@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	"blog/internal/conf"
 )
@@ -18,6 +19,10 @@ type Storage interface {
 
 	// GetReader returns a reader for downloading a file by its key.
 	GetReader(ctx context.Context, key string) (io.ReadCloser, error)
+
+	// PresignedGetURL returns a short-lived signed URL for direct download,
+	// or an error if the backend does not support presigned URLs (e.g. local).
+	PresignedGetURL(ctx context.Context, key string, expires time.Duration) (string, error)
 }
 
 // New creates a Storage backend based on config.

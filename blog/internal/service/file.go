@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	stdhttp "net/http"
 	"path"
 	"strconv"
 
@@ -115,6 +116,8 @@ func (s *FileService) HandleRawUploadHTTP(ctx http.Context) error {
 
 // HandleDownloadHTTP streams a file from the storage backend to the client.
 // Route: GET /file/download/v1/{id}
+// 优先 302 重定向到对象存储的临时预签名 URL（浏览器直连、不占后端带宽，
+// 每次请求重新签名）；本地存储等不支持签名的后端回退为流式代理下载。
 func (s *FileService) HandleDownloadHTTP(ctx http.Context) error {
 	http.SetOperation(ctx, "/file.v1.File/Download")
 	idValues := ctx.Vars()["id"]
@@ -126,6 +129,15 @@ func (s *FileService) HandleDownloadHTTP(ctx http.Context) error {
 	if err != nil {
 		return err
 	}
+
+	if presignedURL, err := s.fc.GetPresignedURL(ctx, uint(id)); err == nil && presignedURL != "" {
+		w := ctx.Response()
+		w.Header().Set("Location", presignedURL)
+		w.WriteHeader(stdhttp.StatusFound)
+		return nil
+	}
+
+	// Fallback: stream through the backend (local storage).
 	record, err := s.fc.Get(ctx, uint(id))
 	if err != nil {
 		return err

@@ -90,3 +90,8 @@ func (s *localStorage) GetReader(ctx context.Context, key string) (io.ReadCloser
 	}
 	return file, nil
 }
+
+// PresignedGetURL 本地存储无签名能力，返回错误，由调用方回退为流式代理下载。
+func (s *localStorage) PresignedGetURL(ctx context.Context, key string, expires time.Duration) (string, error) {
+	return "", fmt.Errorf("local storage does not support presigned URLs")
+}

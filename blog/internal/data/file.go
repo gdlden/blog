@@ -2,8 +2,10 @@ package data
 
 import (
 	"context"
+	"errors"
 	"io"
 	"path"
+	"time"
 
 	"blog/internal/biz"
 	"blog/internal/conf"
@@ -127,6 +129,10 @@ func (a *storageAdapter) GetReader(ctx context.Context, key string) (io.ReadClos
 	return a.s.GetReader(ctx, key)
 }
 
+func (a *storageAdapter) PresignedGetURL(ctx context.Context, key string, expires time.Duration) (string, error) {
+	return a.s.PresignedGetURL(ctx, key, expires)
+}
+
 // noopStorage is a fallback that does nothing.
 type noopStorage struct{}
 
@@ -140,6 +146,10 @@ func (n *noopStorage) Delete(_ context.Context, _ string) error {
 
 func (n *noopStorage) GetReader(_ context.Context, _ string) (io.ReadCloser, error) {
 	return nil, nil
+}
+
+func (n *noopStorage) PresignedGetURL(_ context.Context, _ string, _ time.Duration) (string, error) {
+	return "", errors.New("noop storage does not support presigned URLs")
 }
 
 // getFileExt returns the file extension from a filename.
