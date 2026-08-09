@@ -55,7 +55,7 @@ run:
 # build
 build:
 ifeq ($(GOHOSTOS), windows)
-	if not exist bin mkdir bin && set CGO_ENABLED=0&& set GOOS=linux&& set GOARCH=amd64&& go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/ ./cmd/blog/
+	if not exist bin mkdir bin & set CGO_ENABLED=0& set GOOS=linux& set GOARCH=amd64& go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/blog ./cmd/blog/
 else
 	mkdir -p bin/ && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/ ./cmd/blog/
 endif
