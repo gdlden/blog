@@ -9,6 +9,7 @@ import (
 	"time"
 
 	pb "blog/api/ocr/v1"
+	"blog/internal/conf"
 
 	ark "github.com/sashabaranov/go-openai"
 )
@@ -33,9 +34,18 @@ type KimiVisionTextRecognizer struct {
 // NewKimiVisionTextRecognizer creates a Kimi recognizer with the given API key.
 // The model can be overridden via the OCR_MODEL environment variable.
 func NewKimiVisionTextRecognizer(apiKey string) *KimiVisionTextRecognizer {
+	return NewKimiVisionTextRecognizerWithModel(apiKey, os.Getenv("OCR_MODEL"))
+}
+
+// NewKimiVisionTextRecognizerWithModel creates a Kimi recognizer with an explicit model.
+// An empty model falls back to the OCR_MODEL environment variable, then the default.
+func NewKimiVisionTextRecognizerWithModel(apiKey string, model string) *KimiVisionTextRecognizer {
 	config := ark.DefaultConfig(strings.TrimSpace(apiKey))
 	config.BaseURL = defaultKimiBaseURL
-	model := strings.TrimSpace(os.Getenv("OCR_MODEL"))
+	model = strings.TrimSpace(model)
+	if model == "" {
+		model = strings.TrimSpace(os.Getenv("OCR_MODEL"))
+	}
 	if model == "" {
 		model = defaultKimiOCRModel
 	}
@@ -85,9 +95,9 @@ type AiocrService struct {
 	pb.UnimplementedAiocrServer
 }
 
-// NewAiocrService creates an AiocrService using the recognizer from environment config.
-func NewAiocrService() *AiocrService {
-	return NewAiocrServiceWithRecognizer(NewVisionTextRecognizerFromEnv())
+// NewAiocrService creates an AiocrService using the recognizer from config/env.
+func NewAiocrService(ocr *conf.OCR) *AiocrService {
+	return NewAiocrServiceWithRecognizer(NewVisionTextRecognizerFromConfig(ocr))
 }
 
 // NewAiocrServiceWithRecognizer creates an AiocrService with an explicit recognizer (for testing).
@@ -125,6 +135,31 @@ func NewVisionTextRecognizerFromEnv() VisionTextRecognizer {
 		apiKey = strings.TrimSpace(os.Getenv("MOONSHOT_API_KEY"))
 	}
 	return NewKimiVisionTextRecognizer(apiKey)
+}
+
+// NewVisionTextRecognizerFromConfig builds a recognizer from conf.OCR (config.yaml ocr section).
+// Empty or unresolved "${...}" placeholder values fall back to the environment variables
+// (OCR_API_KEY/KIMI_API_KEY/MOONSHOT_API_KEY and OCR_MODEL), so either config file or env works.
+func NewVisionTextRecognizerFromConfig(ocr *conf.OCR) VisionTextRecognizer {
+	apiKey := ""
+	model := ""
+	if ocr != nil {
+		apiKey = resolveConfigValue(ocr.ApiKey)
+		model = resolveConfigValue(ocr.Model)
+	}
+	if apiKey == "" {
+		return NewVisionTextRecognizerFromEnv()
+	}
+	return NewKimiVisionTextRecognizerWithModel(apiKey, model)
+}
+
+// resolveConfigValue trims a config value and treats unresolved "${VAR}" placeholders as empty.
+func resolveConfigValue(v string) string {
+	v = strings.TrimSpace(v)
+	if strings.HasPrefix(v, "${") {
+		return ""
+	}
+	return v
 }
 
 // NewDebtDetailOCRRecognizerFromEnv returns a Kimi recognizer for debt detail OCR.

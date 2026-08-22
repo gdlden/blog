@@ -2,6 +2,7 @@ package service
 
 import (
 	"blog/internal/biz"
+	"blog/internal/conf"
 	"context"
 	"errors"
 	"strconv"
@@ -17,8 +18,8 @@ type FuelService struct {
 	ocrRecognizer VisionTextRecognizer
 }
 
-func NewFuelService(uc *biz.FuelUsecase) *FuelService {
-	return NewFuelServiceWithRecognizer(uc, NewVisionTextRecognizerFromEnv())
+func NewFuelService(uc *biz.FuelUsecase, ocr *conf.OCR) *FuelService {
+	return NewFuelServiceWithRecognizer(uc, NewVisionTextRecognizerFromConfig(ocr))
 }
 
 // NewFuelServiceWithRecognizer 供测试注入 mock 识别器；recognizer 为 nil 时回退到环境变量配置。

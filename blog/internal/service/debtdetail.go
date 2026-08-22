@@ -2,6 +2,7 @@ package service
 
 import (
 	"blog/internal/biz"
+	"blog/internal/conf"
 	"context"
 	"errors"
 	"github.com/shopspring/decimal"
@@ -16,8 +17,8 @@ type DebtDetailService struct {
 	pb.UnimplementedDebtDetailServer
 }
 
-func NewDebtDetailService(usecase *biz.DebtDetailUsecase) *DebtDetailService {
-	return NewDebtDetailServiceWithRecognizer(usecase, NewDebtDetailOCRRecognizerFromEnv())
+func NewDebtDetailService(usecase *biz.DebtDetailUsecase, ocr *conf.OCR) *DebtDetailService {
+	return NewDebtDetailServiceWithRecognizer(usecase, NewVisionTextRecognizerFromConfig(ocr))
 }
 
 func NewDebtDetailServiceWithRecognizer(usecase *biz.DebtDetailUsecase, recognizer VisionTextRecognizer) *DebtDetailService {

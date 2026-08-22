@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	pb "blog/api/ocr/v1"
+	"blog/internal/conf"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -82,6 +83,40 @@ func TestNewKimiVisionTextRecognizer_DefaultModel(t *testing.T) {
 	recognizer := NewKimiVisionTextRecognizer("test-key")
 
 	assert.Equal(t, defaultKimiOCRModel, recognizer.model)
+}
+
+func TestNewVisionTextRecognizerFromConfig_UsesConfigKeyAndModel(t *testing.T) {
+	t.Setenv("OCR_MODEL", "")
+
+	recognizer := NewVisionTextRecognizerFromConfig(&conf.OCR{ApiKey: "cfg-key", Model: "cfg-model"})
+
+	kimi, ok := recognizer.(*KimiVisionTextRecognizer)
+	require.True(t, ok, "should return KimiVisionTextRecognizer")
+	assert.Equal(t, "cfg-model", kimi.model)
+	assert.NotNil(t, kimi.client)
+}
+
+func TestNewVisionTextRecognizerFromConfig_PlaceholderFallsBackToEnv(t *testing.T) {
+	t.Setenv("OCR_API_KEY", "env-key")
+	t.Setenv("KIMI_API_KEY", "")
+	t.Setenv("MOONSHOT_API_KEY", "")
+
+	recognizer := NewVisionTextRecognizerFromConfig(&conf.OCR{ApiKey: "${OCR_API_KEY}"})
+
+	kimi, ok := recognizer.(*KimiVisionTextRecognizer)
+	require.True(t, ok, "should fall back to env when config value is an unresolved placeholder")
+	assert.NotNil(t, kimi.client)
+}
+
+func TestNewVisionTextRecognizerFromConfig_NilConfigFallsBackToEnv(t *testing.T) {
+	t.Setenv("OCR_API_KEY", "env-key")
+	t.Setenv("KIMI_API_KEY", "")
+	t.Setenv("MOONSHOT_API_KEY", "")
+
+	recognizer := NewVisionTextRecognizerFromConfig(nil)
+
+	_, ok := recognizer.(*KimiVisionTextRecognizer)
+	assert.True(t, ok, "should return KimiVisionTextRecognizer for nil config")
 }
 
 func TestAiocrService_Ocr_DelegatesToRecognizer(t *testing.T) {

@@ -13,13 +13,13 @@ import (
 
 // mockPostRepo is a manual mock implementation of biz.PostRepo interface
 type mockPostRepo struct {
-	saveFunc       func(context.Context, *biz.Post) (*biz.Post, error)
-	updateFunc     func(context.Context, *biz.Post) (*biz.Post, error)
-	deleteFunc     func(context.Context, int64) error
-	findByIDFunc   func(context.Context, int64) (*biz.Post, error)
-	findByPageFunc func(context.Context, *biz.PostPageRequest) ([]*biz.Post, int64, error)
+	saveFunc        func(context.Context, *biz.Post) (*biz.Post, error)
+	updateFunc      func(context.Context, *biz.Post) (*biz.Post, error)
+	deleteFunc      func(context.Context, int64) error
+	findByIDFunc    func(context.Context, int64) (*biz.Post, error)
+	findByPageFunc  func(context.Context, *biz.PostPageRequest) ([]*biz.Post, int64, error)
 	listByHelloFunc func(context.Context, string) ([]*biz.Post, error)
-	listAllFunc    func(context.Context) ([]*biz.Post, error)
+	listAllFunc     func(context.Context) ([]*biz.Post, error)
 }
 
 func (m *mockPostRepo) Save(ctx context.Context, p *biz.Post) (*biz.Post, error) {

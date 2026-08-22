@@ -10,6 +10,12 @@ message Bootstrap {
   Data data = 2;
   File file = 3;
   SMTP smtp = 4;
+  OCR ocr = 5;
+}
+
+message OCR {
+  string api_key = 1;
+  string model = 2;
 }
 
 message File {

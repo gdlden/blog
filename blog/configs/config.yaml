@@ -20,6 +20,10 @@ smtp:
   username: "${SMTP_USERNAME}"
   password: "${SMTP_PASSWORD}"
   from: "${SMTP_FROM}"
+# OCR（Kimi 视觉识别）。可直接把 key 写在这里，或留占位符用环境变量 OCR_API_KEY 覆盖。
+ocr:
+  api_key: "${OCR_API_KEY}"
+  model: "${OCR_MODEL}"
 file:
   storage_type: rustfs
   rustfs:
