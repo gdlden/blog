@@ -603,6 +603,433 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/helloworld.v1.HelloReply'
+    /ledger/account/delete/v1:
+        post:
+            tags:
+                - Ledger
+            operationId: Ledger_DeleteAccount
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.ledger.v1.DeleteLedgerAccountRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.DeleteLedgerReply'
+    /ledger/account/get/v1:
+        get:
+            tags:
+                - Ledger
+            operationId: Ledger_GetAccount
+            parameters:
+                - name: id
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.LedgerAccount'
+    /ledger/account/list/v1:
+        get:
+            tags:
+                - Ledger
+            operationId: Ledger_ListAccounts
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.ListLedgerAccountsReply'
+    /ledger/account/save/v1:
+        post:
+            tags:
+                - Ledger
+            operationId: Ledger_SaveAccount
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.ledger.v1.LedgerAccountSaveRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.SaveLedgerReply'
+    /ledger/account/update/v1:
+        post:
+            tags:
+                - Ledger
+            operationId: Ledger_UpdateAccount
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.ledger.v1.LedgerAccount'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.SaveLedgerReply'
+    /ledger/budget/delete/v1:
+        post:
+            tags:
+                - Ledger
+            operationId: Ledger_DeleteBudget
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.ledger.v1.DeleteLedgerBudgetRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.DeleteLedgerReply'
+    /ledger/budget/list/v1:
+        get:
+            tags:
+                - Ledger
+            operationId: Ledger_ListBudgets
+            parameters:
+                - name: month
+                  in: query
+                  description: 月份 "YYYY-MM"，为空默认当月
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.ListLedgerBudgetsReply'
+    /ledger/budget/save/v1:
+        post:
+            tags:
+                - Ledger
+            operationId: Ledger_SaveBudget
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.ledger.v1.LedgerBudgetSaveRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.SaveLedgerReply'
+    /ledger/category/delete/v1:
+        post:
+            tags:
+                - Ledger
+            operationId: Ledger_DeleteCategory
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.ledger.v1.DeleteLedgerCategoryRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.DeleteLedgerReply'
+    /ledger/category/list/v1:
+        get:
+            tags:
+                - Ledger
+            operationId: Ledger_ListCategories
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.ListLedgerCategoriesReply'
+    /ledger/category/save/v1:
+        post:
+            tags:
+                - Ledger
+            operationId: Ledger_SaveCategory
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.ledger.v1.LedgerCategory'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.SaveLedgerReply'
+    /ledger/category/update/v1:
+        post:
+            tags:
+                - Ledger
+            operationId: Ledger_UpdateCategory
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.ledger.v1.LedgerCategory'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.SaveLedgerReply'
+    /ledger/recurring/apply/v1:
+        post:
+            tags:
+                - Ledger
+            operationId: Ledger_ApplyRecurring
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.ledger.v1.ApplyLedgerRecurringRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.ApplyLedgerRecurringReply'
+    /ledger/recurring/delete/v1:
+        post:
+            tags:
+                - Ledger
+            operationId: Ledger_DeleteRecurring
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.ledger.v1.DeleteLedgerRecurringRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.DeleteLedgerReply'
+    /ledger/recurring/list/v1:
+        get:
+            tags:
+                - Ledger
+            operationId: Ledger_ListRecurring
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.ListLedgerRecurringReply'
+    /ledger/recurring/save/v1:
+        post:
+            tags:
+                - Ledger
+            operationId: Ledger_SaveRecurring
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.ledger.v1.LedgerRecurringSaveRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.SaveLedgerReply'
+    /ledger/stats/balance-trend/v1:
+        get:
+            tags:
+                - Ledger
+            operationId: Ledger_GetBalanceTrend
+            parameters:
+                - name: accountId
+                  in: query
+                  description: 为空表示净资产走势（全部非系统账户合计）
+                  schema:
+                    type: string
+                - name: startTime
+                  in: query
+                  description: '"YYYY-MM-DD"，缺省 = 近 6 个月'
+                  schema:
+                    type: string
+                - name: endTime
+                  in: query
+                  description: '"YYYY-MM-DD"，缺省 = 今天'
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.LedgerBalanceTrend'
+    /ledger/stats/monthly/v1:
+        get:
+            tags:
+                - Ledger
+            operationId: Ledger_GetMonthlyStats
+            parameters:
+                - name: month
+                  in: query
+                  description: 月份 "YYYY-MM"
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.LedgerMonthlyStats'
+    /ledger/transaction/delete/v1:
+        post:
+            tags:
+                - Ledger
+            operationId: Ledger_DeleteTransaction
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.ledger.v1.DeleteLedgerTransactionRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.DeleteLedgerReply'
+    /ledger/transaction/get/v1:
+        get:
+            tags:
+                - Ledger
+            operationId: Ledger_GetTransaction
+            parameters:
+                - name: id
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.LedgerTransaction'
+    /ledger/transaction/page/v1:
+        get:
+            tags:
+                - Ledger
+            operationId: Ledger_PageTransactions
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: string
+                - name: accountId
+                  in: query
+                  schema:
+                    type: string
+                - name: categoryId
+                  in: query
+                  schema:
+                    type: string
+                - name: type
+                  in: query
+                  schema:
+                    type: string
+                - name: startTime
+                  in: query
+                  schema:
+                    type: string
+                - name: endTime
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.PageLedgerTransactionsReply'
+    /ledger/transaction/save/v1:
+        post:
+            tags:
+                - Ledger
+            operationId: Ledger_SaveTransaction
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.ledger.v1.LedgerTransactionSaveRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.SaveLedgerReply'
+    /ledger/transaction/update/v1:
+        post:
+            tags:
+                - Ledger
+            operationId: Ledger_UpdateTransaction
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.ledger.v1.LedgerTransaction'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.ledger.v1.SaveLedgerReply'
     /map/delete/v1:
         post:
             tags:
@@ -1551,6 +1978,354 @@ components:
                     type: string
                 message:
                     type: string
+        api.ledger.v1.ApplyLedgerRecurringReply:
+            type: object
+            properties:
+                created:
+                    type: integer
+                    description: 本次惰性生成的交易笔数
+                    format: int32
+        api.ledger.v1.ApplyLedgerRecurringRequest:
+            type: object
+            properties: {}
+        api.ledger.v1.DeleteLedgerAccountRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+        api.ledger.v1.DeleteLedgerBudgetRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+        api.ledger.v1.DeleteLedgerCategoryRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+        api.ledger.v1.DeleteLedgerRecurringRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+        api.ledger.v1.DeleteLedgerReply:
+            type: object
+            properties:
+                flag:
+                    type: boolean
+        api.ledger.v1.DeleteLedgerTransactionRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+        api.ledger.v1.LedgerAccount:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                type:
+                    type: string
+                    description: asset/liability/expense/income/equity；用户只能创建 asset/liability
+                subtype:
+                    type: string
+                creditLimit:
+                    type: string
+                    description: 信用卡额度（十进制字符串），空串表示未设置
+                billingDay:
+                    type: integer
+                    description: 账单日，仅 subtype=credit_card 使用，未设置时不返回
+                    format: int32
+                paymentDueDay:
+                    type: integer
+                    description: 还款日，仅 subtype=credit_card 使用，未设置时不返回
+                    format: int32
+                remark:
+                    type: string
+                sort:
+                    type: integer
+                    format: int32
+                archived:
+                    type: boolean
+                isSystem:
+                    type: boolean
+                balance:
+                    type: string
+                    description: 实时余额 = 该账户所有 posting.amount 之和（十进制字符串）
+        api.ledger.v1.LedgerAccountSaveRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                type:
+                    type: string
+                    description: 仅允许 asset/liability
+                subtype:
+                    type: string
+                creditLimit:
+                    type: string
+                billingDay:
+                    type: integer
+                    format: int32
+                paymentDueDay:
+                    type: integer
+                    format: int32
+                remark:
+                    type: string
+                openingBalance:
+                    type: string
+                    description: 期初余额（十进制字符串，可空）；非空非 0 时同时生成 opening_balance 交易
+        api.ledger.v1.LedgerBalancePoint:
+            type: object
+            properties:
+                date:
+                    type: string
+                    description: '"YYYY-MM-DD"'
+                balance:
+                    type: string
+                    description: 当日收盘余额（十进制字符串）
+        api.ledger.v1.LedgerBalanceTrend:
+            type: object
+            properties:
+                points:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.ledger.v1.LedgerBalancePoint'
+        api.ledger.v1.LedgerBudget:
+            type: object
+            properties:
+                id:
+                    type: string
+                categoryId:
+                    type: string
+                categoryName:
+                    type: string
+                amount:
+                    type: string
+                    description: 十进制字符串
+                used:
+                    type: string
+                    description: 当月已用 = 该分类及其所有子孙分类的系统费用腿合计（十进制字符串，正数）
+        api.ledger.v1.LedgerBudgetSaveRequest:
+            type: object
+            properties:
+                categoryId:
+                    type: string
+                    description: 仅允许 expense 方向的分类
+                month:
+                    type: string
+                    description: 月份 "YYYY-MM"
+                amount:
+                    type: string
+                    description: 预算金额（十进制字符串），必须 > 0
+        api.ledger.v1.LedgerCategory:
+            type: object
+            properties:
+                id:
+                    type: string
+                parentId:
+                    type: string
+                    description: 父分类 id，0 表示顶级分类（最多两级）
+                name:
+                    type: string
+                direction:
+                    type: string
+                    description: expense/income
+                sort:
+                    type: integer
+                    format: int32
+                isSystem:
+                    type: boolean
+        api.ledger.v1.LedgerCategoryAmount:
+            type: object
+            properties:
+                categoryId:
+                    type: string
+                categoryName:
+                    type: string
+                amount:
+                    type: string
+                    description: 十进制字符串
+        api.ledger.v1.LedgerMonthlyStats:
+            type: object
+            properties:
+                month:
+                    type: string
+                totalExpense:
+                    type: string
+                    description: 十进制字符串
+                totalIncome:
+                    type: string
+                expenseByCategory:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.ledger.v1.LedgerCategoryAmount'
+                incomeByCategory:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.ledger.v1.LedgerCategoryAmount'
+        api.ledger.v1.LedgerPosting:
+            type: object
+            properties:
+                id:
+                    type: string
+                accountId:
+                    type: string
+                    description: |-
+                        0 = 系统对手账户（费用/收入），按交易类型自动解析：
+                         type=expense 解析为系统费用账户，type=income 解析为系统收入账户；
+                         transfer/opening_balance/adjustment 不允许传 0
+                amount:
+                    type: string
+                    description: 带符号金额（十进制字符串），不允许为 0
+                categoryId:
+                    type: string
+                    description: 分类 id，0 表示未挂分类；仅 expense/income 交易可挂分类
+                sort:
+                    type: integer
+                    format: int32
+        api.ledger.v1.LedgerRecurring:
+            type: object
+            properties:
+                id:
+                    type: string
+                accountId:
+                    type: string
+                accountName:
+                    type: string
+                categoryId:
+                    type: string
+                categoryName:
+                    type: string
+                type:
+                    type: string
+                    description: expense/income
+                amount:
+                    type: string
+                    description: 十进制字符串，正数
+                remark:
+                    type: string
+                dayOfMonth:
+                    type: integer
+                    format: int32
+                startMonth:
+                    type: string
+                lastGeneratedMonth:
+                    type: string
+                    description: '"YYYY-MM"，空串表示尚未生成过'
+                enabled:
+                    type: boolean
+                nextDate:
+                    type: string
+                    description: 下一次应生成日期 "YYYY-MM-DD"，disabled 时为空
+        api.ledger.v1.LedgerRecurringSaveRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                    description: 0 = 新建
+                accountId:
+                    type: string
+                categoryId:
+                    type: string
+                type:
+                    type: string
+                    description: 仅允许 expense/income
+                amount:
+                    type: string
+                    description: 正数十进制字符串
+                remark:
+                    type: string
+                dayOfMonth:
+                    type: integer
+                    description: 每月生成日 1-31，短月钳制到当月最后一天
+                    format: int32
+                startMonth:
+                    type: string
+                    description: 起始月份 "YYYY-MM"
+                enabled:
+                    type: boolean
+        api.ledger.v1.LedgerTransaction:
+            type: object
+            properties:
+                id:
+                    type: string
+                type:
+                    type: string
+                    description: expense/income/transfer/opening_balance/adjustment
+                bookedAt:
+                    type: string
+                    description: 记账时间 "YYYY-MM-DD HH:mm:ss"
+                remark:
+                    type: string
+                createdAt:
+                    type: string
+                postings:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.ledger.v1.LedgerPosting'
+        api.ledger.v1.LedgerTransactionSaveRequest:
+            type: object
+            properties:
+                type:
+                    type: string
+                    description: expense/income/transfer/opening_balance/adjustment
+                bookedAt:
+                    type: string
+                    description: 记账时间 "YYYY-MM-DD HH:mm:ss"
+                remark:
+                    type: string
+                postings:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.ledger.v1.LedgerPosting'
+        api.ledger.v1.ListLedgerAccountsReply:
+            type: object
+            properties:
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.ledger.v1.LedgerAccount'
+        api.ledger.v1.ListLedgerBudgetsReply:
+            type: object
+            properties:
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.ledger.v1.LedgerBudget'
+        api.ledger.v1.ListLedgerCategoriesReply:
+            type: object
+            properties:
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.ledger.v1.LedgerCategory'
+        api.ledger.v1.ListLedgerRecurringReply:
+            type: object
+            properties:
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.ledger.v1.LedgerRecurring'
+        api.ledger.v1.PageLedgerTransactionsReply:
+            type: object
+            properties:
+                page:
+                    type: string
+                total:
+                    type: string
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.ledger.v1.LedgerTransaction'
+        api.ledger.v1.SaveLedgerReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                message:
+                    type: string
         api.realName.CreateRealNameReply:
             type: object
             properties:
@@ -2077,6 +2852,7 @@ tags:
     - name: Fuel
     - name: Greeter
       description: The greeting service definition.
+    - name: Ledger
     - name: Map
     - name: Post
     - name: Price

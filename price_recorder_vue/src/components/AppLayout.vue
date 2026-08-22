@@ -12,6 +12,7 @@ const mobileMenuOpen = ref(false)
 const navItems = [
   { name: 'blog', path: '/blog', label: '博文' },
   { name: 'debt', path: '/debt', label: '债务' },
+  { name: 'ledger', path: '/ledger', label: '记账' },
   { name: 'fuel', path: '/fuel', label: '油耗' },
   { name: 'price', path: '/price', label: '价格' },
   { name: 'appVersion', path: '/app-version', label: '版本' },

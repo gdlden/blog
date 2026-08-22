@@ -55,6 +55,31 @@ describe('router guards', () => {
     expect(router.currentRoute.value.params.vehicleId).toBe('42')
   })
 
+  it('allows authenticated user to access ledger routes', async () => {
+    const store = useUserStore()
+    store.setUserInfo({ token: 'test', userId: 1 })
+
+    await router.push('/ledger')
+    await router.isReady()
+    expect(router.currentRoute.value.name).toBe('ledger')
+
+    await router.push('/ledger/accounts')
+    await router.isReady()
+    expect(router.currentRoute.value.name).toBe('ledgerAccounts')
+
+    await router.push('/ledger/categories')
+    await router.isReady()
+    expect(router.currentRoute.value.name).toBe('ledgerCategories')
+
+    await router.push('/ledger/report')
+    await router.isReady()
+    expect(router.currentRoute.value.name).toBe('ledgerReport')
+
+    await router.push('/ledger/recurring')
+    await router.isReady()
+    expect(router.currentRoute.value.name).toBe('ledgerRecurring')
+  })
+
   it('initializes store from localStorage when isAuthenticated is false', async () => {
     const stored = { token: 'stored-token', userId: 2 }
     localStorage.setItem('user', JSON.stringify(stored))

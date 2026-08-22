@@ -1,0 +1,406 @@
+syntax = "proto3";
+
+package api.ledger.v1;
+
+option go_package = "blog/api/ledger/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.ledger.v1";
+
+import "google/api/annotations.proto";
+
+service Ledger {
+	rpc SaveAccount (LedgerAccountSaveRequest) returns (SaveLedgerReply) {
+		option (google.api.http) = {
+			post: "/ledger/account/save/v1"
+			body: "*"
+		};
+	};
+	rpc UpdateAccount (LedgerAccount) returns (SaveLedgerReply) {
+		option (google.api.http) = {
+			post: "/ledger/account/update/v1"
+			body: "*"
+		};
+	};
+	rpc DeleteAccount (DeleteLedgerAccountRequest) returns (DeleteLedgerReply) {
+		option (google.api.http) = {
+			post: "/ledger/account/delete/v1"
+			body: "*"
+		};
+	};
+	rpc GetAccount (GetLedgerAccountRequest) returns (LedgerAccount) {
+		option (google.api.http) = {
+			get: "/ledger/account/get/v1"
+		};
+	};
+	rpc ListAccounts (ListLedgerAccountsRequest) returns (ListLedgerAccountsReply) {
+		option (google.api.http) = {
+			get: "/ledger/account/list/v1"
+		};
+	};
+	rpc SaveCategory (LedgerCategory) returns (SaveLedgerReply) {
+		option (google.api.http) = {
+			post: "/ledger/category/save/v1"
+			body: "*"
+		};
+	};
+	rpc UpdateCategory (LedgerCategory) returns (SaveLedgerReply) {
+		option (google.api.http) = {
+			post: "/ledger/category/update/v1"
+			body: "*"
+		};
+	};
+	rpc DeleteCategory (DeleteLedgerCategoryRequest) returns (DeleteLedgerReply) {
+		option (google.api.http) = {
+			post: "/ledger/category/delete/v1"
+			body: "*"
+		};
+	};
+	rpc ListCategories (ListLedgerCategoriesRequest) returns (ListLedgerCategoriesReply) {
+		option (google.api.http) = {
+			get: "/ledger/category/list/v1"
+		};
+	};
+	rpc SaveTransaction (LedgerTransactionSaveRequest) returns (SaveLedgerReply) {
+		option (google.api.http) = {
+			post: "/ledger/transaction/save/v1"
+			body: "*"
+		};
+	};
+	rpc UpdateTransaction (LedgerTransaction) returns (SaveLedgerReply) {
+		option (google.api.http) = {
+			post: "/ledger/transaction/update/v1"
+			body: "*"
+		};
+	};
+	rpc DeleteTransaction (DeleteLedgerTransactionRequest) returns (DeleteLedgerReply) {
+		option (google.api.http) = {
+			post: "/ledger/transaction/delete/v1"
+			body: "*"
+		};
+	};
+	rpc GetTransaction (GetLedgerTransactionRequest) returns (LedgerTransaction) {
+		option (google.api.http) = {
+			get: "/ledger/transaction/get/v1"
+		};
+	};
+	rpc PageTransactions (PageLedgerTransactionsRequest) returns (PageLedgerTransactionsReply) {
+		option (google.api.http) = {
+			get: "/ledger/transaction/page/v1"
+		};
+	};
+	rpc GetMonthlyStats (GetLedgerMonthlyStatsRequest) returns (LedgerMonthlyStats) {
+		option (google.api.http) = {
+			get: "/ledger/stats/monthly/v1"
+		};
+	};
+	rpc SaveBudget (LedgerBudgetSaveRequest) returns (SaveLedgerReply) {
+		option (google.api.http) = {
+			post: "/ledger/budget/save/v1"
+			body: "*"
+		};
+	};
+	rpc DeleteBudget (DeleteLedgerBudgetRequest) returns (DeleteLedgerReply) {
+		option (google.api.http) = {
+			post: "/ledger/budget/delete/v1"
+			body: "*"
+		};
+	};
+	rpc ListBudgets (ListLedgerBudgetsRequest) returns (ListLedgerBudgetsReply) {
+		option (google.api.http) = {
+			get: "/ledger/budget/list/v1"
+		};
+	};
+	rpc GetBalanceTrend (GetLedgerBalanceTrendRequest) returns (LedgerBalanceTrend) {
+		option (google.api.http) = {
+			get: "/ledger/stats/balance-trend/v1"
+		};
+	};
+	rpc SaveRecurring (LedgerRecurringSaveRequest) returns (SaveLedgerReply) {
+		option (google.api.http) = {
+			post: "/ledger/recurring/save/v1"
+			body: "*"
+		};
+	};
+	rpc DeleteRecurring (DeleteLedgerRecurringRequest) returns (DeleteLedgerReply) {
+		option (google.api.http) = {
+			post: "/ledger/recurring/delete/v1"
+			body: "*"
+		};
+	};
+	rpc ListRecurring (ListLedgerRecurringRequest) returns (ListLedgerRecurringReply) {
+		option (google.api.http) = {
+			get: "/ledger/recurring/list/v1"
+		};
+	};
+	rpc ApplyRecurring (ApplyLedgerRecurringRequest) returns (ApplyLedgerRecurringReply) {
+		option (google.api.http) = {
+			post: "/ledger/recurring/apply/v1"
+			body: "*"
+		};
+	};
+}
+
+message SaveLedgerReply {
+	int64 id = 1;
+	string message = 2;
+}
+
+message DeleteLedgerReply {
+	bool flag = 1;
+}
+
+message LedgerAccount {
+	int64 id = 1;
+	string name = 2;
+	// asset/liability/expense/income/equity；用户只能创建 asset/liability
+	string type = 3;
+	string subtype = 4;
+	// 信用卡额度（十进制字符串），空串表示未设置
+	string creditLimit = 5;
+	// 账单日，仅 subtype=credit_card 使用，未设置时不返回
+	optional int32 billingDay = 6;
+	// 还款日，仅 subtype=credit_card 使用，未设置时不返回
+	optional int32 paymentDueDay = 7;
+	string remark = 8;
+	int32 sort = 9;
+	bool archived = 10;
+	bool isSystem = 11;
+	// 实时余额 = 该账户所有 posting.amount 之和（十进制字符串）
+	string balance = 12;
+}
+
+message LedgerAccountSaveRequest {
+	string name = 1;
+	// 仅允许 asset/liability
+	string type = 2;
+	string subtype = 3;
+	string creditLimit = 4;
+	optional int32 billingDay = 5;
+	optional int32 paymentDueDay = 6;
+	string remark = 7;
+	// 期初余额（十进制字符串，可空）；非空非 0 时同时生成 opening_balance 交易
+	string openingBalance = 8;
+}
+
+message DeleteLedgerAccountRequest {
+	int64 id = 1;
+}
+
+message GetLedgerAccountRequest {
+	int64 id = 1;
+}
+
+message ListLedgerAccountsRequest {
+}
+
+message ListLedgerAccountsReply {
+	repeated LedgerAccount list = 1;
+}
+
+message LedgerCategory {
+	int64 id = 1;
+	// 父分类 id，0 表示顶级分类（最多两级）
+	int64 parentId = 2;
+	string name = 3;
+	// expense/income
+	string direction = 4;
+	int32 sort = 5;
+	bool isSystem = 6;
+}
+
+message DeleteLedgerCategoryRequest {
+	int64 id = 1;
+}
+
+message ListLedgerCategoriesRequest {
+}
+
+message ListLedgerCategoriesReply {
+	repeated LedgerCategory list = 1;
+}
+
+message LedgerPosting {
+	int64 id = 1;
+	// 0 = 系统对手账户（费用/收入），按交易类型自动解析：
+	// type=expense 解析为系统费用账户，type=income 解析为系统收入账户；
+	// transfer/opening_balance/adjustment 不允许传 0
+	int64 accountId = 2;
+	// 带符号金额（十进制字符串），不允许为 0
+	string amount = 3;
+	// 分类 id，0 表示未挂分类；仅 expense/income 交易可挂分类
+	int64 categoryId = 4;
+	int32 sort = 5;
+}
+
+message LedgerTransaction {
+	int64 id = 1;
+	// expense/income/transfer/opening_balance/adjustment
+	string type = 2;
+	// 记账时间 "YYYY-MM-DD HH:mm:ss"
+	string bookedAt = 3;
+	string remark = 4;
+	string createdAt = 5;
+	repeated LedgerPosting postings = 6;
+}
+
+message LedgerTransactionSaveRequest {
+	// expense/income/transfer/opening_balance/adjustment
+	string type = 1;
+	// 记账时间 "YYYY-MM-DD HH:mm:ss"
+	string bookedAt = 2;
+	string remark = 3;
+	repeated LedgerPosting postings = 4;
+}
+
+message DeleteLedgerTransactionRequest {
+	int64 id = 1;
+}
+
+message GetLedgerTransactionRequest {
+	int64 id = 1;
+}
+
+message PageLedgerTransactionsRequest {
+	int64 page = 1;
+	int64 pageSize = 2;
+	int64 accountId = 3;
+	int64 categoryId = 4;
+	string type = 5;
+	string startTime = 6;
+	string endTime = 7;
+}
+
+message PageLedgerTransactionsReply {
+	int64 page = 1;
+	int64 total = 2;
+	repeated LedgerTransaction list = 3;
+}
+
+message GetLedgerMonthlyStatsRequest {
+	// 月份 "YYYY-MM"
+	string month = 1;
+}
+
+message LedgerCategoryAmount {
+	int64 categoryId = 1;
+	string categoryName = 2;
+	// 十进制字符串
+	string amount = 3;
+}
+
+message LedgerMonthlyStats {
+	string month = 1;
+	// 十进制字符串
+	string totalExpense = 2;
+	string totalIncome = 3;
+	repeated LedgerCategoryAmount expenseByCategory = 4;
+	repeated LedgerCategoryAmount incomeByCategory = 5;
+}
+
+message LedgerBudgetSaveRequest {
+	// 仅允许 expense 方向的分类
+	int64 categoryId = 1;
+	// 月份 "YYYY-MM"
+	string month = 2;
+	// 预算金额（十进制字符串），必须 > 0
+	string amount = 3;
+}
+
+message DeleteLedgerBudgetRequest {
+	int64 id = 1;
+}
+
+message ListLedgerBudgetsRequest {
+	// 月份 "YYYY-MM"，为空默认当月
+	string month = 1;
+}
+
+message LedgerBudget {
+	int64 id = 1;
+	int64 categoryId = 2;
+	string categoryName = 3;
+	// 十进制字符串
+	string amount = 4;
+	// 当月已用 = 该分类及其所有子孙分类的系统费用腿合计（十进制字符串，正数）
+	string used = 5;
+}
+
+message ListLedgerBudgetsReply {
+	repeated LedgerBudget list = 1;
+}
+
+message GetLedgerBalanceTrendRequest {
+	// 为空表示净资产走势（全部非系统账户合计）
+	int64 accountId = 1;
+	// "YYYY-MM-DD"，缺省 = 近 6 个月
+	string startTime = 2;
+	// "YYYY-MM-DD"，缺省 = 今天
+	string endTime = 3;
+}
+
+message LedgerBalancePoint {
+	// "YYYY-MM-DD"
+	string date = 1;
+	// 当日收盘余额（十进制字符串）
+	string balance = 2;
+}
+
+message LedgerBalanceTrend {
+	repeated LedgerBalancePoint points = 1;
+}
+
+message LedgerRecurringSaveRequest {
+	// 0 = 新建
+	uint64 id = 1;
+	int64 accountId = 2;
+	int64 categoryId = 3;
+	// 仅允许 expense/income
+	string type = 4;
+	// 正数十进制字符串
+	string amount = 5;
+	string remark = 6;
+	// 每月生成日 1-31，短月钳制到当月最后一天
+	int32 dayOfMonth = 7;
+	// 起始月份 "YYYY-MM"
+	string startMonth = 8;
+	bool enabled = 9;
+}
+
+message DeleteLedgerRecurringRequest {
+	int64 id = 1;
+}
+
+message ListLedgerRecurringRequest {
+}
+
+message LedgerRecurring {
+	int64 id = 1;
+	int64 accountId = 2;
+	string accountName = 3;
+	int64 categoryId = 4;
+	string categoryName = 5;
+	// expense/income
+	string type = 6;
+	// 十进制字符串，正数
+	string amount = 7;
+	string remark = 8;
+	int32 dayOfMonth = 9;
+	string startMonth = 10;
+	// "YYYY-MM"，空串表示尚未生成过
+	string lastGeneratedMonth = 11;
+	bool enabled = 12;
+	// 下一次应生成日期 "YYYY-MM-DD"，disabled 时为空
+	string nextDate = 13;
+}
+
+message ListLedgerRecurringReply {
+	repeated LedgerRecurring list = 1;
+}
+
+message ApplyLedgerRecurringRequest {
+}
+
+message ApplyLedgerRecurringReply {
+	// 本次惰性生成的交易笔数
+	int32 created = 1;
+}

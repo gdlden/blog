@@ -37,6 +37,7 @@ describe('AppLayout.vue', () => {
 
     expect(wrapper.text()).toContain('博文')
     expect(wrapper.text()).toContain('债务')
+    expect(wrapper.text()).toContain('记账')
     expect(wrapper.text()).toContain('油耗')
   })
 

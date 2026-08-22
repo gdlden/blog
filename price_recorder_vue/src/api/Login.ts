@@ -12,7 +12,7 @@ export interface LoginResponse {
   [key: string]: any
 }
 
-export let user = <userReq>{
+export const user = <userReq>{
   username: "",
   password: "",
 }
