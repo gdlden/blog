@@ -3,6 +3,7 @@ package biz
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -64,6 +65,7 @@ func (m *mockFuelVehicleRepo) CountRefuelRecordByVehicleId(ctx context.Context, 
 type mockRefuelRecordRepo struct {
 	listAllFunc func(context.Context, string, uint) ([]*RefuelRecord, error)
 	saveFunc    func(context.Context, *RefuelRecord) (uint, error)
+	findFunc    func(context.Context, string, uint) (*RefuelRecord, error)
 }
 
 func (m *mockRefuelRecordRepo) Save(ctx context.Context, record *RefuelRecord) (uint, error) {
@@ -82,6 +84,9 @@ func (m *mockRefuelRecordRepo) DeleteByUserIdAndRecordId(ctx context.Context, us
 }
 
 func (m *mockRefuelRecordRepo) FindByUserIdAndRecordId(ctx context.Context, userId string, id uint) (*RefuelRecord, error) {
+	if m.findFunc != nil {
+		return m.findFunc(ctx, userId, id)
+	}
 	return nil, nil
 }
 
@@ -142,40 +147,44 @@ func TestFuelUsecase_GetStatsCalculatesFullTankIntervals(t *testing.T) {
 		listAllFunc: func(ctx context.Context, userId string, vehicleId uint) ([]*RefuelRecord, error) {
 			return []*RefuelRecord{
 				{
-					Id:         1,
-					VehicleId:  1,
-					RefuelTime: "2026-01-01 08:00:00",
-					Odometer:   decimal.NewFromInt(1000),
-					Volume:     decimal.NewFromInt(30),
-					Amount:     decimal.NewFromInt(210),
-					IsFull:     true,
+					Id:           1,
+					VehicleId:    1,
+					RefuelTime:   "2026-01-01 08:00:00",
+					Odometer:     decimal.NewFromInt(1000),
+					Volume:       decimal.NewFromInt(30),
+					Amount:       decimal.NewFromInt(210),
+					ActualAmount: decimal.NewFromInt(200),
+					IsFull:       true,
 				},
 				{
-					Id:         2,
-					VehicleId:  1,
-					RefuelTime: "2026-01-10 08:00:00",
-					Odometer:   decimal.NewFromInt(1300),
-					Volume:     decimal.NewFromInt(20),
-					Amount:     decimal.NewFromInt(140),
-					IsFull:     false,
+					Id:           2,
+					VehicleId:    1,
+					RefuelTime:   "2026-01-10 08:00:00",
+					Odometer:     decimal.NewFromInt(1300),
+					Volume:       decimal.NewFromInt(20),
+					Amount:       decimal.NewFromInt(140),
+					ActualAmount: decimal.NewFromInt(130),
+					IsFull:       false,
 				},
 				{
-					Id:         3,
-					VehicleId:  1,
-					RefuelTime: "2026-01-20 08:00:00",
-					Odometer:   decimal.NewFromInt(1600),
-					Volume:     decimal.NewFromInt(25),
-					Amount:     decimal.NewFromInt(175),
-					IsFull:     true,
+					Id:           3,
+					VehicleId:    1,
+					RefuelTime:   "2026-01-20 08:00:00",
+					Odometer:     decimal.NewFromInt(1600),
+					Volume:       decimal.NewFromInt(25),
+					Amount:       decimal.NewFromInt(175),
+					ActualAmount: decimal.NewFromInt(165),
+					IsFull:       true,
 				},
 				{
-					Id:         4,
-					VehicleId:  1,
-					RefuelTime: "2026-01-25 08:00:00",
-					Odometer:   decimal.NewFromInt(1500),
-					Volume:     decimal.NewFromInt(10),
-					Amount:     decimal.NewFromInt(70),
-					IsFull:     true,
+					Id:           4,
+					VehicleId:    1,
+					RefuelTime:   "2026-01-25 08:00:00",
+					Odometer:     decimal.NewFromInt(1500),
+					Volume:       decimal.NewFromInt(10),
+					Amount:       decimal.NewFromInt(70),
+					ActualAmount: decimal.NewFromInt(60),
+					IsFull:       true,
 				},
 			}, nil
 		},
@@ -185,12 +194,12 @@ func TestFuelUsecase_GetStatsCalculatesFullTankIntervals(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.True(t, stats.TotalDistance.Equal(decimal.NewFromInt(600)))
-	// 新口径：总油量/总金额只累计加满区间内实际消耗的部分（记录2+记录3：20+25L、140+175元）
+	// 新口径：总油量/总金额只累计加满区间内实际消耗的部分，金额按实付金额（记录2+记录3：20+25L、130+165元）
 	assert.True(t, stats.TotalVolume.Equal(decimal.NewFromInt(45)))
-	assert.True(t, stats.TotalAmount.Equal(decimal.NewFromInt(315)))
+	assert.True(t, stats.TotalAmount.Equal(decimal.NewFromInt(295)))
 	assert.True(t, stats.AverageConsumption.Equal(decimal.RequireFromString("7.50")))
 	assert.True(t, stats.LatestConsumption.Equal(decimal.RequireFromString("7.50")))
-	assert.True(t, stats.CostPerKm.Equal(decimal.RequireFromString("0.53")))
+	assert.True(t, stats.CostPerKm.Equal(decimal.RequireFromString("0.49")))
 	assert.Len(t, stats.Trend, 1)
 	assert.True(t, stats.Trend[0].Consumption.Equal(decimal.RequireFromString("7.50")))
 	assert.Equal(t, "2026-01-20 08:00:00", stats.Trend[0].RefuelTime)
@@ -198,10 +207,10 @@ func TestFuelUsecase_GetStatsCalculatesFullTankIntervals(t *testing.T) {
 
 func TestFuelUsecase_GetStatsFiltersByTimeRangeWithAnchor(t *testing.T) {
 	records := []*RefuelRecord{
-		{Id: 1, RefuelTime: "2026-01-01 08:00:00", Odometer: decimal.NewFromInt(1000), Volume: decimal.NewFromInt(30), Amount: decimal.NewFromInt(210), IsFull: true},
-		{Id: 2, RefuelTime: "2026-01-10 08:00:00", Odometer: decimal.NewFromInt(1300), Volume: decimal.NewFromInt(20), Amount: decimal.NewFromInt(140), IsFull: false},
-		{Id: 3, RefuelTime: "2026-01-20 08:00:00", Odometer: decimal.NewFromInt(1600), Volume: decimal.NewFromInt(25), Amount: decimal.NewFromInt(175), IsFull: true},
-		{Id: 4, RefuelTime: "2026-02-01 08:00:00", Odometer: decimal.NewFromInt(2100), Volume: decimal.NewFromInt(40), Amount: decimal.NewFromInt(280), IsFull: true},
+		{Id: 1, RefuelTime: "2026-01-01 08:00:00", Odometer: decimal.NewFromInt(1000), Volume: decimal.NewFromInt(30), Amount: decimal.NewFromInt(210), ActualAmount: decimal.NewFromInt(200), IsFull: true},
+		{Id: 2, RefuelTime: "2026-01-10 08:00:00", Odometer: decimal.NewFromInt(1300), Volume: decimal.NewFromInt(20), Amount: decimal.NewFromInt(140), ActualAmount: decimal.NewFromInt(130), IsFull: false},
+		{Id: 3, RefuelTime: "2026-01-20 08:00:00", Odometer: decimal.NewFromInt(1600), Volume: decimal.NewFromInt(25), Amount: decimal.NewFromInt(175), ActualAmount: decimal.NewFromInt(165), IsFull: true},
+		{Id: 4, RefuelTime: "2026-02-01 08:00:00", Odometer: decimal.NewFromInt(2100), Volume: decimal.NewFromInt(40), Amount: decimal.NewFromInt(280), ActualAmount: decimal.NewFromInt(270), IsFull: true},
 	}
 	uc := NewFuelUsecase(&mockFuelVehicleRepo{
 		findByUserFunc: func(ctx context.Context, userId string, id uint) (*FuelVehicle, error) {
@@ -219,13 +228,13 @@ func TestFuelUsecase_GetStatsFiltersByTimeRangeWithAnchor(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, stats.Trend, 1)
 	assert.Equal(t, "2026-01-20 08:00:00", stats.Trend[0].RefuelTime)
-	// 区间 [记录1, 记录3]：distance=600，油量=记录2+记录3=45L，金额=140+175=315
+	// 区间 [记录1, 记录3]：distance=600，油量=记录2+记录3=45L，实付金额=130+165=295
 	assert.True(t, stats.Trend[0].Distance.Equal(decimal.NewFromInt(600)))
 	assert.True(t, stats.Trend[0].Volume.Equal(decimal.NewFromInt(45)))
 	assert.True(t, stats.Trend[0].Consumption.Equal(decimal.RequireFromString("7.50")))
 	assert.True(t, stats.TotalDistance.Equal(decimal.NewFromInt(600)))
 	assert.True(t, stats.TotalVolume.Equal(decimal.NewFromInt(45)))
-	assert.True(t, stats.TotalAmount.Equal(decimal.NewFromInt(315)))
+	assert.True(t, stats.TotalAmount.Equal(decimal.NewFromInt(295)))
 	// 范围外的记录4 不参与统计
 	assert.Equal(t, 1, len(stats.Trend))
 
@@ -238,10 +247,10 @@ func TestFuelUsecase_GetStatsFiltersByTimeRangeWithAnchor(t *testing.T) {
 
 func TestFuelUsecase_GetStatsUsesNearestAnchorBeforeRange(t *testing.T) {
 	records := []*RefuelRecord{
-		{Id: 1, RefuelTime: "2026-01-01 08:00:00", Odometer: decimal.NewFromInt(1000), Volume: decimal.NewFromInt(30), Amount: decimal.NewFromInt(210), IsFull: true},
-		{Id: 2, RefuelTime: "2026-01-05 08:00:00", Odometer: decimal.NewFromInt(1300), Volume: decimal.NewFromInt(20), Amount: decimal.NewFromInt(140), IsFull: true},
-		{Id: 3, RefuelTime: "2026-01-08 08:00:00", Odometer: decimal.NewFromInt(1450), Volume: decimal.NewFromInt(10), Amount: decimal.NewFromInt(70), IsFull: false},
-		{Id: 4, RefuelTime: "2026-01-20 08:00:00", Odometer: decimal.NewFromInt(1750), Volume: decimal.NewFromInt(25), Amount: decimal.NewFromInt(175), IsFull: true},
+		{Id: 1, RefuelTime: "2026-01-01 08:00:00", Odometer: decimal.NewFromInt(1000), Volume: decimal.NewFromInt(30), Amount: decimal.NewFromInt(210), ActualAmount: decimal.NewFromInt(200), IsFull: true},
+		{Id: 2, RefuelTime: "2026-01-05 08:00:00", Odometer: decimal.NewFromInt(1300), Volume: decimal.NewFromInt(20), Amount: decimal.NewFromInt(140), ActualAmount: decimal.NewFromInt(130), IsFull: true},
+		{Id: 3, RefuelTime: "2026-01-08 08:00:00", Odometer: decimal.NewFromInt(1450), Volume: decimal.NewFromInt(10), Amount: decimal.NewFromInt(70), ActualAmount: decimal.NewFromInt(60), IsFull: false},
+		{Id: 4, RefuelTime: "2026-01-20 08:00:00", Odometer: decimal.NewFromInt(1750), Volume: decimal.NewFromInt(25), Amount: decimal.NewFromInt(175), ActualAmount: decimal.NewFromInt(165), IsFull: true},
 	}
 	uc := NewFuelUsecase(&mockFuelVehicleRepo{
 		findByUserFunc: func(ctx context.Context, userId string, id uint) (*FuelVehicle, error) {
@@ -259,18 +268,18 @@ func TestFuelUsecase_GetStatsUsesNearestAnchorBeforeRange(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, stats.Trend, 1)
 	assert.Equal(t, "2026-01-20 08:00:00", stats.Trend[0].RefuelTime)
-	// 区间 [记录2(1300km), 记录4(1750km)]：distance=450，油量=记录3+记录4=35L，金额=70+175=245
+	// 区间 [记录2(1300km), 记录4(1750km)]：distance=450，油量=记录3+记录4=35L，实付金额=60+165=225
 	assert.True(t, stats.TotalDistance.Equal(decimal.NewFromInt(450)))
 	assert.True(t, stats.TotalVolume.Equal(decimal.NewFromInt(35)))
-	assert.True(t, stats.TotalAmount.Equal(decimal.NewFromInt(245)))
+	assert.True(t, stats.TotalAmount.Equal(decimal.NewFromInt(225)))
 	assert.True(t, stats.Trend[0].Consumption.Equal(decimal.RequireFromString("7.78")))
 	assert.True(t, stats.AverageConsumption.Equal(decimal.RequireFromString("7.78")))
 }
 
 func TestFuelUsecase_GetStatsRangeWithNoRecordsInside(t *testing.T) {
 	records := []*RefuelRecord{
-		{Id: 1, RefuelTime: "2026-01-01 08:00:00", Odometer: decimal.NewFromInt(1000), Volume: decimal.NewFromInt(30), Amount: decimal.NewFromInt(210), IsFull: true},
-		{Id: 2, RefuelTime: "2026-01-20 08:00:00", Odometer: decimal.NewFromInt(1600), Volume: decimal.NewFromInt(25), Amount: decimal.NewFromInt(175), IsFull: true},
+		{Id: 1, RefuelTime: "2026-01-01 08:00:00", Odometer: decimal.NewFromInt(1000), Volume: decimal.NewFromInt(30), Amount: decimal.NewFromInt(210), ActualAmount: decimal.NewFromInt(200), IsFull: true},
+		{Id: 2, RefuelTime: "2026-01-20 08:00:00", Odometer: decimal.NewFromInt(1600), Volume: decimal.NewFromInt(25), Amount: decimal.NewFromInt(175), ActualAmount: decimal.NewFromInt(165), IsFull: true},
 	}
 	uc := NewFuelUsecase(&mockFuelVehicleRepo{
 		findByUserFunc: func(ctx context.Context, userId string, id uint) (*FuelVehicle, error) {
@@ -292,6 +301,21 @@ func TestFuelUsecase_GetStatsRangeWithNoRecordsInside(t *testing.T) {
 	assert.True(t, stats.TotalAmount.Equal(decimal.Zero))
 }
 
+func TestCalculateFuelStats_UsesActualAmount(t *testing.T) {
+	// 金额口径为实付金额：amount=100、actualAmount=90 时统计结果必须是 90 口径
+	records := []*RefuelRecord{
+		{Id: 1, RefuelTime: "2026-01-01 08:00:00", Odometer: decimal.NewFromInt(1000), Volume: decimal.NewFromInt(30), Amount: decimal.NewFromInt(210), ActualAmount: decimal.NewFromInt(200), IsFull: true},
+		{Id: 2, RefuelTime: "2026-01-10 08:00:00", Odometer: decimal.NewFromInt(1100), Volume: decimal.NewFromInt(10), Amount: decimal.NewFromInt(100), ActualAmount: decimal.NewFromInt(90), IsFull: true},
+	}
+
+	stats := CalculateFuelStats(1, records)
+
+	assert.True(t, stats.TotalDistance.Equal(decimal.NewFromInt(100)))
+	assert.True(t, stats.TotalVolume.Equal(decimal.NewFromInt(10)))
+	assert.True(t, stats.TotalAmount.Equal(decimal.NewFromInt(90)))
+	assert.True(t, stats.CostPerKm.Equal(decimal.RequireFromString("0.90")))
+}
+
 func TestFilterFuelRecordsByTime_RejectsReversedRange(t *testing.T) {
 	records := []*RefuelRecord{
 		{Id: 1, RefuelTime: "2026-01-01 08:00:00", IsFull: true},
@@ -302,6 +326,81 @@ func TestFilterFuelRecordsByTime_RejectsReversedRange(t *testing.T) {
 
 	assert.Nil(t, filtered)
 	assert.Nil(t, anchor)
+}
+
+func TestFuelUsecase_CreateRefuelRecord_ValidatesActualAmount(t *testing.T) {
+	vehicleRepo := &mockFuelVehicleRepo{
+		findByUserFunc: func(ctx context.Context, userId string, id uint) (*FuelVehicle, error) {
+			return &FuelVehicle{Id: int64(id), UserId: userId}, nil
+		},
+	}
+	uc := NewFuelUsecase(vehicleRepo, &mockRefuelRecordRepo{}, &mockFileRepo{}, log.DefaultLogger)
+	base := &RefuelRecord{
+		VehicleId:    1,
+		RefuelTime:   "2026-05-01 08:00:00",
+		Odometer:     decimal.NewFromInt(1000),
+		Volume:       decimal.NewFromInt(30),
+		UnitPrice:    decimal.NewFromInt(7),
+		Amount:       decimal.NewFromInt(210),
+		ActualAmount: decimal.NewFromInt(210),
+	}
+
+	// 实付金额为空（零值）
+	rec := *base
+	rec.ActualAmount = decimal.Zero
+	_, err := uc.CreateRefuelRecord(withUser(context.Background(), "user-123"), &rec)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "实付金额不能为空")
+
+	// 实付金额为负数
+	rec = *base
+	rec.ActualAmount = decimal.NewFromInt(-1)
+	_, err = uc.CreateRefuelRecord(withUser(context.Background(), "user-123"), &rec)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "实付金额不能为负数")
+
+	// 实付金额大于应付金额：允许（加燃油宝等场景）
+	rec = *base
+	rec.ActualAmount = decimal.NewFromInt(300)
+	_, err = uc.CreateRefuelRecord(withUser(context.Background(), "user-123"), &rec)
+	assert.NoError(t, err)
+}
+
+func TestFuelUsecase_UpdateRefuelRecord_ValidatesActualAmount(t *testing.T) {
+	vehicleRepo := &mockFuelVehicleRepo{
+		findByUserFunc: func(ctx context.Context, userId string, id uint) (*FuelVehicle, error) {
+			return &FuelVehicle{Id: int64(id), UserId: userId}, nil
+		},
+	}
+	recordRepo := &mockRefuelRecordRepo{
+		findFunc: func(ctx context.Context, userId string, id uint) (*RefuelRecord, error) {
+			return &RefuelRecord{Id: int64(id), UserId: userId}, nil
+		},
+	}
+	uc := NewFuelUsecase(vehicleRepo, recordRepo, &mockFileRepo{}, log.DefaultLogger)
+	base := &RefuelRecord{
+		Id:           1,
+		VehicleId:    1,
+		RefuelTime:   "2026-05-01 08:00:00",
+		Odometer:     decimal.NewFromInt(1000),
+		Volume:       decimal.NewFromInt(30),
+		UnitPrice:    decimal.NewFromInt(7),
+		Amount:       decimal.NewFromInt(210),
+		ActualAmount: decimal.NewFromInt(210),
+	}
+
+	// 实付金额为负数
+	rec := *base
+	rec.ActualAmount = decimal.NewFromInt(-1)
+	_, err := uc.UpdateRefuelRecord(withUser(context.Background(), "user-123"), &rec)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "实付金额不能为负数")
+
+	// 实付金额大于应付金额：允许
+	rec = *base
+	rec.ActualAmount = decimal.NewFromInt(300)
+	_, err = uc.UpdateRefuelRecord(withUser(context.Background(), "user-123"), &rec)
+	assert.NoError(t, err)
 }
 
 func TestFuelUsecase_CreateRefuelRecord_ValidatesAttachments(t *testing.T) {
@@ -327,17 +426,18 @@ func TestFuelUsecase_CreateRefuelRecord_ValidatesAttachments(t *testing.T) {
 		},
 	}
 	base := &RefuelRecord{
-		VehicleId:  1,
-		RefuelTime: "2026-05-01 08:00:00",
-		Odometer:   decimal.NewFromInt(1000),
-		Volume:     decimal.NewFromInt(30),
-		UnitPrice:  decimal.NewFromInt(7),
+		VehicleId:    1,
+		RefuelTime:   "2026-05-01 08:00:00",
+		Odometer:     decimal.NewFromInt(1000),
+		Volume:       decimal.NewFromInt(30),
+		UnitPrice:    decimal.NewFromInt(7),
+		ActualAmount: decimal.NewFromInt(210),
 	}
 
 	// 数量超过 6 张
 	atts := make([]*FuelAttachment, 0, 7)
 	for i := 0; i < 7; i++ {
-		atts = append(atts, &FuelAttachment{FileId: 1, AttachType: "receipt"})
+		atts = append(atts, &FuelAttachment{FileId: 1, AttachType: "station_screen"})
 	}
 	uc := NewFuelUsecase(vehicleRepo, &mockRefuelRecordRepo{}, fileRepo, log.DefaultLogger)
 	rec := *base
@@ -353,23 +453,32 @@ func TestFuelUsecase_CreateRefuelRecord_ValidatesAttachments(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "附件类型不合法")
 
+	// 旧枚举值 receipt/environment 已废弃
+	for _, legacyType := range []string{"receipt", "environment"} {
+		rec = *base
+		rec.Attachments = []*FuelAttachment{{FileId: 1, AttachType: legacyType}}
+		_, err = uc.CreateRefuelRecord(withUser(context.Background(), "user-123"), &rec)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "附件类型不合法")
+	}
+
 	// 文件不存在或不属于当前用户
 	rec = *base
-	rec.Attachments = []*FuelAttachment{{FileId: 999, AttachType: "receipt"}}
+	rec.Attachments = []*FuelAttachment{{FileId: 999, AttachType: "station_screen"}}
 	_, err = uc.CreateRefuelRecord(withUser(context.Background(), "user-123"), &rec)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "不存在或无权访问")
 
 	// 非图片文件
 	rec = *base
-	rec.Attachments = []*FuelAttachment{{FileId: 3, AttachType: "receipt"}}
+	rec.Attachments = []*FuelAttachment{{FileId: 3, AttachType: "station_screen"}}
 	_, err = uc.CreateRefuelRecord(withUser(context.Background(), "user-123"), &rec)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "必须是图片")
 
 	// 超过 10MB
 	rec = *base
-	rec.Attachments = []*FuelAttachment{{FileId: 4, AttachType: "receipt"}}
+	rec.Attachments = []*FuelAttachment{{FileId: 4, AttachType: "station_screen"}}
 	_, err = uc.CreateRefuelRecord(withUser(context.Background(), "user-123"), &rec)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "不能超过 10MB")
@@ -385,12 +494,76 @@ func TestFuelUsecase_CreateRefuelRecord_ValidatesAttachments(t *testing.T) {
 	uc = NewFuelUsecase(vehicleRepo, recordRepo, fileRepo, log.DefaultLogger)
 	rec = *base
 	rec.Attachments = []*FuelAttachment{
-		{FileId: 1, AttachType: "receipt"},
-		{FileId: 2, AttachType: "environment"},
+		{FileId: 1, AttachType: "station_screen"},
+		{FileId: 2, AttachType: "dashboard"},
 	}
 	_, err = uc.CreateRefuelRecord(withUser(context.Background(), "user-123"), &rec)
 	assert.NoError(t, err)
 	assert.NotNil(t, saved)
 	assert.Equal(t, int32(0), saved.Attachments[0].Sort)
 	assert.Equal(t, int32(1), saved.Attachments[1].Sort)
+}
+
+func TestFuelUsecase_CreateRefuelRecord_ValidatesAttachmentTypeCounts(t *testing.T) {
+	vehicleRepo := &mockFuelVehicleRepo{
+		findByUserFunc: func(ctx context.Context, userId string, id uint) (*FuelVehicle, error) {
+			return &FuelVehicle{Id: int64(id), UserId: userId}, nil
+		},
+	}
+	fileRepo := &mockFileRepo{
+		getByIdAndUserFunc: func(ctx context.Context, id uint, userId string) (*FileRecord, error) {
+			return &FileRecord{Id: id, FileName: fmt.Sprintf("img%d.jpg", id), FileType: "image/jpeg", FileSize: 1024}, nil
+		},
+	}
+	base := &RefuelRecord{
+		VehicleId:    1,
+		RefuelTime:   "2026-05-01 08:00:00",
+		Odometer:     decimal.NewFromInt(1000),
+		Volume:       decimal.NewFromInt(30),
+		UnitPrice:    decimal.NewFromInt(7),
+		ActualAmount: decimal.NewFromInt(210),
+	}
+	uc := NewFuelUsecase(vehicleRepo, &mockRefuelRecordRepo{}, fileRepo, log.DefaultLogger)
+
+	// 两张 station_screen 报错
+	rec := *base
+	rec.Attachments = []*FuelAttachment{
+		{FileId: 1, AttachType: "station_screen"},
+		{FileId: 2, AttachType: "station_screen"},
+	}
+	_, err := uc.CreateRefuelRecord(withUser(context.Background(), "user-123"), &rec)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "加油站屏幕照片只能上传 1 张")
+
+	// 两张 dashboard 报错
+	rec = *base
+	rec.Attachments = []*FuelAttachment{
+		{FileId: 1, AttachType: "dashboard"},
+		{FileId: 2, AttachType: "dashboard"},
+	}
+	_, err = uc.CreateRefuelRecord(withUser(context.Background(), "user-123"), &rec)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "车辆仪表照片只能上传 1 张")
+
+	// 1 station_screen + 1 dashboard + 多张 other 通过
+	var saved *RefuelRecord
+	recordRepo := &mockRefuelRecordRepo{
+		saveFunc: func(ctx context.Context, r *RefuelRecord) (uint, error) {
+			saved = r
+			return 1, nil
+		},
+	}
+	uc = NewFuelUsecase(vehicleRepo, recordRepo, fileRepo, log.DefaultLogger)
+	rec = *base
+	rec.Attachments = []*FuelAttachment{
+		{FileId: 1, AttachType: "station_screen"},
+		{FileId: 2, AttachType: "dashboard"},
+		{FileId: 3, AttachType: "other"},
+		{FileId: 4, AttachType: "other"},
+		{FileId: 5, AttachType: "other"},
+	}
+	_, err = uc.CreateRefuelRecord(withUser(context.Background(), "user-123"), &rec)
+	assert.NoError(t, err)
+	assert.NotNil(t, saved)
+	assert.Len(t, saved.Attachments, 5)
 }

@@ -5,7 +5,7 @@ import { storeToRefs } from 'pinia'
 import { useFuelStore } from '@/stores/fuelStore'
 import { uploadImage } from '@/api/file'
 import { resolveFileUrl } from '@/utils/fileUrl'
-import type { FuelAttachType, RefuelRecord } from '@/api/fuel'
+import { recognizeFuelOcr, type FuelAttachType, type RefuelRecord } from '@/api/fuel'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,15 +26,26 @@ interface AttachmentDraft {
   url: string
   fileName: string
   uploading?: boolean
+  recognizing?: boolean
 }
 const attachmentList = ref<AttachmentDraft[]>([])
 const attachTypeOptions: Array<{ value: FuelAttachType; label: string }> = [
-  { value: 'receipt', label: '小票' },
-  { value: 'environment', label: '环境' },
+  { value: 'station_screen', label: '加油站屏幕' },
+  { value: 'dashboard', label: '车辆仪表' },
   { value: 'other', label: '其他' },
 ]
 const maxAttachments = 6
 const maxAttachmentSize = 10 * 1024 * 1024
+
+// 类型标签只读展示：旧数据（receipt/environment 等未知值）归入"其他"，不崩溃
+function attachTypeLabel(type: string) {
+  return attachTypeOptions.find((opt) => opt.value === type)?.label || '其他'
+}
+
+// station_screen/dashboard 每种最多 1 张：列表已有同类型附件时隐藏对应上传入口；other 仅受总数 ≤6 限制
+function hasAttachType(type: FuelAttachType) {
+  return attachmentList.value.some((att) => att.attachType === type)
+}
 
 // 后端返回相对路径（/file/download/v1/{id}），统一经 resolveFileUrl 加 /api 前缀
 // 新建记录时：里程小于该车最新记录（records 按时间倒序）则提示回拨
@@ -53,6 +64,7 @@ const formData = ref<RefuelRecord>({
   volume: '',
   unitPrice: '',
   amount: '',
+  actualAmount: '',
   station: '',
   isFull: true,
   remark: '',
@@ -84,6 +96,18 @@ watch([startDate, endDate], () => {
   fuelStore.fetchStats(vehicleId, startDate.value || undefined, endDate.value || undefined)
 })
 
+// 新增时实付金额默认跟随金额；实付被手改（不为空且不等于旧联动值）后解除联动，编辑时不联动
+watch(
+  () => formData.value.amount,
+  (amount, prevAmount) => {
+    if (isEditing.value) return
+    const current = formData.value.actualAmount
+    if (!current || current === prevAmount) {
+      formData.value.actualAmount = amount
+    }
+  },
+)
+
 function clearDateRange() {
   startDate.value = ''
   endDate.value = ''
@@ -103,6 +127,7 @@ function openCreateModal() {
     volume: '',
     unitPrice: '',
     amount: '',
+    actualAmount: '',
     station: '',
     isFull: true,
     remark: '',
@@ -121,14 +146,14 @@ function openEditModal(record: RefuelRecord) {
   }
   attachmentList.value = (record.attachmentInfos || []).map((info) => ({
     fileId: info.fileId,
-    attachType: (info.attachType as FuelAttachType) || 'receipt',
+    attachType: (info.attachType as FuelAttachType) || 'other',
     url: info.url,
     fileName: info.fileName,
   }))
   showModal.value = true
 }
 
-async function handleFileChange(event: Event) {
+async function handleFileChange(event: Event, attachType: FuelAttachType) {
   const input = event.target as HTMLInputElement
   const files = Array.from(input.files || [])
   input.value = ''
@@ -148,7 +173,7 @@ async function handleFileChange(event: Event) {
     }
     attachmentList.value.push({
       fileId: '',
-      attachType: 'receipt',
+      attachType,
       url: '',
       fileName: file.name,
       uploading: true,
@@ -156,15 +181,52 @@ async function handleFileChange(event: Event) {
     const index = attachmentList.value.length - 1
     try {
       const reply = await uploadImage(file)
-      attachmentList.value[index].fileId = reply.id
-      attachmentList.value[index].url = reply.url
+      const draft = attachmentList.value[index]
+      if (draft) {
+        draft.fileId = reply.id
+        draft.url = reply.url
+        if (attachType === 'station_screen' || attachType === 'dashboard') {
+          await runOcr(file, attachType, index)
+        }
+      }
     } catch (err) {
       attachmentList.value.splice(index, 1)
       const message = err instanceof Error ? err.message : '未知错误'
       alert(`上传失败：${file.name}（${message}）`)
     } finally {
-      attachmentList.value[index].uploading = false
+      const draft = attachmentList.value[index]
+      if (draft) draft.uploading = false
     }
+  }
+}
+
+// 附件上传成功后按类型自动识别：加油站屏幕回填金额/油量/单价，车辆仪表回填里程；
+// 仅回填空字段，不覆盖用户已填的值；失败仅提示，不影响附件本身
+async function runOcr(file: File, attachType: 'station_screen' | 'dashboard', index: number) {
+  const draft = attachmentList.value[index]
+  if (draft) draft.recognizing = true
+  try {
+    const reply = await recognizeFuelOcr(file, attachType)
+    if (attachType === 'station_screen') {
+      if (!reply.amount && !reply.volume && !reply.unitPrice) {
+        alert('识别失败，请手动填写')
+        return
+      }
+      if (!formData.value.amount && reply.amount) formData.value.amount = reply.amount
+      if (!formData.value.volume && reply.volume) formData.value.volume = reply.volume
+      if (!formData.value.unitPrice && reply.unitPrice) formData.value.unitPrice = reply.unitPrice
+    } else {
+      if (!reply.odometer) {
+        alert('识别失败，请手动填写')
+        return
+      }
+      if (!formData.value.odometer) formData.value.odometer = reply.odometer
+    }
+  } catch {
+    alert('识别失败，请手动填写')
+  } finally {
+    const current = attachmentList.value[index]
+    if (current) current.recognizing = false
   }
 }
 
@@ -183,6 +245,7 @@ async function handleSubmit() {
       ? formData.value.refuelTime
       : `${formData.value.refuelTime} 00:00:00`,
     amount,
+    actualAmount: formData.value.actualAmount || amount,
     attachments: attachmentList.value.map((att, index) => ({
       fileId: att.fileId,
       attachType: att.attachType,
@@ -440,7 +503,15 @@ function formatNumber(value?: string, suffix = '') {
             </td>
             <td class="px-5 py-4 text-sm text-[#1d1d1f] text-right">{{ record.odometer }} km</td>
             <td class="px-5 py-4 text-sm text-[#1d1d1f] text-right">{{ record.volume }} L</td>
-            <td class="px-5 py-4 text-sm text-[#1d1d1f] text-right">¥{{ record.amount }}</td>
+            <td class="px-5 py-4 text-sm text-[#1d1d1f] text-right">
+              ¥{{ record.actualAmount }}
+              <div
+                v-if="Number(record.actualAmount) !== Number(record.amount)"
+                class="text-xs text-[#86868b]"
+              >
+                应付 ¥{{ record.amount }}
+              </div>
+            </td>
             <td class="px-5 py-4 text-sm text-center">
               <span
                 class="text-xs px-2 py-0.5 rounded-full border font-medium"
@@ -601,6 +672,17 @@ function formatNumber(value?: string, suffix = '') {
               />
             </div>
             <div>
+              <label class="block mb-1.5 text-sm font-medium text-[#1d1d1f]">实付金额</label
+              ><input
+                v-model="formData.actualAmount"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="默认与金额一致，可修改"
+                class="w-full px-4 py-2.5 bg-[#fafafc] border border-[#e8e8ed] rounded-xl text-[15px] text-[#1d1d1f] outline-none transition-all placeholder:text-[#c7c7cc] focus:border-[#0071e3] focus:bg-white focus:ring-2 focus:ring-[#0071e3]/10"
+              />
+            </div>
+            <div>
               <label class="block mb-1.5 text-sm font-medium text-[#1d1d1f]">加油站</label
               ><input
                 v-model="formData.station"
@@ -649,14 +731,17 @@ function formatNumber(value?: string, suffix = '') {
                   >
                     {{ att.uploading ? '上传中...' : att.fileName }}
                   </div>
-                  <select
-                    v-model="att.attachType"
-                    class="absolute bottom-0 inset-x-0 w-full text-[11px] bg-black/60 text-white border-0 outline-none px-1 py-0.5"
+                  <span
+                    class="attach-type-badge absolute bottom-0 inset-x-0 w-full text-center text-[11px] bg-black/60 text-white px-1 py-0.5"
                   >
-                    <option v-for="opt in attachTypeOptions" :key="opt.value" :value="opt.value">
-                      {{ opt.label }}
-                    </option>
-                  </select>
+                    {{ attachTypeLabel(att.attachType) }}
+                  </span>
+                  <div
+                    v-if="att.recognizing"
+                    class="absolute inset-0 flex items-center justify-center bg-black/40 text-white text-xs"
+                  >
+                    识别中...
+                  </div>
                   <button
                     @click="removeAttachment(index)"
                     class="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full bg-black/50 text-white text-xs hover:bg-[#ff3b30] transition-colors"
@@ -665,29 +750,36 @@ function formatNumber(value?: string, suffix = '') {
                     ×
                   </button>
                 </div>
-                <label
-                  v-if="attachmentList.length < maxAttachments"
-                  class="w-24 h-24 rounded-xl border-2 border-dashed border-[#d2d2d7] flex flex-col items-center justify-center gap-1 cursor-pointer text-[#86868b] hover:text-[#0071e3] hover:border-[#0071e3] transition-colors"
-                >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 4v16m8-8H4"
-                    />
-                  </svg>
-                  <span class="text-[11px]">上传图片</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    class="hidden"
-                    @change="handleFileChange"
-                  />
-                </label>
+                <template v-if="attachmentList.length < maxAttachments">
+                  <template v-for="opt in attachTypeOptions" :key="opt.value">
+                    <label
+                      v-if="opt.value === 'other' || !hasAttachType(opt.value)"
+                      class="w-24 h-24 rounded-xl border-2 border-dashed border-[#d2d2d7] flex flex-col items-center justify-center gap-1 cursor-pointer text-[#86868b] hover:text-[#0071e3] hover:border-[#0071e3] transition-colors"
+                    >
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 4v16m8-8H4"
+                        />
+                      </svg>
+                      <span class="text-[11px]">{{ opt.label }}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        class="hidden"
+                        :data-attach-type="opt.value"
+                        @change="handleFileChange($event, opt.value)"
+                      />
+                    </label>
+                  </template>
+                </template>
               </div>
-              <p class="mt-1.5 text-xs text-[#86868b]">小票 / 环境照片，最多 6 张，每张不超过 10MB</p>
+              <p class="mt-1.5 text-xs text-[#86868b]">
+                按类型入口上传，传错请删除重传；最多 6 张，每张不超过 10MB
+              </p>
             </div>
             <div class="md:col-span-2">
               <label class="block mb-1.5 text-sm font-medium text-[#1d1d1f]">备注</label

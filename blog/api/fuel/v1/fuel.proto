@@ -120,6 +120,8 @@ message RefuelRecord {
 	string volume = 5;
 	string unitPrice = 6;
 	string amount = 7;
+	// 实付金额
+	string actualAmount = 14;
 	string station = 8;
 	bool isFull = 9;
 	string remark = 10;

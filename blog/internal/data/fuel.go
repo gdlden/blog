@@ -25,16 +25,17 @@ type FuelVehicle struct {
 
 type RefuelRecord struct {
 	gorm.Model
-	VehicleId  uint            `gorm:"comment:vehicle id;index"`
-	RefuelTime time.Time       `gorm:"comment:refuel time;index"`
-	Odometer   decimal.Decimal `gorm:"type:decimal(12,2);comment:odometer"`
-	Volume     decimal.Decimal `gorm:"type:decimal(10,2);comment:volume"`
-	UnitPrice  decimal.Decimal `gorm:"type:decimal(10,2);comment:unit price"`
-	Amount     decimal.Decimal `gorm:"type:decimal(10,2);comment:amount"`
-	Station    string          `gorm:"comment:station"`
-	IsFull     bool            `gorm:"comment:is full tank"`
-	Remark     string          `gorm:"comment:remark"`
-	UserId     string          `gorm:"comment:user id;index"`
+	VehicleId    uint            `gorm:"comment:vehicle id;index"`
+	RefuelTime   time.Time       `gorm:"comment:refuel time;index"`
+	Odometer     decimal.Decimal `gorm:"type:decimal(12,2);comment:odometer"`
+	Volume       decimal.Decimal `gorm:"type:decimal(10,2);comment:volume"`
+	UnitPrice    decimal.Decimal `gorm:"type:decimal(10,2);comment:unit price"`
+	Amount       decimal.Decimal `gorm:"type:decimal(10,2);comment:amount"`
+	ActualAmount decimal.Decimal `gorm:"column:actual_amount;type:decimal(10,2);comment:actual amount"`
+	Station      string          `gorm:"comment:station"`
+	IsFull       bool            `gorm:"comment:is full tank"`
+	Remark       string          `gorm:"comment:remark"`
+	UserId       string          `gorm:"comment:user id;index"`
 }
 
 // FuelAttachment 加油记录附件关联：指向 file_records 中的文件元数据。
@@ -184,16 +185,17 @@ func (r *RefuelRecordRepo) Save(ctx context.Context, record *biz.RefuelRecord) (
 	var recordID uint
 	err = r.data.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		dbRecord := RefuelRecord{
-			VehicleId:  uint(record.VehicleId),
-			RefuelTime: refuelTime,
-			Odometer:   record.Odometer,
-			Volume:     record.Volume,
-			UnitPrice:  record.UnitPrice,
-			Amount:     record.Amount,
-			Station:    record.Station,
-			IsFull:     record.IsFull,
-			Remark:     record.Remark,
-			UserId:     record.UserId,
+			VehicleId:    uint(record.VehicleId),
+			RefuelTime:   refuelTime,
+			Odometer:     record.Odometer,
+			Volume:       record.Volume,
+			UnitPrice:    record.UnitPrice,
+			Amount:       record.Amount,
+			ActualAmount: record.ActualAmount,
+			Station:      record.Station,
+			IsFull:       record.IsFull,
+			Remark:       record.Remark,
+			UserId:       record.UserId,
 		}
 		if err := tx.Create(&dbRecord).Error; err != nil {
 			return err
@@ -213,15 +215,16 @@ func (r *RefuelRecordRepo) Update(ctx context.Context, record *biz.RefuelRecord)
 		return err
 	}
 	updates := map[string]any{
-		"vehicle_id":  record.VehicleId,
-		"refuel_time": refuelTime,
-		"odometer":    record.Odometer,
-		"volume":      record.Volume,
-		"unit_price":  record.UnitPrice,
-		"amount":      record.Amount,
-		"station":     record.Station,
-		"is_full":     record.IsFull,
-		"remark":      record.Remark,
+		"vehicle_id":    record.VehicleId,
+		"refuel_time":   refuelTime,
+		"odometer":      record.Odometer,
+		"volume":        record.Volume,
+		"unit_price":    record.UnitPrice,
+		"amount":        record.Amount,
+		"actual_amount": record.ActualAmount,
+		"station":       record.Station,
+		"is_full":       record.IsFull,
+		"remark":        record.Remark,
 	}
 	return r.data.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		res := tx.Model(&RefuelRecord{}).
@@ -381,17 +384,18 @@ func mapRefuelRecordToBiz(record *RefuelRecord) *biz.RefuelRecord {
 		return nil
 	}
 	return &biz.RefuelRecord{
-		Id:         int64(record.ID),
-		VehicleId:  int64(record.VehicleId),
-		RefuelTime: record.RefuelTime.Format("2006-01-02 15:04:05"),
-		Odometer:   record.Odometer,
-		Volume:     record.Volume,
-		UnitPrice:  record.UnitPrice,
-		Amount:     record.Amount,
-		Station:    record.Station,
-		IsFull:     record.IsFull,
-		Remark:     record.Remark,
-		UserId:     record.UserId,
+		Id:           int64(record.ID),
+		VehicleId:    int64(record.VehicleId),
+		RefuelTime:   record.RefuelTime.Format("2006-01-02 15:04:05"),
+		Odometer:     record.Odometer,
+		Volume:       record.Volume,
+		UnitPrice:    record.UnitPrice,
+		Amount:       record.Amount,
+		ActualAmount: record.ActualAmount,
+		Station:      record.Station,
+		IsFull:       record.IsFull,
+		Remark:       record.Remark,
+		UserId:       record.UserId,
 	}
 }
 

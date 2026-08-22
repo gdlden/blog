@@ -76,14 +76,15 @@ func TestFuelVehicleRepo_CountRefuelRecordByVehicleId(t *testing.T) {
 	vehicleId, err := vehicleRepo.Save(ctx, &biz.FuelVehicle{Name: "Car", UserId: "user-123"})
 	assert.NoError(t, err)
 	_, err = recordRepo.Save(ctx, &biz.RefuelRecord{
-		VehicleId:  int64(vehicleId),
-		RefuelTime: "2026-01-01 00:00:00",
-		Odometer:   decimal.NewFromInt(1000),
-		Volume:     decimal.NewFromInt(30),
-		UnitPrice:  decimal.NewFromInt(7),
-		Amount:     decimal.NewFromInt(210),
-		IsFull:     true,
-		UserId:     "user-123",
+		VehicleId:    int64(vehicleId),
+		RefuelTime:   "2026-01-01 00:00:00",
+		Odometer:     decimal.NewFromInt(1000),
+		Volume:       decimal.NewFromInt(30),
+		UnitPrice:    decimal.NewFromInt(7),
+		Amount:       decimal.NewFromInt(210),
+		ActualAmount: decimal.NewFromInt(200),
+		IsFull:       true,
+		UserId:       "user-123",
 	})
 	assert.NoError(t, err)
 
@@ -102,8 +103,8 @@ func TestRefuelRecordRepo_ListByUserIdAndVehicleIdOrdersByRefuelTimeDesc(t *test
 	vehicleId, err := vehicleRepo.Save(ctx, &biz.FuelVehicle{Name: "Car", UserId: "user-123"})
 	assert.NoError(t, err)
 	for _, record := range []*biz.RefuelRecord{
-		{VehicleId: int64(vehicleId), RefuelTime: "2026-01-01 00:00:00", Odometer: decimal.NewFromInt(1000), Volume: decimal.NewFromInt(30), Amount: decimal.NewFromInt(210), UserId: "user-123"},
-		{VehicleId: int64(vehicleId), RefuelTime: "2026-02-01 00:00:00", Odometer: decimal.NewFromInt(1500), Volume: decimal.NewFromInt(35), Amount: decimal.NewFromInt(245), UserId: "user-123"},
+		{VehicleId: int64(vehicleId), RefuelTime: "2026-01-01 00:00:00", Odometer: decimal.NewFromInt(1000), Volume: decimal.NewFromInt(30), Amount: decimal.NewFromInt(210), ActualAmount: decimal.NewFromInt(200), UserId: "user-123"},
+		{VehicleId: int64(vehicleId), RefuelTime: "2026-02-01 00:00:00", Odometer: decimal.NewFromInt(1500), Volume: decimal.NewFromInt(35), Amount: decimal.NewFromInt(245), ActualAmount: decimal.NewFromInt(235), UserId: "user-123"},
 	} {
 		_, err := recordRepo.Save(ctx, record)
 		assert.NoError(t, err)
@@ -115,6 +116,7 @@ func TestRefuelRecordRepo_ListByUserIdAndVehicleIdOrdersByRefuelTimeDesc(t *test
 	assert.Equal(t, int64(2), total)
 	assert.Len(t, items, 2)
 	assert.Equal(t, "2026-02-01 00:00:00", items[0].RefuelTime)
+	assert.True(t, items[0].ActualAmount.Equal(decimal.NewFromInt(235)))
 }
 
 func TestRefuelRecordRepo_SaveListAndReplaceAttachments(t *testing.T) {
@@ -136,15 +138,16 @@ func TestRefuelRecordRepo_SaveListAndReplaceAttachments(t *testing.T) {
 
 	// 保存记录并带两张附件
 	recordId, err := recordRepo.Save(ctx, &biz.RefuelRecord{
-		VehicleId:  int64(vehicleId),
-		RefuelTime: "2026-03-01 00:00:00",
-		Odometer:   decimal.NewFromInt(2000),
-		Volume:     decimal.NewFromInt(40),
-		Amount:     decimal.NewFromInt(280),
-		UserId:     "user-123",
+		VehicleId:    int64(vehicleId),
+		RefuelTime:   "2026-03-01 00:00:00",
+		Odometer:     decimal.NewFromInt(2000),
+		Volume:       decimal.NewFromInt(40),
+		Amount:       decimal.NewFromInt(280),
+		ActualAmount: decimal.NewFromInt(270),
+		UserId:       "user-123",
 		Attachments: []*biz.FuelAttachment{
-			{FileId: fileId1, AttachType: "receipt", Sort: 0},
-			{FileId: fileId2, AttachType: "environment", Sort: 1},
+			{FileId: fileId1, AttachType: "station_screen", Sort: 0},
+			{FileId: fileId2, AttachType: "dashboard", Sort: 1},
 		},
 	})
 	assert.NoError(t, err)
@@ -153,8 +156,9 @@ func TestRefuelRecordRepo_SaveListAndReplaceAttachments(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, item.Attachments, 2)
 	assert.Equal(t, "receipt.jpg", item.Attachments[0].FileName)
+	assert.True(t, item.ActualAmount.Equal(decimal.NewFromInt(270)))
 	assert.Equal(t, "/file/download/v1/1", item.Attachments[0].FileUrl)
-	assert.Equal(t, "receipt", item.Attachments[0].AttachType)
+	assert.Equal(t, "station_screen", item.Attachments[0].AttachType)
 	assert.Equal(t, int32(0), item.Attachments[0].Sort)
 	assert.Equal(t, "scene.png", item.Attachments[1].FileName)
 	assert.Equal(t, int32(1), item.Attachments[1].Sort)
@@ -168,14 +172,15 @@ func TestRefuelRecordRepo_SaveListAndReplaceAttachments(t *testing.T) {
 
 	// 整组替换：只保留第二张
 	err = recordRepo.Update(ctx, &biz.RefuelRecord{
-		Id:          int64(recordId),
-		VehicleId:   int64(vehicleId),
-		RefuelTime:  "2026-03-01 00:00:00",
-		Odometer:    decimal.NewFromInt(2000),
-		Volume:      decimal.NewFromInt(40),
-		Amount:      decimal.NewFromInt(280),
-		UserId:      "user-123",
-		Attachments: []*biz.FuelAttachment{{FileId: fileId2, AttachType: "other", Sort: 0}},
+		Id:           int64(recordId),
+		VehicleId:    int64(vehicleId),
+		RefuelTime:   "2026-03-01 00:00:00",
+		Odometer:     decimal.NewFromInt(2000),
+		Volume:       decimal.NewFromInt(40),
+		Amount:       decimal.NewFromInt(280),
+		ActualAmount: decimal.NewFromInt(270),
+		UserId:       "user-123",
+		Attachments:  []*biz.FuelAttachment{{FileId: fileId2, AttachType: "other", Sort: 0}},
 	})
 	assert.NoError(t, err)
 	item, err = recordRepo.FindByUserIdAndRecordId(ctx, "user-123", recordId)
@@ -186,13 +191,14 @@ func TestRefuelRecordRepo_SaveListAndReplaceAttachments(t *testing.T) {
 
 	// Update 不传 attachments 时保持现有附件不变
 	err = recordRepo.Update(ctx, &biz.RefuelRecord{
-		Id:         int64(recordId),
-		VehicleId:  int64(vehicleId),
-		RefuelTime: "2026-03-02 00:00:00",
-		Odometer:   decimal.NewFromInt(2050),
-		Volume:     decimal.NewFromInt(40),
-		Amount:     decimal.NewFromInt(280),
-		UserId:     "user-123",
+		Id:           int64(recordId),
+		VehicleId:    int64(vehicleId),
+		RefuelTime:   "2026-03-02 00:00:00",
+		Odometer:     decimal.NewFromInt(2050),
+		Volume:       decimal.NewFromInt(40),
+		Amount:       decimal.NewFromInt(280),
+		ActualAmount: decimal.NewFromInt(270),
+		UserId:       "user-123",
 	})
 	assert.NoError(t, err)
 	item, err = recordRepo.FindByUserIdAndRecordId(ctx, "user-123", recordId)

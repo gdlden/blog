@@ -10,7 +10,7 @@ export interface FuelVehicle {
   remark: string
 }
 
-export type FuelAttachType = 'receipt' | 'environment' | 'other'
+export type FuelAttachType = 'station_screen' | 'dashboard' | 'other'
 
 export interface FuelAttachment {
   /** 文件记录 id（先经 /file/upload/raw/v1 上传获得） */
@@ -36,6 +36,8 @@ export interface RefuelRecord {
   volume: string
   unitPrice: string
   amount: string
+  /** 实付金额 */
+  actualAmount: string
   station: string
   isFull: boolean
   remark: string
@@ -77,6 +79,14 @@ export interface SaveFuelReply {
   message: string
 }
 
+export interface FuelOcrReply {
+  rawText: string
+  amount: string
+  volume: string
+  unitPrice: string
+  odometer: string
+}
+
 type FuelVehicleRequest = Omit<FuelVehicle, 'id'> & {
   tankCapacity: string | number
 }
@@ -86,6 +96,7 @@ type RefuelRecordRequest = Omit<RefuelRecord, 'id' | 'intervalConsumption' | 'at
   volume: string | number
   unitPrice: string | number
   amount: string | number
+  actualAmount: string | number
 }
 
 function decimalToString(value: string | number | undefined): string {
@@ -107,6 +118,7 @@ function serializeRefuelRecord(data: RefuelRecord | RefuelRecordRequest) {
     volume: decimalToString(data.volume),
     unitPrice: decimalToString(data.unitPrice),
     amount: decimalToString(data.amount),
+    actualAmount: decimalToString(data.actualAmount),
   }
 }
 
@@ -175,6 +187,18 @@ export async function deleteRefuelRecord(id: string): Promise<boolean> {
     flag: boolean
   }
   return response.flag
+}
+
+export async function recognizeFuelOcr(
+  file: File,
+  attachType: 'station_screen' | 'dashboard',
+): Promise<FuelOcrReply> {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('attachType', attachType)
+  return await instance.post('/fuel/refuel/ocr/v1', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
 }
 
 export async function getFuelStats(

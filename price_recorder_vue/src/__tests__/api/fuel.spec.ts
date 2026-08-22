@@ -48,6 +48,7 @@ describe('fuel api', () => {
       volume: 30 as any,
       unitPrice: 7.5 as any,
       amount: 225 as any,
+      actualAmount: 200,
       station: '',
       isFull: true,
       remark: '',
@@ -60,6 +61,7 @@ describe('fuel api', () => {
       volume: '30',
       unitPrice: '7.5',
       amount: '225',
+      actualAmount: '200',
       station: '',
       isFull: true,
       remark: '',
@@ -76,12 +78,13 @@ describe('fuel api', () => {
       volume: '30',
       unitPrice: '7.5',
       amount: '225',
+      actualAmount: '200',
       station: '',
       isFull: true,
       remark: '',
       attachments: [
-        { fileId: '9', attachType: 'receipt', sort: 0 },
-        { fileId: '10', attachType: 'environment', sort: 1 },
+        { fileId: '9', attachType: 'station_screen', sort: 0 },
+        { fileId: '10', attachType: 'dashboard', sort: 1 },
       ],
     })
 
@@ -92,12 +95,13 @@ describe('fuel api', () => {
       volume: '30',
       unitPrice: '7.5',
       amount: '225',
+      actualAmount: '200',
       station: '',
       isFull: true,
       remark: '',
       attachments: [
-        { fileId: '9', attachType: 'receipt', sort: 0 },
-        { fileId: '10', attachType: 'environment', sort: 1 },
+        { fileId: '9', attachType: 'station_screen', sort: 0 },
+        { fileId: '10', attachType: 'dashboard', sort: 1 },
       ],
     })
   })
@@ -138,5 +142,20 @@ describe('fuel api', () => {
     await getFuelStats('1')
 
     expect(getMock).toHaveBeenCalledWith('/fuel/stats/v1', { params: { vehicleId: '1' } })
+  })
+
+  it('posts multipart form data for fuel OCR', async () => {
+    const { recognizeFuelOcr } = await import('@/api/fuel')
+    const file = new File(['fake-image'], 'screen.jpg', { type: 'image/jpeg' })
+
+    await recognizeFuelOcr(file, 'station_screen')
+
+    expect(postMock).toHaveBeenCalledTimes(1)
+    const [url, body, config] = postMock.mock.calls[0]
+    expect(url).toBe('/fuel/refuel/ocr/v1')
+    expect(body).toBeInstanceOf(FormData)
+    expect((body as FormData).get('file')).toBe(file)
+    expect((body as FormData).get('attachType')).toBe('station_screen')
+    expect(config).toEqual({ headers: { 'Content-Type': 'multipart/form-data' } })
   })
 })

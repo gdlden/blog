@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	pb "blog/api/fuel/v1"
+	"blog/internal/biz"
 
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -11,14 +12,15 @@ import (
 
 func validRefuelRequest() *pb.RefuelRecord {
 	return &pb.RefuelRecord{
-		Id:         1,
-		VehicleId:  1,
-		RefuelTime: "2026-01-01 08:00:00",
-		Odometer:   "1000",
-		Volume:     "30",
-		UnitPrice:  "7.5",
-		Amount:     "225.00",
-		IsFull:     true,
+		Id:           1,
+		VehicleId:    1,
+		RefuelTime:   "2026-01-01 08:00:00",
+		Odometer:     "1000",
+		Volume:       "30",
+		UnitPrice:    "7.5",
+		Amount:       "225.00",
+		ActualAmount: "225.00",
+		IsFull:       true,
 	}
 }
 
@@ -105,6 +107,47 @@ func TestRefuelRecordFromRequest_RecalculatesAmountOnEdit(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.True(t, record.Amount.Equal(decimal.RequireFromString("225.00")))
+}
+
+func TestRefuelRecordFromRequest_RejectsMissingActualAmount(t *testing.T) {
+	req := validRefuelRequest()
+	req.ActualAmount = ""
+
+	_, err := refuelRecordFromRequest(req, true)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "实付金额不能为空")
+}
+
+func TestRefuelRecordFromRequest_RejectsNegativeActualAmount(t *testing.T) {
+	req := validRefuelRequest()
+	req.ActualAmount = "-1"
+
+	_, err := refuelRecordFromRequest(req, true)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "实付金额不能为负数")
+}
+
+func TestRefuelRecordFromRequest_AcceptsActualAmountGreaterThanAmount(t *testing.T) {
+	// 实付金额允许大于应付金额（加燃油宝等场景）
+	req := validRefuelRequest()
+	req.ActualAmount = "300.00"
+
+	record, err := refuelRecordFromRequest(req, true)
+
+	assert.NoError(t, err)
+	assert.True(t, record.ActualAmount.Equal(decimal.RequireFromString("300.00")))
+}
+
+func TestRefuelRecordToReply_IncludesActualAmount(t *testing.T) {
+	reply := refuelRecordToReply(&biz.RefuelRecord{
+		Amount:       decimal.RequireFromString("225.00"),
+		ActualAmount: decimal.RequireFromString("215.50"),
+	})
+
+	assert.Equal(t, "225", reply.Amount)
+	assert.Equal(t, "215.5", reply.ActualAmount)
 }
 
 func TestFuelVehicleFromRequest_RejectsEmptyName(t *testing.T) {

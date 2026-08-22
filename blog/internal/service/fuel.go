@@ -13,11 +13,20 @@ import (
 
 type FuelService struct {
 	pb.UnimplementedFuelServer
-	uc *biz.FuelUsecase
+	uc            *biz.FuelUsecase
+	ocrRecognizer VisionTextRecognizer
 }
 
 func NewFuelService(uc *biz.FuelUsecase) *FuelService {
-	return &FuelService{uc: uc}
+	return NewFuelServiceWithRecognizer(uc, NewVisionTextRecognizerFromEnv())
+}
+
+// NewFuelServiceWithRecognizer 供测试注入 mock 识别器；recognizer 为 nil 时回退到环境变量配置。
+func NewFuelServiceWithRecognizer(uc *biz.FuelUsecase, recognizer VisionTextRecognizer) *FuelService {
+	if recognizer == nil {
+		recognizer = NewVisionTextRecognizerFromEnv()
+	}
+	return &FuelService{uc: uc, ocrRecognizer: recognizer}
 }
 
 func (s *FuelService) CreateVehicle(ctx context.Context, req *pb.FuelVehicle) (*pb.SaveFuelReply, error) {
@@ -278,22 +287,33 @@ func refuelRecordFromRequest(req *pb.RefuelRecord, strictAmount bool) (*biz.Refu
 	} else {
 		amount = expectedAmount
 	}
+	actualAmount, err := parseDecimalOrZero(req.ActualAmount)
+	if err != nil {
+		return nil, err
+	}
+	if req.ActualAmount == "" {
+		return nil, errors.New("实付金额不能为空")
+	}
+	if actualAmount.IsNegative() {
+		return nil, errors.New("实付金额不能为负数")
+	}
 	attachments, err := fuelAttachmentsFromRequest(req.Attachments)
 	if err != nil {
 		return nil, err
 	}
 	return &biz.RefuelRecord{
-		Id:          req.Id,
-		VehicleId:   req.VehicleId,
-		RefuelTime:  req.RefuelTime,
-		Odometer:    odometer,
-		Volume:      volume,
-		UnitPrice:   unitPrice,
-		Amount:      amount,
-		Station:     req.Station,
-		IsFull:      req.IsFull,
-		Remark:      req.Remark,
-		Attachments: attachments,
+		Id:           req.Id,
+		VehicleId:    req.VehicleId,
+		RefuelTime:   req.RefuelTime,
+		Odometer:     odometer,
+		Volume:       volume,
+		UnitPrice:    unitPrice,
+		Amount:       amount,
+		ActualAmount: actualAmount,
+		Station:      req.Station,
+		IsFull:       req.IsFull,
+		Remark:       req.Remark,
+		Attachments:  attachments,
 	}, nil
 }
 
@@ -348,6 +368,7 @@ func refuelRecordToReply(record *biz.RefuelRecord) *pb.RefuelRecord {
 		Volume:              record.Volume.String(),
 		UnitPrice:           record.UnitPrice.String(),
 		Amount:              record.Amount.String(),
+		ActualAmount:        record.ActualAmount.String(),
 		Station:             record.Station,
 		IsFull:              record.IsFull,
 		Remark:              record.Remark,

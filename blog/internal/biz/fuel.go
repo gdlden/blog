@@ -31,6 +31,7 @@ type RefuelRecord struct {
 	Volume              decimal.Decimal
 	UnitPrice           decimal.Decimal
 	Amount              decimal.Decimal
+	ActualAmount        decimal.Decimal
 	Station             string
 	IsFull              bool
 	Remark              string
@@ -84,9 +85,9 @@ const (
 
 // fuelAttachmentTypes 附件类型枚举。
 var fuelAttachmentTypes = map[string]bool{
-	"receipt":     true,
-	"environment": true,
-	"other":       true,
+	"station_screen": true,
+	"dashboard":      true,
+	"other":          true,
 }
 
 // fuelImageExts 允许的图片扩展名。
@@ -216,6 +217,9 @@ func (uc *FuelUsecase) CreateRefuelRecord(ctx context.Context, record *RefuelRec
 	if err != nil {
 		return 0, err
 	}
+	if err := validateActualAmount(record.ActualAmount); err != nil {
+		return 0, err
+	}
 	if _, err := uc.vehicleRepo.FindByUserIdAndVehicleId(ctx, userId, uint(record.VehicleId)); err != nil {
 		return 0, err
 	}
@@ -229,6 +233,9 @@ func (uc *FuelUsecase) CreateRefuelRecord(ctx context.Context, record *RefuelRec
 func (uc *FuelUsecase) UpdateRefuelRecord(ctx context.Context, record *RefuelRecord) (uint, error) {
 	userId, err := utils.CurrentUserId(ctx)
 	if err != nil {
+		return 0, err
+	}
+	if err := validateActualAmount(record.ActualAmount); err != nil {
 		return 0, err
 	}
 	dbRecord, err := uc.recordRepo.FindByUserIdAndRecordId(ctx, userId, uint(record.Id))
@@ -252,15 +259,34 @@ func (uc *FuelUsecase) UpdateRefuelRecord(ctx context.Context, record *RefuelRec
 	return uint(dbRecord.Id), nil
 }
 
-// validateFuelAttachments 校验附件：数量≤6、类型枚举合法、fileId 归属当前用户、必须是图片且≤10MB。
+// validateActualAmount 校验实付金额：必填且不能为负数；允许大于应付金额（加燃油宝等场景）。
+func validateActualAmount(actualAmount decimal.Decimal) error {
+	if actualAmount.IsZero() {
+		return errors.New("实付金额不能为空")
+	}
+	if actualAmount.IsNegative() {
+		return errors.New("实付金额不能为负数")
+	}
+	return nil
+}
+
+// validateFuelAttachments 校验附件：数量≤6、类型枚举合法、station_screen/dashboard 各≤1、fileId 归属当前用户、必须是图片且≤10MB。
 // 校验通过后按提交顺序回填 sort。
 func (uc *FuelUsecase) validateFuelAttachments(ctx context.Context, userId string, attachments []*FuelAttachment) error {
 	if len(attachments) > maxFuelAttachments {
 		return errors.New("附件数量不能超过 6 张")
 	}
+	counts := map[string]int{}
 	for i, att := range attachments {
 		if !fuelAttachmentTypes[att.AttachType] {
 			return fmt.Errorf("附件类型不合法: %s", att.AttachType)
+		}
+		counts[att.AttachType]++
+		if att.AttachType == "station_screen" && counts[att.AttachType] > 1 {
+			return errors.New("加油站屏幕照片只能上传 1 张")
+		}
+		if att.AttachType == "dashboard" && counts[att.AttachType] > 1 {
+			return errors.New("车辆仪表照片只能上传 1 张")
 		}
 		file, err := uc.fileRepo.GetByIdAndUserId(ctx, att.FileId, userId)
 		if err != nil {
@@ -421,7 +447,7 @@ func CalculateFuelStats(vehicleId int64, records []*RefuelRecord) *FuelStats {
 				intervalAmount := decimal.Zero
 				for j := lastFullIndex + 1; j <= i; j++ {
 					intervalVolume = intervalVolume.Add(sortedRecords[j].Volume)
-					intervalAmount = intervalAmount.Add(sortedRecords[j].Amount)
+					intervalAmount = intervalAmount.Add(sortedRecords[j].ActualAmount)
 				}
 				consumption := intervalVolume.Div(distance).Mul(decimal.NewFromInt(100)).Round(2)
 				stats.Trend = append(stats.Trend, &FuelTrendPoint{
@@ -442,7 +468,7 @@ func CalculateFuelStats(vehicleId int64, records []*RefuelRecord) *FuelStats {
 		lastFullIndex = i
 	}
 
-	// 统一口径：总里程/总油量/总油费只累计加满锚点区间内实际消耗的部分
+	// 统一口径：总里程/总油量只累计加满锚点区间内实际消耗的部分，总油费按实付金额（actualAmount）累计
 	stats.TotalDistance = validDistance
 	stats.TotalVolume = validVolume
 	stats.TotalAmount = validAmount

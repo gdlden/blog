@@ -77,6 +77,7 @@ func NewHTTPServer(c *conf.Server, greeter *service.GreeterService,
 	fileV1.RegisterFileHTTPServer(srv, fileService)
 	mapV1.RegisterMapHTTPServer(srv, mapService)
 	srv.Route("/").POST("/debtDetail/ocr/v1", detailService.RecognizeDebtDetailOCRHTTP)
+	srv.Route("/").POST("/fuel/refuel/ocr/v1", fuelService.RecognizeFuelOCRHTTP)
 	srv.Route("/").POST("/file/upload/raw/v1", fileService.HandleRawUploadHTTP)
 	srv.Route("/").GET("/file/download/v1/{id}", fileService.HandleDownloadHTTP)
 	return srv
